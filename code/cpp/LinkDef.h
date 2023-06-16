@@ -1,0 +1,22 @@
+// Add the dictionary directives for each class
+#pragma link C++ class mu2e::EventInfo+;
+#pragma link C++ class mu2e::EventInfoMC+;
+#pragma link C++ class mu2e::HitCount+;
+#pragma link C++ class mu2e::TrkInfo+;
+#pragma link C++ class mu2e::TrkFitInfo+;
+#pragma link C++ class mu2e::TrkCaloHitInfo+;
+#pragma link C++ class mu2e::TrkStrawHitInfo+;
+#pragma link C++ class mu2e::TrkStrawMatInfo+;
+#pragma link C++ class mu2e::CrvHitInfoReco+;
+#pragma link C++ class mu2e::CrvHitInfoMC+;
+#pragma link C++ class mu2e::TrkInfoMC+;
+#pragma link C++ class mu2e::MCRelationship+;
+#pragma link C++ class mu2e::SimInfo+;
+#pragma link C++ class mu2e::TrkInfoMCStep+;
+#pragma link C++ class mu2e::CaloClusterInfoMC+;
+#pragma link C++ class mu2e::TrkStrawHitInfoMC+;
+#pragma link C++ class mu2e::MCStepInfo+;
+#pragma link C++ class mu2e::MCStepSummaryInfo+;
+#pragma link C++ class mu2e::CrvSummaryReco+;
+#pragma link C++ class mu2e::CrvSummaryMC+;
+#pragma link C++ class mu2e::CrvPlaneInfoMC+;

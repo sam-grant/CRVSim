@@ -1,0 +1,12 @@
+******************************************************************************
+*Tree    :trkana    : track analysis                                         *
+*Entries :    10355 : Total =        88807141 bytes  File  Size =   44125980 *
+*        :          : Tree compression factor =   2.01                       *
+******************************************************************************
+*Branch  :evtinfo.                                                           *
+*Entries :    10355 : BranchElement (see below)                              *
+*............................................................................*
+*Br    0 :evtinfo.eventid : Int_t                                            *
+*Entries :    10355 : Total  Size=      42121 bytes  File Size  =      26792 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.55     *
+*............................................................................*

@@ -1,0 +1,1966 @@
+root [3] tr->Print()
+******************************************************************************
+*Tree    :trkana    : track analysis                                         *
+*Entries :    10355 : Total =        88807141 bytes  File  Size =   44125980 *
+*        :          : Tree compression factor =   2.01                       *
+******************************************************************************
+*Branch  :evtinfo.                                                           *
+*Entries :    10355 : BranchElement (see below)                              *
+*............................................................................*
+*Br    0 :evtinfo.eventid : Int_t                                            *
+*Entries :    10355 : Total  Size=      42121 bytes  File Size  =      26792 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.55     *
+*............................................................................*
+*Br    1 :evtinfo.runid : Int_t                                              *
+*Entries :    10355 : Total  Size=      42109 bytes  File Size  =        441 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  94.29     *
+*............................................................................*
+*Br    2 :evtinfo.subrunid : Int_t                                           *
+*Entries :    10355 : Total  Size=      42127 bytes  File Size  =        489 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  85.05     *
+*............................................................................*
+*Br    3 :evtinfo.nprotons : Int_t                                           *
+*Entries :    10355 : Total  Size=      42127 bytes  File Size  =        415 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 100.22     *
+*............................................................................*
+*Br    4 :evtinfo.pbtime : Float_t                                           *
+*Entries :    10355 : Total  Size=      42115 bytes  File Size  =        411 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 101.18     *
+*............................................................................*
+*Br    5 :evtinfo.pbterr : Float_t                                           *
+*Entries :    10355 : Total  Size=      42115 bytes  File Size  =        411 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 101.18     *
+*............................................................................*
+*Branch  :evtinfomc.                                                         *
+*Entries :    10355 : BranchElement (see below)                              *
+*............................................................................*
+*Br    6 :evtinfomc.nprotons : Int_t                                         *
+*Entries :    10355 : Total  Size=      42135 bytes  File Size  =        446 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  93.26     *
+*............................................................................*
+*Br    7 :evtinfomc.pbtime : Float_t                                         *
+*Entries :    10355 : Total  Size=      42123 bytes  File Size  =        415 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 100.22     *
+*............................................................................*
+*Branch  :hcnt.                                                              *
+*Entries :    10355 : BranchElement (see below)                              *
+*............................................................................*
+*Br    8 :hcnt.nsd  : Int_t                                                  *
+*Entries :    10355 : Total  Size=      42075 bytes  File Size  =      11598 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   3.58     *
+*............................................................................*
+*Br    9 :hcnt.nesel : Int_t                                                 *
+*Entries :    10355 : Total  Size=      42087 bytes  File Size  =      11570 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   3.59     *
+*............................................................................*
+*Br   10 :hcnt.nrsel : Int_t                                                 *
+*Entries :    10355 : Total  Size=      42087 bytes  File Size  =      11582 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   3.59     *
+*............................................................................*
+*Br   11 :hcnt.ntsel : Int_t                                                 *
+*Entries :    10355 : Total  Size=      42087 bytes  File Size  =      11602 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   3.58     *
+*............................................................................*
+*Br   12 :hcnt.nbkg : Int_t                                                  *
+*Entries :    10355 : Total  Size=      42081 bytes  File Size  =        401 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 103.68     *
+*............................................................................*
+*Br   13 :hcnt.ntpk : Int_t                                                  *
+*Entries :    10355 : Total  Size=      42081 bytes  File Size  =        401 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 103.68     *
+*............................................................................*
+*Br   14 :hcnt.ncd  : Int_t                                                  *
+*Entries :    10355 : Total  Size=      42075 bytes  File Size  =       2173 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  19.13     *
+*............................................................................*
+*Br   15 :hcnt.ncrvd : Int_t                                                 *
+*Entries :    10355 : Total  Size=      42087 bytes  File Size  =       7914 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   5.25     *
+*............................................................................*
+*Br   16 :tcnt.nkl  : tcnt.nkl/I                                             *
+*Entries :    10355 : Total  Size=      42071 bytes  File Size  =        468 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  88.83     *
+*............................................................................*
+*Branch  :kl.                                                                *
+*Entries :    10355 : BranchElement (see below)                              *
+*............................................................................*
+*Br   17 :kl.status : Int_t                                                  *
+*Entries :    10355 : Total  Size=      42081 bytes  File Size  =       3977 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  10.45     *
+*............................................................................*
+*Br   18 :kl.goodfit : Int_t                                                 *
+*Entries :    10355 : Total  Size=      42087 bytes  File Size  =        403 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 103.17     *
+*............................................................................*
+*Br   19 :kl.seedalg : Int_t                                                 *
+*Entries :    10355 : Total  Size=      42087 bytes  File Size  =        403 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 103.17     *
+*............................................................................*
+*Br   20 :kl.fitalg : Int_t                                                  *
+*Entries :    10355 : Total  Size=      42081 bytes  File Size  =        429 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  96.91     *
+*............................................................................*
+*Br   21 :kl.pdg    : Int_t                                                  *
+*Entries :    10355 : Total  Size=      42063 bytes  File Size  =        424 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  98.04     *
+*............................................................................*
+*Br   22 :kl.nhits  : Int_t                                                  *
+*Entries :    10355 : Total  Size=      42075 bytes  File Size  =      11234 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   3.70     *
+*............................................................................*
+*Br   23 :kl.ndof   : Int_t                                                  *
+*Entries :    10355 : Total  Size=      42069 bytes  File Size  =      12596 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   3.30     *
+*............................................................................*
+*Br   24 :kl.nactive : Int_t                                                 *
+*Entries :    10355 : Total  Size=      42087 bytes  File Size  =      11792 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   3.53     *
+*............................................................................*
+*Br   25 :kl.ndouble : Int_t                                                 *
+*Entries :    10355 : Total  Size=      42087 bytes  File Size  =      10942 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   3.80     *
+*............................................................................*
+*Br   26 :kl.ndactive : Int_t                                                *
+*Entries :    10355 : Total  Size=      42093 bytes  File Size  =      10908 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   3.81     *
+*............................................................................*
+*Br   27 :kl.nplanes : Int_t                                                 *
+*Entries :    10355 : Total  Size=      42087 bytes  File Size  =       9374 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   4.44     *
+*............................................................................*
+*Br   28 :kl.planespan : Int_t                                               *
+*Entries :    10355 : Total  Size=      42099 bytes  File Size  =      12002 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   3.46     *
+*............................................................................*
+*Br   29 :kl.nnullambig : Int_t                                              *
+*Entries :    10355 : Total  Size=      42105 bytes  File Size  =       9656 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   4.31     *
+*............................................................................*
+*Br   30 :kl.nmat   : Int_t                                                  *
+*Entries :    10355 : Total  Size=      42069 bytes  File Size  =      12544 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   3.31     *
+*............................................................................*
+*Br   31 :kl.nmatactive : Int_t                                              *
+*Entries :    10355 : Total  Size=      42105 bytes  File Size  =      12337 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   3.37     *
+*............................................................................*
+*Br   32 :kl.nseg   : Int_t                                                  *
+*Entries :    10355 : Total  Size=      42069 bytes  File Size  =      12292 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   3.38     *
+*............................................................................*
+*Br   33 :kl.t0     : Float_t                                                *
+*Entries :    10355 : Total  Size=      42057 bytes  File Size  =        424 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  98.04     *
+*............................................................................*
+*Br   34 :kl.t0err  : Float_t                                                *
+*Entries :    10355 : Total  Size=      42075 bytes  File Size  =        430 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  96.68     *
+*............................................................................*
+*Br   35 :kl.chisq  : Float_t                                                *
+*Entries :    10355 : Total  Size=      42075 bytes  File Size  =      35757 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.16     *
+*............................................................................*
+*Br   36 :kl.fitcon : Float_t                                                *
+*Entries :    10355 : Total  Size=      42081 bytes  File Size  =      35289 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.18     *
+*............................................................................*
+*Br   37 :kl.radlen : Float_t                                                *
+*Entries :    10355 : Total  Size=      42081 bytes  File Size  =      36814 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.13     *
+*............................................................................*
+*Br   38 :kl.firsthit : Float_t                                              *
+*Entries :    10355 : Total  Size=      42093 bytes  File Size  =      37178 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.12     *
+*............................................................................*
+*Br   39 :kl.lasthit : Float_t                                               *
+*Entries :    10355 : Total  Size=      42087 bytes  File Size  =      37178 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.12     *
+*............................................................................*
+*Br   40 :kl.maxgap : Float_t                                                *
+*Entries :    10355 : Total  Size=      42081 bytes  File Size  =      39313 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.06     *
+*............................................................................*
+*Br   41 :kl.avggap : Float_t                                                *
+*Entries :    10355 : Total  Size=      42081 bytes  File Size  =      39300 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.06     *
+*............................................................................*
+*Branch  :klent.                                                             *
+*Entries :    10355 : BranchElement (see below)                              *
+*............................................................................*
+*Br   42 :klent.mom :                                                        *
+*Entries :    10355 : Total  Size=       2646 bytes  One basket in memory    *
+*Baskets :        0 : Basket Size=      32000 bytes  Compression=   1.00     *
+*............................................................................*
+*Br   43 :klent.mom.fCoordinates.fX : Float_t                                *
+*Entries :    10355 : Total  Size=      42177 bytes  File Size  =      38443 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.08     *
+*............................................................................*
+*Br   44 :klent.mom.fCoordinates.fY : Float_t                                *
+*Entries :    10355 : Total  Size=      42177 bytes  File Size  =      36095 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.15     *
+*............................................................................*
+*Br   45 :klent.mom.fCoordinates.fZ : Float_t                                *
+*Entries :    10355 : Total  Size=      42177 bytes  File Size  =      38319 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.09     *
+*............................................................................*
+*Br   46 :klent.pos :                                                        *
+*Entries :    10355 : Total  Size=       2646 bytes  One basket in memory    *
+*Baskets :        0 : Basket Size=      32000 bytes  Compression=   1.00     *
+*............................................................................*
+*Br   47 :klent.pos.fCoordinates.fX : Float_t                                *
+*Entries :    10355 : Total  Size=      42177 bytes  File Size  =      38820 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.07     *
+*............................................................................*
+*Br   48 :klent.pos.fCoordinates.fY : Float_t                                *
+*Entries :    10355 : Total  Size=      42177 bytes  File Size  =      38542 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.08     *
+*............................................................................*
+*Br   49 :klent.pos.fCoordinates.fZ : Float_t                                *
+*Entries :    10355 : Total  Size=      42177 bytes  File Size  =      38077 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.09     *
+*............................................................................*
+*Br   50 :klent.momerr : Float_t                                             *
+*Entries :    10355 : Total  Size=      42099 bytes  File Size  =      36162 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.15     *
+*............................................................................*
+*Br   51 :klent.d0  : Float_t                                                *
+*Entries :    10355 : Total  Size=      42075 bytes  File Size  =        399 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 104.20     *
+*............................................................................*
+*Br   52 :klent.maxr : Float_t                                               *
+*Entries :    10355 : Total  Size=      42087 bytes  File Size  =        403 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 103.17     *
+*............................................................................*
+*Br   53 :klent.td  : Float_t                                                *
+*Entries :    10355 : Total  Size=      42075 bytes  File Size  =        399 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 104.20     *
+*............................................................................*
+*Br   54 :klent.Rad : Float_t                                                *
+*Entries :    10355 : Total  Size=      42081 bytes  File Size  =        401 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 103.68     *
+*............................................................................*
+*Br   55 :klent.Lambda : Float_t                                             *
+*Entries :    10355 : Total  Size=      42099 bytes  File Size  =        407 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 102.17     *
+*............................................................................*
+*Br   56 :klent.Cx  : Float_t                                                *
+*Entries :    10355 : Total  Size=      42075 bytes  File Size  =        399 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 104.20     *
+*............................................................................*
+*Br   57 :klent.Cy  : Float_t                                                *
+*Entries :    10355 : Total  Size=      42075 bytes  File Size  =        399 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 104.20     *
+*............................................................................*
+*Br   58 :klent.phi0 : Float_t                                               *
+*Entries :    10355 : Total  Size=      42087 bytes  File Size  =        403 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 103.17     *
+*............................................................................*
+*Br   59 :klent.t0  : Float_t                                                *
+*Entries :    10355 : Total  Size=      42075 bytes  File Size  =        399 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 104.20     *
+*............................................................................*
+*Branch  :klmid.                                                             *
+*Entries :    10355 : BranchElement (see below)                              *
+*............................................................................*
+*Br   60 :klmid.mom :                                                        *
+*Entries :    10355 : Total  Size=       2646 bytes  One basket in memory    *
+*Baskets :        0 : Basket Size=      32000 bytes  Compression=   1.00     *
+*............................................................................*
+*Br   61 :klmid.mom.fCoordinates.fX : Float_t                                *
+*Entries :    10355 : Total  Size=      42177 bytes  File Size  =      38453 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.08     *
+*............................................................................*
+*Br   62 :klmid.mom.fCoordinates.fY : Float_t                                *
+*Entries :    10355 : Total  Size=      42177 bytes  File Size  =      36091 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.15     *
+*............................................................................*
+*Br   63 :klmid.mom.fCoordinates.fZ : Float_t                                *
+*Entries :    10355 : Total  Size=      42177 bytes  File Size  =      38327 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.09     *
+*............................................................................*
+*Br   64 :klmid.pos :                                                        *
+*Entries :    10355 : Total  Size=       2646 bytes  One basket in memory    *
+*Baskets :        0 : Basket Size=      32000 bytes  Compression=   1.00     *
+*............................................................................*
+*Br   65 :klmid.pos.fCoordinates.fX : Float_t                                *
+*Entries :    10355 : Total  Size=      42177 bytes  File Size  =      38814 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.07     *
+*............................................................................*
+*Br   66 :klmid.pos.fCoordinates.fY : Float_t                                *
+*Entries :    10355 : Total  Size=      42177 bytes  File Size  =      38659 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.08     *
+*............................................................................*
+*Br   67 :klmid.pos.fCoordinates.fZ : Float_t                                *
+*Entries :    10355 : Total  Size=      42177 bytes  File Size  =      38727 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.07     *
+*............................................................................*
+*Br   68 :klmid.momerr : Float_t                                             *
+*Entries :    10355 : Total  Size=      42099 bytes  File Size  =      36023 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.15     *
+*............................................................................*
+*Br   69 :klmid.d0  : Float_t                                                *
+*Entries :    10355 : Total  Size=      42075 bytes  File Size  =        399 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 104.20     *
+*............................................................................*
+*Br   70 :klmid.maxr : Float_t                                               *
+*Entries :    10355 : Total  Size=      42087 bytes  File Size  =        403 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 103.17     *
+*............................................................................*
+*Br   71 :klmid.td  : Float_t                                                *
+*Entries :    10355 : Total  Size=      42075 bytes  File Size  =        399 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 104.20     *
+*............................................................................*
+*Br   72 :klmid.Rad : Float_t                                                *
+*Entries :    10355 : Total  Size=      42081 bytes  File Size  =        401 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 103.68     *
+*............................................................................*
+*Br   73 :klmid.Lambda : Float_t                                             *
+*Entries :    10355 : Total  Size=      42099 bytes  File Size  =        407 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 102.17     *
+*............................................................................*
+*Br   74 :klmid.Cx  : Float_t                                                *
+*Entries :    10355 : Total  Size=      42075 bytes  File Size  =        399 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 104.20     *
+*............................................................................*
+*Br   75 :klmid.Cy  : Float_t                                                *
+*Entries :    10355 : Total  Size=      42075 bytes  File Size  =        399 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 104.20     *
+*............................................................................*
+*Br   76 :klmid.phi0 : Float_t                                               *
+*Entries :    10355 : Total  Size=      42087 bytes  File Size  =        403 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 103.17     *
+*............................................................................*
+*Br   77 :klmid.t0  : Float_t                                                *
+*Entries :    10355 : Total  Size=      42075 bytes  File Size  =        399 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 104.20     *
+*............................................................................*
+*Branch  :klxit.                                                             *
+*Entries :    10355 : BranchElement (see below)                              *
+*............................................................................*
+*Br   78 :klxit.mom :                                                        *
+*Entries :    10355 : Total  Size=       2646 bytes  One basket in memory    *
+*Baskets :        0 : Basket Size=      32000 bytes  Compression=   1.00     *
+*............................................................................*
+*Br   79 :klxit.mom.fCoordinates.fX : Float_t                                *
+*Entries :    10355 : Total  Size=      42177 bytes  File Size  =      38453 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.08     *
+*............................................................................*
+*Br   80 :klxit.mom.fCoordinates.fY : Float_t                                *
+*Entries :    10355 : Total  Size=      42177 bytes  File Size  =      36100 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.15     *
+*............................................................................*
+*Br   81 :klxit.mom.fCoordinates.fZ : Float_t                                *
+*Entries :    10355 : Total  Size=      42177 bytes  File Size  =      38333 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.09     *
+*............................................................................*
+*Br   82 :klxit.pos :                                                        *
+*Entries :    10355 : Total  Size=       2646 bytes  One basket in memory    *
+*Baskets :        0 : Basket Size=      32000 bytes  Compression=   1.00     *
+*............................................................................*
+*Br   83 :klxit.pos.fCoordinates.fX : Float_t                                *
+*Entries :    10355 : Total  Size=      42177 bytes  File Size  =      38839 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.07     *
+*............................................................................*
+*Br   84 :klxit.pos.fCoordinates.fY : Float_t                                *
+*Entries :    10355 : Total  Size=      42177 bytes  File Size  =      38571 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.08     *
+*............................................................................*
+*Br   85 :klxit.pos.fCoordinates.fZ : Float_t                                *
+*Entries :    10355 : Total  Size=      42177 bytes  File Size  =      38105 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.09     *
+*............................................................................*
+*Br   86 :klxit.momerr : Float_t                                             *
+*Entries :    10355 : Total  Size=      42099 bytes  File Size  =      36312 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.15     *
+*............................................................................*
+*Br   87 :klxit.d0  : Float_t                                                *
+*Entries :    10355 : Total  Size=      42075 bytes  File Size  =        399 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 104.20     *
+*............................................................................*
+*Br   88 :klxit.maxr : Float_t                                               *
+*Entries :    10355 : Total  Size=      42087 bytes  File Size  =        403 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 103.17     *
+*............................................................................*
+*Br   89 :klxit.td  : Float_t                                                *
+*Entries :    10355 : Total  Size=      42075 bytes  File Size  =        399 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 104.20     *
+*............................................................................*
+*Br   90 :klxit.Rad : Float_t                                                *
+*Entries :    10355 : Total  Size=      42081 bytes  File Size  =        401 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 103.68     *
+*............................................................................*
+*Br   91 :klxit.Lambda : Float_t                                             *
+*Entries :    10355 : Total  Size=      42099 bytes  File Size  =        407 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 102.17     *
+*............................................................................*
+*Br   92 :klxit.Cx  : Float_t                                                *
+*Entries :    10355 : Total  Size=      42075 bytes  File Size  =        399 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 104.20     *
+*............................................................................*
+*Br   93 :klxit.Cy  : Float_t                                                *
+*Entries :    10355 : Total  Size=      42075 bytes  File Size  =        399 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 104.20     *
+*............................................................................*
+*Br   94 :klxit.phi0 : Float_t                                               *
+*Entries :    10355 : Total  Size=      42087 bytes  File Size  =        403 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 103.17     *
+*............................................................................*
+*Br   95 :klxit.t0  : Float_t                                                *
+*Entries :    10355 : Total  Size=      42075 bytes  File Size  =        399 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 104.20     *
+*............................................................................*
+*Branch  :kltch.                                                             *
+*Entries :    10355 : BranchElement (see below)                              *
+*............................................................................*
+*Br   96 :kltch.active : Int_t                                               *
+*Entries :    10355 : Total  Size=      42099 bytes  File Size  =       1343 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  30.96     *
+*............................................................................*
+*Br   97 :kltch.did : Int_t                                                  *
+*Entries :    10355 : Total  Size=      42081 bytes  File Size  =       1472 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  28.24     *
+*............................................................................*
+*Br   98 :kltch.poca :                                                       *
+*Entries :    10355 : Total  Size=       2660 bytes  One basket in memory    *
+*Baskets :        0 : Basket Size=      32000 bytes  Compression=   1.00     *
+*............................................................................*
+*Br   99 :kltch.poca.fCoordinates.fX : Float_t                               *
+*Entries :    10355 : Total  Size=      42183 bytes  File Size  =       2677 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  15.54     *
+*............................................................................*
+*Br  100 :kltch.poca.fCoordinates.fY : Float_t                               *
+*Entries :    10355 : Total  Size=      42183 bytes  File Size  =       2656 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  15.67     *
+*............................................................................*
+*Br  101 :kltch.poca.fCoordinates.fZ : Float_t                               *
+*Entries :    10355 : Total  Size=      42183 bytes  File Size  =       2578 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  16.14     *
+*............................................................................*
+*Br  102 :kltch.mom :                                                        *
+*Entries :    10355 : Total  Size=       2646 bytes  One basket in memory    *
+*Baskets :        0 : Basket Size=      32000 bytes  Compression=   1.00     *
+*............................................................................*
+*Br  103 :kltch.mom.fCoordinates.fX : Float_t                                *
+*Entries :    10355 : Total  Size=      42177 bytes  File Size  =       2688 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  15.48     *
+*............................................................................*
+*Br  104 :kltch.mom.fCoordinates.fY : Float_t                                *
+*Entries :    10355 : Total  Size=      42177 bytes  File Size  =       2626 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  15.84     *
+*............................................................................*
+*Br  105 :kltch.mom.fCoordinates.fZ : Float_t                                *
+*Entries :    10355 : Total  Size=      42177 bytes  File Size  =       2637 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  15.78     *
+*............................................................................*
+*Br  106 :kltch.cdepth : Float_t                                             *
+*Entries :    10355 : Total  Size=      42099 bytes  File Size  =       2681 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  15.51     *
+*............................................................................*
+*Br  107 :kltch.doca : Float_t                                               *
+*Entries :    10355 : Total  Size=      42087 bytes  File Size  =       2714 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  15.32     *
+*............................................................................*
+*Br  108 :kltch.dt  : Float_t                                                *
+*Entries :    10355 : Total  Size=      42075 bytes  File Size  =       2671 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  15.56     *
+*............................................................................*
+*Br  109 :kltch.ptoca : Float_t                                              *
+*Entries :    10355 : Total  Size=      42093 bytes  File Size  =       2654 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  15.67     *
+*............................................................................*
+*Br  110 :kltch.tocavar : Float_t                                            *
+*Entries :    10355 : Total  Size=      42105 bytes  File Size  =       2644 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  15.73     *
+*............................................................................*
+*Br  111 :kltch.tresid : Float_t                                             *
+*Entries :    10355 : Total  Size=      42099 bytes  File Size  =       2685 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  15.49     *
+*............................................................................*
+*Br  112 :kltch.tresidmvar : Float_t                                         *
+*Entries :    10355 : Total  Size=      42123 bytes  File Size  =       2572 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  16.17     *
+*............................................................................*
+*Br  113 :kltch.tresidpvar : Float_t                                         *
+*Entries :    10355 : Total  Size=      42123 bytes  File Size  =       2648 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  15.71     *
+*............................................................................*
+*Br  114 :kltch.ctime : Float_t                                              *
+*Entries :    10355 : Total  Size=      42093 bytes  File Size  =       2651 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  15.68     *
+*............................................................................*
+*Br  115 :kltch.ctimeerr : Float_t                                           *
+*Entries :    10355 : Total  Size=      42111 bytes  File Size  =       2647 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  15.71     *
+*............................................................................*
+*Br  116 :kltch.csize : Float_t                                              *
+*Entries :    10355 : Total  Size=      42093 bytes  File Size  =       1632 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  25.48     *
+*............................................................................*
+*Br  117 :kltch.edep : Float_t                                               *
+*Entries :    10355 : Total  Size=      42087 bytes  File Size  =       2653 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  15.67     *
+*............................................................................*
+*Br  118 :kltch.edeperr : Float_t                                            *
+*Entries :    10355 : Total  Size=      42105 bytes  File Size  =       2657 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  15.65     *
+*............................................................................*
+*Br  119 :kltsh     : Int_t kltsh_                                           *
+*Entries :    10355 : Total  Size=     133332 bytes  File Size  =      27760 *
+*Baskets :        5 : Basket Size=      32000 bytes  Compression=   3.00     *
+*............................................................................*
+*Br  120 :kltsh.plane : Int_t plane[kltsh_]                                  *
+*Entries :    10355 : Total  Size=     834773 bytes  File Size  =     139878 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   5.96     *
+*............................................................................*
+*Br  121 :kltsh.panel : Int_t panel[kltsh_]                                  *
+*Entries :    10355 : Total  Size=     834773 bytes  File Size  =     126288 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   6.60     *
+*............................................................................*
+*Br  122 :kltsh.layer : Int_t layer[kltsh_]                                  *
+*Entries :    10355 : Total  Size=     834773 bytes  File Size  =     112335 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   7.42     *
+*............................................................................*
+*Br  123 :kltsh.straw : Int_t straw[kltsh_]                                  *
+*Entries :    10355 : Total  Size=     834773 bytes  File Size  =     282567 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   2.95     *
+*............................................................................*
+*Br  124 :kltsh.state : Int_t state[kltsh_]                                  *
+*Entries :    10355 : Total  Size=     834773 bytes  File Size  =     157397 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   5.30     *
+*............................................................................*
+*Br  125 :kltsh.algo : Int_t algo[kltsh_]                                    *
+*Entries :    10355 : Total  Size=     834747 bytes  File Size  =      56844 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=  14.67     *
+*............................................................................*
+*Br  126 :kltsh.frozen : Bool_t frozen[kltsh_]                               *
+*Entries :    10355 : Total  Size=     240367 bytes  File Size  =      35610 *
+*Baskets :        8 : Basket Size=     240640 bytes  Compression=   6.73     *
+*............................................................................*
+*Br  127 :kltsh.usetot : Bool_t usetot[kltsh_]                               *
+*Entries :    10355 : Total  Size=     240367 bytes  File Size  =      22698 *
+*Baskets :        8 : Basket Size=     240640 bytes  Compression=  10.56     *
+*............................................................................*
+*Br  128 :kltsh.usedriftdt : Bool_t usedriftdt[kltsh_]                       *
+*Entries :    10355 : Total  Size=     240415 bytes  File Size  =      22747 *
+*Baskets :        8 : Basket Size=     240640 bytes  Compression=  10.54     *
+*............................................................................*
+*Br  129 :kltsh.useabsdt : Bool_t useabsdt[kltsh_]                           *
+*Entries :    10355 : Total  Size=     240391 bytes  File Size  =      22690 *
+*Baskets :        8 : Basket Size=     240640 bytes  Compression=  10.57     *
+*............................................................................*
+*Br  130 :kltsh.usendvar : Bool_t usendvar[kltsh_]                           *
+*Entries :    10355 : Total  Size=     240391 bytes  File Size  =      31690 *
+*Baskets :        8 : Basket Size=     240640 bytes  Compression=   7.57     *
+*............................................................................*
+*Br  131 :kltsh.bkgqual : Float_t bkgqual[kltsh_]                            *
+*Entries :    10355 : Total  Size=     834825 bytes  File Size  =     561532 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   1.49     *
+*............................................................................*
+*Br  132 :kltsh.signqual : Float_t signqual[kltsh_]                          *
+*Entries :    10355 : Total  Size=     834851 bytes  File Size  =     611730 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   1.36     *
+*............................................................................*
+*Br  133 :kltsh.driftqual : Float_t driftqual[kltsh_]                        *
+*Entries :    10355 : Total  Size=     834877 bytes  File Size  =     618804 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   1.35     *
+*............................................................................*
+*Br  134 :kltsh.chi2qual : Float_t chi2qual[kltsh_]                          *
+*Entries :    10355 : Total  Size=     834851 bytes  File Size  =      31047 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=  26.86     *
+*............................................................................*
+*Br  135 :kltsh.earlyend : Int_t earlyend[kltsh_]                            *
+*Entries :    10355 : Total  Size=     834851 bytes  File Size  =     103659 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   8.05     *
+*............................................................................*
+*Br  136 :kltsh.edep : Float_t edep[kltsh_]                                  *
+*Entries :    10355 : Total  Size=     834747 bytes  File Size  =     491534 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   1.70     *
+*............................................................................*
+*Br  137 :kltsh.wdist : Float_t wdist[kltsh_]                                *
+*Entries :    10355 : Total  Size=     834773 bytes  File Size  =     757716 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   1.10     *
+*............................................................................*
+*Br  138 :kltsh.werr : Float_t werr[kltsh_]                                  *
+*Entries :    10355 : Total  Size=     834747 bytes  File Size  =     697766 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   1.20     *
+*............................................................................*
+*Br  139 :kltsh.tottdrift : Float_t tottdrift[kltsh_]                        *
+*Entries :    10355 : Total  Size=     834877 bytes  File Size  =     263739 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   3.16     *
+*............................................................................*
+*Br  140 :kltsh.etime[2] : Float_t etime[kltsh_]                             *
+*Entries :    10355 : Total  Size=    1627408 bytes  File Size  =    1260548 *
+*Baskets :       40 : Basket Size=    1204736 bytes  Compression=   1.29     *
+*............................................................................*
+*Br  141 :kltsh.tot[2] : Float_t tot[kltsh_]                                 *
+*Entries :    10355 : Total  Size=    1627320 bytes  File Size  =     365504 *
+*Baskets :       40 : Basket Size=    1204736 bytes  Compression=   4.45     *
+*............................................................................*
+*Br  142 :kltsh.ptoca : Float_t ptoca[kltsh_]                                *
+*Entries :    10355 : Total  Size=     834773 bytes  File Size  =     447034 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   1.87     *
+*............................................................................*
+*Br  143 :kltsh.stoca : Float_t stoca[kltsh_]                                *
+*Entries :    10355 : Total  Size=     834773 bytes  File Size  =     680226 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   1.23     *
+*............................................................................*
+*Br  144 :kltsh.rdoca : Float_t rdoca[kltsh_]                                *
+*Entries :    10355 : Total  Size=     834773 bytes  File Size  =     769318 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   1.08     *
+*............................................................................*
+*Br  145 :kltsh.rdocavar : Float_t rdocavar[kltsh_]                          *
+*Entries :    10355 : Total  Size=     834851 bytes  File Size  =     755509 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   1.10     *
+*............................................................................*
+*Br  146 :kltsh.rdt : Float_t rdt[kltsh_]                                    *
+*Entries :    10355 : Total  Size=     834721 bytes  File Size  =     738254 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   1.13     *
+*............................................................................*
+*Br  147 :kltsh.rtocavar : Float_t rtocavar[kltsh_]                          *
+*Entries :    10355 : Total  Size=     834851 bytes  File Size  =     464768 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   1.79     *
+*............................................................................*
+*Br  148 :kltsh.udoca : Float_t udoca[kltsh_]                                *
+*Entries :    10355 : Total  Size=     834773 bytes  File Size  =     769873 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   1.08     *
+*............................................................................*
+*Br  149 :kltsh.udocavar : Float_t udocavar[kltsh_]                          *
+*Entries :    10355 : Total  Size=     834851 bytes  File Size  =     759925 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   1.10     *
+*............................................................................*
+*Br  150 :kltsh.udt : Float_t udt[kltsh_]                                    *
+*Entries :    10355 : Total  Size=     834721 bytes  File Size  =     738912 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   1.13     *
+*............................................................................*
+*Br  151 :kltsh.utocavar : Float_t utocavar[kltsh_]                          *
+*Entries :    10355 : Total  Size=     834851 bytes  File Size  =     686635 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   1.21     *
+*............................................................................*
+*Br  152 :kltsh.rupos : Float_t rupos[kltsh_]                                *
+*Entries :    10355 : Total  Size=     834773 bytes  File Size  =     763351 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   1.09     *
+*............................................................................*
+*Br  153 :kltsh.uupos : Float_t uupos[kltsh_]                                *
+*Entries :    10355 : Total  Size=     834773 bytes  File Size  =     763416 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   1.09     *
+*............................................................................*
+*Br  154 :kltsh.rdrift : Float_t rdrift[kltsh_]                              *
+*Entries :    10355 : Total  Size=     834799 bytes  File Size  =     736861 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   1.13     *
+*............................................................................*
+*Br  155 :kltsh.cdrift : Float_t cdrift[kltsh_]                              *
+*Entries :    10355 : Total  Size=     834799 bytes  File Size  =     737018 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   1.13     *
+*............................................................................*
+*Br  156 :kltsh.sderr : Float_t sderr[kltsh_]                                *
+*Entries :    10355 : Total  Size=     834773 bytes  File Size  =      30884 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=  27.00     *
+*............................................................................*
+*Br  157 :kltsh.uderr : Float_t uderr[kltsh_]                                *
+*Entries :    10355 : Total  Size=     834773 bytes  File Size  =      30931 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=  26.96     *
+*............................................................................*
+*Br  158 :kltsh.dvel : Float_t dvel[kltsh_]                                  *
+*Entries :    10355 : Total  Size=     834747 bytes  File Size  =     656173 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   1.27     *
+*............................................................................*
+*Br  159 :kltsh.lang : Float_t lang[kltsh_]                                  *
+*Entries :    10355 : Total  Size=     834747 bytes  File Size  =      30976 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=  26.92     *
+*............................................................................*
+*Br  160 :kltsh.utresid : Float_t utresid[kltsh_]                            *
+*Entries :    10355 : Total  Size=     834825 bytes  File Size  =     625312 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   1.33     *
+*............................................................................*
+*Br  161 :kltsh.utresidmvar : Float_t utresidmvar[kltsh_]                    *
+*Entries :    10355 : Total  Size=     834929 bytes  File Size  =     241464 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   3.45     *
+*............................................................................*
+*Br  162 :kltsh.utresidpvar : Float_t utresidpvar[kltsh_]                    *
+*Entries :    10355 : Total  Size=     834929 bytes  File Size  =     539965 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   1.54     *
+*............................................................................*
+*Br  163 :kltsh.udresid : Float_t udresid[kltsh_]                            *
+*Entries :    10355 : Total  Size=     834825 bytes  File Size  =     627125 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   1.33     *
+*............................................................................*
+*Br  164 :kltsh.udresidmvar : Float_t udresidmvar[kltsh_]                    *
+*Entries :    10355 : Total  Size=     834929 bytes  File Size  =     193998 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   4.30     *
+*............................................................................*
+*Br  165 :kltsh.udresidpvar : Float_t udresidpvar[kltsh_]                    *
+*Entries :    10355 : Total  Size=     834929 bytes  File Size  =     606542 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   1.38     *
+*............................................................................*
+*Br  166 :kltsh.rtresid : Float_t rtresid[kltsh_]                            *
+*Entries :    10355 : Total  Size=     834825 bytes  File Size  =     702661 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   1.19     *
+*............................................................................*
+*Br  167 :kltsh.rtresidmvar : Float_t rtresidmvar[kltsh_]                    *
+*Entries :    10355 : Total  Size=     834929 bytes  File Size  =     263050 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   3.17     *
+*............................................................................*
+*Br  168 :kltsh.rtresidpvar : Float_t rtresidpvar[kltsh_]                    *
+*Entries :    10355 : Total  Size=     834929 bytes  File Size  =      54860 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=  15.20     *
+*............................................................................*
+*Br  169 :kltsh.rdresid : Float_t rdresid[kltsh_]                            *
+*Entries :    10355 : Total  Size=     834825 bytes  File Size  =     708624 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   1.18     *
+*............................................................................*
+*Br  170 :kltsh.rdresidmvar : Float_t rdresidmvar[kltsh_]                    *
+*Entries :    10355 : Total  Size=     834929 bytes  File Size  =     223392 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   3.73     *
+*............................................................................*
+*Br  171 :kltsh.rdresidpvar : Float_t rdresidpvar[kltsh_]                    *
+*Entries :    10355 : Total  Size=     834929 bytes  File Size  =      54860 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=  15.20     *
+*............................................................................*
+*Br  172 :kltsh.wdot : Float_t wdot[kltsh_]                                  *
+*Entries :    10355 : Total  Size=     834747 bytes  File Size  =     405649 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   2.06     *
+*............................................................................*
+*Br  173 :kltsh.poca.fCoordinates.fX : Float_t fX[kltsh_]                    *
+*Entries :    10355 : Total  Size=     835127 bytes  File Size  =     760753 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   1.10     *
+*............................................................................*
+*Br  174 :kltsh.poca.fCoordinates.fY : Float_t fY[kltsh_]                    *
+*Entries :    10355 : Total  Size=     835127 bytes  File Size  =     759216 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   1.10     *
+*............................................................................*
+*Br  175 :kltsh.poca.fCoordinates.fZ : Float_t fZ[kltsh_]                    *
+*Entries :    10355 : Total  Size=     835127 bytes  File Size  =     261979 *
+*Baskets :       22 : Basket Size=     685568 bytes  Compression=   3.18     *
+*............................................................................*
+*Br  176 :kltsh.dhit : Bool_t dhit[kltsh_]                                   *
+*Entries :    10355 : Total  Size=     240343 bytes  File Size  =      48198 *
+*Baskets :        8 : Basket Size=     240640 bytes  Compression=   4.97     *
+*............................................................................*
+*Br  177 :kltsh.dactive : Bool_t dactive[kltsh_]                             *
+*Entries :    10355 : Total  Size=     240379 bytes  File Size  =      52941 *
+*Baskets :        8 : Basket Size=     240640 bytes  Compression=   4.53     *
+*............................................................................*
+*Br  178 :kltsm     : Int_t kltsm_                                           *
+*Entries :    10355 : Total  Size=      92838 bytes  File Size  =      28890 *
+*Baskets :        5 : Basket Size=      32000 bytes  Compression=   2.88     *
+*............................................................................*
+*Br  179 :kltsm.active : Bool_t active[kltsm_]                               *
+*Entries :    10355 : Total  Size=     324151 bytes  File Size  =      70927 *
+*Baskets :       10 : Basket Size=     303104 bytes  Compression=   4.56     *
+*............................................................................*
+*Br  180 :kltsm.plane : Int_t plane[kltsm_]                                  *
+*Entries :    10355 : Total  Size=    1169873 bytes  File Size  =     199046 *
+*Baskets :       29 : Basket Size=     934400 bytes  Compression=   5.87     *
+*............................................................................*
+*Br  181 :kltsm.panel : Int_t panel[kltsm_]                                  *
+*Entries :    10355 : Total  Size=    1169873 bytes  File Size  =     178605 *
+*Baskets :       29 : Basket Size=     934400 bytes  Compression=   6.54     *
+*............................................................................*
+*Br  182 :kltsm.layer : Int_t layer[kltsm_]                                  *
+*Entries :    10355 : Total  Size=    1169873 bytes  File Size  =     154251 *
+*Baskets :       29 : Basket Size=     934400 bytes  Compression=   7.58     *
+*............................................................................*
+*Br  183 :kltsm.straw : Int_t straw[kltsm_]                                  *
+*Entries :    10355 : Total  Size=    1169873 bytes  File Size  =     399432 *
+*Baskets :       29 : Basket Size=     934400 bytes  Compression=   2.93     *
+*............................................................................*
+*Br  184 :kltsm.doca : Float_t doca[kltsm_]                                  *
+*Entries :    10355 : Total  Size=    1169840 bytes  File Size  =    1086346 *
+*Baskets :       29 : Basket Size=     934400 bytes  Compression=   1.08     *
+*............................................................................*
+*Br  185 :kltsm.tlen : Float_t tlen[kltsm_]                                  *
+*Entries :    10355 : Total  Size=    1169840 bytes  File Size  =     612923 *
+*Baskets :       29 : Basket Size=     934400 bytes  Compression=   1.91     *
+*............................................................................*
+*Br  186 :kltsm.dp  : Float_t dp[kltsm_]                                     *
+*Entries :    10355 : Total  Size=    1169774 bytes  File Size  =     855777 *
+*Baskets :       29 : Basket Size=     934400 bytes  Compression=   1.37     *
+*............................................................................*
+*Br  187 :kltsm.radlen : Float_t radlen[kltsm_]                              *
+*Entries :    10355 : Total  Size=    1169906 bytes  File Size  =     840561 *
+*Baskets :       29 : Basket Size=     934400 bytes  Compression=   1.39     *
+*............................................................................*
+*Branch  :klbestcrv.                                                         *
+*Entries :    10355 : BranchElement (see below)                              *
+*............................................................................*
+*Br  188 :klbestcrv._crvSectorType : Int_t                                   *
+*Entries :    10355 : Total  Size=      42171 bytes  File Size  =       5345 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   7.78     *
+*............................................................................*
+*Br  189 :klbestcrv._x : Float_t                                             *
+*Entries :    10355 : Total  Size=      42099 bytes  File Size  =       5184 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   8.02     *
+*............................................................................*
+*Br  190 :klbestcrv._y : Float_t                                             *
+*Entries :    10355 : Total  Size=      42099 bytes  File Size  =      13460 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   3.09     *
+*............................................................................*
+*Br  191 :klbestcrv._z : Float_t                                             *
+*Entries :    10355 : Total  Size=      42099 bytes  File Size  =      13774 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   3.02     *
+*............................................................................*
+*Br  192 :klbestcrv._timeWindowStart : Float_t                               *
+*Entries :    10355 : Total  Size=      42183 bytes  File Size  =      13958 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   2.98     *
+*............................................................................*
+*Br  193 :klbestcrv._timeWindowEnd : Float_t                                 *
+*Entries :    10355 : Total  Size=      42171 bytes  File Size  =      13930 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   2.99     *
+*............................................................................*
+*Br  194 :klbestcrv._PEs : Int_t                                             *
+*Entries :    10355 : Total  Size=      42111 bytes  File Size  =       9198 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   4.52     *
+*............................................................................*
+*Br  195 :klbestcrv._nCoincidenceHits : Int_t                                *
+*Entries :    10355 : Total  Size=      42189 bytes  File Size  =       6170 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   6.74     *
+*............................................................................*
+*Br  196 :klbestcrv._nCoincidenceLayers : Int_t                              *
+*Entries :    10355 : Total  Size=      42201 bytes  File Size  =        441 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  94.37     *
+*............................................................................*
+*Br  197 :klbestcrv._angle : Float_t                                         *
+*Entries :    10355 : Total  Size=      42123 bytes  File Size  =        449 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  92.63     *
+*............................................................................*
+*Branch  :klbestcrvmc.                                                       *
+*Entries :    10355 : BranchElement (see below)                              *
+*............................................................................*
+*Br  198 :klbestcrvmc._valid : Bool_t                                        *
+*Entries :    10355 : Total  Size=      11070 bytes  File Size  =       2437 *
+*Baskets :        2 : Basket Size=       8192 bytes  Compression=   4.32     *
+*............................................................................*
+*Br  199 :klbestcrvmc._pdgId : Int_t                                         *
+*Entries :    10355 : Total  Size=      42135 bytes  File Size  =       5321 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   7.82     *
+*............................................................................*
+*Br  200 :klbestcrvmc._primaryPdgId : Int_t                                  *
+*Entries :    10355 : Total  Size=      42177 bytes  File Size  =       5312 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   7.83     *
+*............................................................................*
+*Br  201 :klbestcrvmc._primaryE : Float_t                                    *
+*Entries :    10355 : Total  Size=      42153 bytes  File Size  =      15110 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   2.75     *
+*............................................................................*
+*Br  202 :klbestcrvmc._primaryX : Float_t                                    *
+*Entries :    10355 : Total  Size=      42153 bytes  File Size  =      15344 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   2.71     *
+*............................................................................*
+*Br  203 :klbestcrvmc._primaryY : Float_t                                    *
+*Entries :    10355 : Total  Size=      42153 bytes  File Size  =       4185 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   9.94     *
+*............................................................................*
+*Br  204 :klbestcrvmc._primaryZ : Float_t                                    *
+*Entries :    10355 : Total  Size=      42153 bytes  File Size  =      14435 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   2.88     *
+*............................................................................*
+*Br  205 :klbestcrvmc._parentPdgId : Int_t                                   *
+*Entries :    10355 : Total  Size=      42171 bytes  File Size  =       5313 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   7.83     *
+*............................................................................*
+*Br  206 :klbestcrvmc._parentE : Float_t                                     *
+*Entries :    10355 : Total  Size=      42147 bytes  File Size  =      15111 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   2.75     *
+*............................................................................*
+*Br  207 :klbestcrvmc._parentX : Float_t                                     *
+*Entries :    10355 : Total  Size=      42147 bytes  File Size  =      15342 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   2.71     *
+*............................................................................*
+*Br  208 :klbestcrvmc._parentY : Float_t                                     *
+*Entries :    10355 : Total  Size=      42147 bytes  File Size  =       4196 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   9.91     *
+*............................................................................*
+*Br  209 :klbestcrvmc._parentZ : Float_t                                     *
+*Entries :    10355 : Total  Size=      42147 bytes  File Size  =      14434 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   2.88     *
+*............................................................................*
+*Br  210 :klbestcrvmc._gparentPdgId : Int_t                                  *
+*Entries :    10355 : Total  Size=      42177 bytes  File Size  =       5312 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   7.83     *
+*............................................................................*
+*Br  211 :klbestcrvmc._gparentE : Float_t                                    *
+*Entries :    10355 : Total  Size=      42153 bytes  File Size  =      15109 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   2.75     *
+*............................................................................*
+*Br  212 :klbestcrvmc._gparentX : Float_t                                    *
+*Entries :    10355 : Total  Size=      42153 bytes  File Size  =      15340 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   2.71     *
+*............................................................................*
+*Br  213 :klbestcrvmc._gparentY : Float_t                                    *
+*Entries :    10355 : Total  Size=      42153 bytes  File Size  =       4197 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   9.91     *
+*............................................................................*
+*Br  214 :klbestcrvmc._gparentZ : Float_t                                    *
+*Entries :    10355 : Total  Size=      42153 bytes  File Size  =      14435 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   2.88     *
+*............................................................................*
+*Br  215 :klbestcrvmc._x : Float_t                                           *
+*Entries :    10355 : Total  Size=      42111 bytes  File Size  =      14737 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   2.82     *
+*............................................................................*
+*Br  216 :klbestcrvmc._y : Float_t                                           *
+*Entries :    10355 : Total  Size=      42111 bytes  File Size  =       5707 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   7.29     *
+*............................................................................*
+*Br  217 :klbestcrvmc._z : Float_t                                           *
+*Entries :    10355 : Total  Size=      42111 bytes  File Size  =      14073 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   2.96     *
+*............................................................................*
+*Br  218 :klbestcrvmc._time : Float_t                                        *
+*Entries :    10355 : Total  Size=      42129 bytes  File Size  =      14914 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   2.79     *
+*............................................................................*
+*Br  219 :klbestcrvmc._depositedEnergy : Float_t                             *
+*Entries :    10355 : Total  Size=      42195 bytes  File Size  =      14369 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   2.90     *
+*............................................................................*
+*Branch  :klmc.                                                              *
+*Entries :    10355 : BranchElement (see below)                              *
+*............................................................................*
+*Br  220 :klmc.valid : Bool_t                                                *
+*Entries :    10355 : Total  Size=      11022 bytes  File Size  =        269 *
+*Baskets :        2 : Basket Size=       8192 bytes  Compression=  39.08     *
+*............................................................................*
+*Br  221 :klmc.ndigi : Int_t                                                 *
+*Entries :    10355 : Total  Size=      42087 bytes  File Size  =      11240 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   3.70     *
+*............................................................................*
+*Br  222 :klmc.ndigigood : Int_t                                             *
+*Entries :    10355 : Total  Size=      42111 bytes  File Size  =       6215 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   6.69     *
+*............................................................................*
+*Br  223 :klmc.nhits : Int_t                                                 *
+*Entries :    10355 : Total  Size=      42087 bytes  File Size  =      11229 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   3.70     *
+*............................................................................*
+*Br  224 :klmc.nactive : Int_t                                               *
+*Entries :    10355 : Total  Size=      42099 bytes  File Size  =      11802 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   3.52     *
+*............................................................................*
+*Br  225 :klmc.nambig : Int_t                                                *
+*Entries :    10355 : Total  Size=      42093 bytes  File Size  =      10016 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   4.15     *
+*............................................................................*
+*Br  226 :klmc.pdg  : Int_t                                                  *
+*Entries :    10355 : Total  Size=      42075 bytes  File Size  =       5664 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   7.34     *
+*............................................................................*
+*Br  227 :klmc.gen  : Int_t                                                  *
+*Entries :    10355 : Total  Size=      42075 bytes  File Size  =        428 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  97.14     *
+*............................................................................*
+*Br  228 :klmc.proc : Int_t                                                  *
+*Entries :    10355 : Total  Size=      42081 bytes  File Size  =       1718 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  24.20     *
+*............................................................................*
+*Br  229 :klmc.otime : Float_t                                               *
+*Entries :    10355 : Total  Size=      42087 bytes  File Size  =      37181 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.12     *
+*............................................................................*
+*Br  230 :klmc.prel :                                                        *
+*Entries :    10355 : Total  Size=       1636 bytes  One basket in memory    *
+*Baskets :        0 : Basket Size=      32000 bytes  Compression=   1.00     *
+*............................................................................*
+*Br  231 :klmc.prel._rel : Char_t                                            *
+*Entries :    10355 : Total  Size=      11046 bytes  File Size  =       1172 *
+*Baskets :        2 : Basket Size=       8192 bytes  Compression=   8.98     *
+*............................................................................*
+*Br  232 :klmc.prel._rem : Char_t                                            *
+*Entries :    10355 : Total  Size=      11046 bytes  File Size  =       1172 *
+*Baskets :        2 : Basket Size=       8192 bytes  Compression=   8.98     *
+*............................................................................*
+*Br  233 :klmc.omom :                                                        *
+*Entries :    10355 : Total  Size=       2646 bytes  One basket in memory    *
+*Baskets :        0 : Basket Size=      32000 bytes  Compression=   1.00     *
+*............................................................................*
+*Br  234 :klmc.omom.fCoordinates.fX : Float_t                                *
+*Entries :    10355 : Total  Size=      42177 bytes  File Size  =      39470 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.05     *
+*............................................................................*
+*Br  235 :klmc.omom.fCoordinates.fY : Float_t                                *
+*Entries :    10355 : Total  Size=      42177 bytes  File Size  =      37899 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.10     *
+*............................................................................*
+*Br  236 :klmc.omom.fCoordinates.fZ : Float_t                                *
+*Entries :    10355 : Total  Size=      42177 bytes  File Size  =      39382 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.06     *
+*............................................................................*
+*Br  237 :klmc.opos :                                                        *
+*Entries :    10355 : Total  Size=       2646 bytes  One basket in memory    *
+*Baskets :        0 : Basket Size=      32000 bytes  Compression=   1.00     *
+*............................................................................*
+*Br  238 :klmc.opos.fCoordinates.fX : Float_t                                *
+*Entries :    10355 : Total  Size=      42177 bytes  File Size  =      38949 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.07     *
+*............................................................................*
+*Br  239 :klmc.opos.fCoordinates.fY : Float_t                                *
+*Entries :    10355 : Total  Size=      42177 bytes  File Size  =       3196 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  13.02     *
+*............................................................................*
+*Br  240 :klmc.opos.fCoordinates.fZ : Float_t                                *
+*Entries :    10355 : Total  Size=      42177 bytes  File Size  =      37841 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.10     *
+*............................................................................*
+*Branch  :klmcsim.                                                           *
+*Entries :    10355 : BranchElement (see below)                              *
+*............................................................................*
+*Br  241 :klmcsim.valid : Bool_t                                             *
+*Entries :    10355 : Total  Size=      11040 bytes  File Size  =        275 *
+*Baskets :        2 : Basket Size=       8192 bytes  Compression=  38.25     *
+*............................................................................*
+*Br  242 :klmcsim.pdg : Int_t                                                *
+*Entries :    10355 : Total  Size=      42093 bytes  File Size  =       5670 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   7.33     *
+*............................................................................*
+*Br  243 :klmcsim.gen : Int_t                                                *
+*Entries :    10355 : Total  Size=      42093 bytes  File Size  =       1722 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  24.15     *
+*............................................................................*
+*Br  244 :klmcsim.time : Float_t                                             *
+*Entries :    10355 : Total  Size=      42099 bytes  File Size  =      37185 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.12     *
+*............................................................................*
+*Br  245 :klmcsim.mom :                                                      *
+*Entries :    10355 : Total  Size=       2674 bytes  One basket in memory    *
+*Baskets :        0 : Basket Size=      32000 bytes  Compression=   1.00     *
+*............................................................................*
+*Br  246 :klmcsim.mom.fCoordinates.fX : Float_t                              *
+*Entries :    10355 : Total  Size=      42189 bytes  File Size  =      39474 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.05     *
+*............................................................................*
+*Br  247 :klmcsim.mom.fCoordinates.fY : Float_t                              *
+*Entries :    10355 : Total  Size=      42189 bytes  File Size  =      37903 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.10     *
+*............................................................................*
+*Br  248 :klmcsim.mom.fCoordinates.fZ : Float_t                              *
+*Entries :    10355 : Total  Size=      42189 bytes  File Size  =      39386 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.06     *
+*............................................................................*
+*Br  249 :klmcsim.pos :                                                      *
+*Entries :    10355 : Total  Size=       2674 bytes  One basket in memory    *
+*Baskets :        0 : Basket Size=      32000 bytes  Compression=   1.00     *
+*............................................................................*
+*Br  250 :klmcsim.pos.fCoordinates.fX : Float_t                              *
+*Entries :    10355 : Total  Size=      42189 bytes  File Size  =      38953 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.07     *
+*............................................................................*
+*Br  251 :klmcsim.pos.fCoordinates.fY : Float_t                              *
+*Entries :    10355 : Total  Size=      42189 bytes  File Size  =       3200 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  13.00     *
+*............................................................................*
+*Br  252 :klmcsim.pos.fCoordinates.fZ : Float_t                              *
+*Entries :    10355 : Total  Size=      42189 bytes  File Size  =      37845 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.10     *
+*............................................................................*
+*Branch  :klmcparent.                                                        *
+*Entries :    10355 : BranchElement (see below)                              *
+*............................................................................*
+*Br  253 :klmcparent.valid : Bool_t                                          *
+*Entries :    10355 : Total  Size=      11058 bytes  File Size  =       1130 *
+*Baskets :        2 : Basket Size=       8192 bytes  Compression=   9.31     *
+*............................................................................*
+*Br  254 :klmcparent.pdg : Int_t                                             *
+*Entries :    10355 : Total  Size=      42111 bytes  File Size  =       1771 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  23.48     *
+*............................................................................*
+*Br  255 :klmcparent.gen : Int_t                                             *
+*Entries :    10355 : Total  Size=      42111 bytes  File Size  =       1746 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  23.82     *
+*............................................................................*
+*Br  256 :klmcparent.time : Float_t                                          *
+*Entries :    10355 : Total  Size=      42117 bytes  File Size  =       3127 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  13.30     *
+*............................................................................*
+*Br  257 :klmcparent.mom :                                                   *
+*Entries :    10355 : Total  Size=       2716 bytes  One basket in memory    *
+*Baskets :        0 : Basket Size=      32000 bytes  Compression=   1.00     *
+*............................................................................*
+*Br  258 :klmcparent.mom.fCoordinates.fX : Float_t                           *
+*Entries :    10355 : Total  Size=      42207 bytes  File Size  =       3258 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  12.77     *
+*............................................................................*
+*Br  259 :klmcparent.mom.fCoordinates.fY : Float_t                           *
+*Entries :    10355 : Total  Size=      42207 bytes  File Size  =       3195 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  13.03     *
+*............................................................................*
+*Br  260 :klmcparent.mom.fCoordinates.fZ : Float_t                           *
+*Entries :    10355 : Total  Size=      42207 bytes  File Size  =       3228 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  12.89     *
+*............................................................................*
+*Br  261 :klmcparent.pos :                                                   *
+*Entries :    10355 : Total  Size=       2716 bytes  One basket in memory    *
+*Baskets :        0 : Basket Size=      32000 bytes  Compression=   1.00     *
+*............................................................................*
+*Br  262 :klmcparent.pos.fCoordinates.fX : Float_t                           *
+*Entries :    10355 : Total  Size=      42207 bytes  File Size  =       3237 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  12.86     *
+*............................................................................*
+*Br  263 :klmcparent.pos.fCoordinates.fY : Float_t                           *
+*Entries :    10355 : Total  Size=      42207 bytes  File Size  =       2208 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  18.85     *
+*............................................................................*
+*Br  264 :klmcparent.pos.fCoordinates.fZ : Float_t                           *
+*Entries :    10355 : Total  Size=      42207 bytes  File Size  =       3145 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  13.23     *
+*............................................................................*
+*Branch  :klmcgparent.                                                       *
+*Entries :    10355 : BranchElement (see below)                              *
+*............................................................................*
+*Br  265 :klmcgparent.valid : Bool_t                                         *
+*Entries :    10355 : Total  Size=      11064 bytes  File Size  =        629 *
+*Baskets :        2 : Basket Size=       8192 bytes  Compression=  16.74     *
+*............................................................................*
+*Br  266 :klmcgparent.pdg : Int_t                                            *
+*Entries :    10355 : Total  Size=      42117 bytes  File Size  =        939 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  44.29     *
+*............................................................................*
+*Br  267 :klmcgparent.gen : Int_t                                            *
+*Entries :    10355 : Total  Size=      42117 bytes  File Size  =        994 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  41.84     *
+*............................................................................*
+*Br  268 :klmcgparent.time : Float_t                                         *
+*Entries :    10355 : Total  Size=      42123 bytes  File Size  =       1443 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  28.82     *
+*............................................................................*
+*Br  269 :klmcgparent.mom :                                                  *
+*Entries :    10355 : Total  Size=       2730 bytes  One basket in memory    *
+*Baskets :        0 : Basket Size=      32000 bytes  Compression=   1.00     *
+*............................................................................*
+*Br  270 :klmcgparent.mom.fCoordinates.fX : Float_t                          *
+*Entries :    10355 : Total  Size=      42213 bytes  File Size  =       1460 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  28.51     *
+*............................................................................*
+*Br  271 :klmcgparent.mom.fCoordinates.fY : Float_t                          *
+*Entries :    10355 : Total  Size=      42213 bytes  File Size  =       1443 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  28.84     *
+*............................................................................*
+*Br  272 :klmcgparent.mom.fCoordinates.fZ : Float_t                          *
+*Entries :    10355 : Total  Size=      42213 bytes  File Size  =       1443 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  28.84     *
+*............................................................................*
+*Br  273 :klmcgparent.pos :                                                  *
+*Entries :    10355 : Total  Size=       2730 bytes  One basket in memory    *
+*Baskets :        0 : Basket Size=      32000 bytes  Compression=   1.00     *
+*............................................................................*
+*Br  274 :klmcgparent.pos.fCoordinates.fX : Float_t                          *
+*Entries :    10355 : Total  Size=      42213 bytes  File Size  =       1437 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  28.96     *
+*............................................................................*
+*Br  275 :klmcgparent.pos.fCoordinates.fY : Float_t                          *
+*Entries :    10355 : Total  Size=      42213 bytes  File Size  =       1403 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  29.67     *
+*............................................................................*
+*Br  276 :klmcgparent.pos.fCoordinates.fZ : Float_t                          *
+*Entries :    10355 : Total  Size=      42213 bytes  File Size  =       1391 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  29.92     *
+*............................................................................*
+*Branch  :klmcggparent.                                                      *
+*Entries :    10355 : BranchElement (see below)                              *
+*............................................................................*
+*Br  277 :klmcggparent.valid : Bool_t                                        *
+*Entries :    10355 : Total  Size=      11070 bytes  File Size  =        611 *
+*Baskets :        2 : Basket Size=       8192 bytes  Compression=  17.23     *
+*............................................................................*
+*Br  278 :klmcggparent.pdg : Int_t                                           *
+*Entries :    10355 : Total  Size=      42123 bytes  File Size  =        920 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  45.21     *
+*............................................................................*
+*Br  279 :klmcggparent.gen : Int_t                                           *
+*Entries :    10355 : Total  Size=      42123 bytes  File Size  =        893 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  46.57     *
+*............................................................................*
+*Br  280 :klmcggparent.time : Float_t                                        *
+*Entries :    10355 : Total  Size=      42129 bytes  File Size  =       1377 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  30.20     *
+*............................................................................*
+*Br  281 :klmcggparent.mom :                                                 *
+*Entries :    10355 : Total  Size=       2744 bytes  One basket in memory    *
+*Baskets :        0 : Basket Size=      32000 bytes  Compression=   1.00     *
+*............................................................................*
+*Br  282 :klmcggparent.mom.fCoordinates.fX : Float_t                         *
+*Entries :    10355 : Total  Size=      42219 bytes  File Size  =       1380 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  30.16     *
+*............................................................................*
+*Br  283 :klmcggparent.mom.fCoordinates.fY : Float_t                         *
+*Entries :    10355 : Total  Size=      42219 bytes  File Size  =       1359 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  30.63     *
+*............................................................................*
+*Br  284 :klmcggparent.mom.fCoordinates.fZ : Float_t                         *
+*Entries :    10355 : Total  Size=      42219 bytes  File Size  =       1371 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  30.36     *
+*............................................................................*
+*Br  285 :klmcggparent.pos :                                                 *
+*Entries :    10355 : Total  Size=       2744 bytes  One basket in memory    *
+*Baskets :        0 : Basket Size=      32000 bytes  Compression=   1.00     *
+*............................................................................*
+*Br  286 :klmcggparent.pos.fCoordinates.fX : Float_t                         *
+*Entries :    10355 : Total  Size=      42219 bytes  File Size  =       1369 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  30.40     *
+*............................................................................*
+*Br  287 :klmcggparent.pos.fCoordinates.fY : Float_t                         *
+*Entries :    10355 : Total  Size=      42219 bytes  File Size  =       1064 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  39.12     *
+*............................................................................*
+*Br  288 :klmcggparent.pos.fCoordinates.fZ : Float_t                         *
+*Entries :    10355 : Total  Size=      42219 bytes  File Size  =       1369 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  30.40     *
+*............................................................................*
+*Branch  :klmcgggparent.                                                     *
+*Entries :    10355 : BranchElement (see below)                              *
+*............................................................................*
+*Br  289 :klmcgggparent.valid : Bool_t                                       *
+*Entries :    10355 : Total  Size=      11076 bytes  File Size  =        402 *
+*Baskets :        2 : Basket Size=       8192 bytes  Compression=  26.20     *
+*............................................................................*
+*Br  290 :klmcgggparent.pdg : Int_t                                          *
+*Entries :    10355 : Total  Size=      42129 bytes  File Size  =        593 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  70.14     *
+*............................................................................*
+*Br  291 :klmcgggparent.gen : Int_t                                          *
+*Entries :    10355 : Total  Size=      42129 bytes  File Size  =        615 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  67.63     *
+*............................................................................*
+*Br  292 :klmcgggparent.time : Float_t                                       *
+*Entries :    10355 : Total  Size=      42135 bytes  File Size  =        772 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  53.88     *
+*............................................................................*
+*Br  293 :klmcgggparent.mom :                                                *
+*Entries :    10355 : Total  Size=       2758 bytes  One basket in memory    *
+*Baskets :        0 : Basket Size=      32000 bytes  Compression=   1.00     *
+*............................................................................*
+*Br  294 :klmcgggparent.mom.fCoordinates.fX : Float_t                        *
+*Entries :    10355 : Total  Size=      42225 bytes  File Size  =        758 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  54.91     *
+*............................................................................*
+*Br  295 :klmcgggparent.mom.fCoordinates.fY : Float_t                        *
+*Entries :    10355 : Total  Size=      42225 bytes  File Size  =        753 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  55.28     *
+*............................................................................*
+*Br  296 :klmcgggparent.mom.fCoordinates.fZ : Float_t                        *
+*Entries :    10355 : Total  Size=      42225 bytes  File Size  =        760 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  54.77     *
+*............................................................................*
+*Br  297 :klmcgggparent.pos :                                                *
+*Entries :    10355 : Total  Size=       2758 bytes  One basket in memory    *
+*Baskets :        0 : Basket Size=      32000 bytes  Compression=   1.00     *
+*............................................................................*
+*Br  298 :klmcgggparent.pos.fCoordinates.fX : Float_t                        *
+*Entries :    10355 : Total  Size=      42225 bytes  File Size  =        755 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  55.13     *
+*............................................................................*
+*Br  299 :klmcgggparent.pos.fCoordinates.fY : Float_t                        *
+*Entries :    10355 : Total  Size=      42225 bytes  File Size  =        739 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  56.32     *
+*............................................................................*
+*Br  300 :klmcgggparent.pos.fCoordinates.fZ : Float_t                        *
+*Entries :    10355 : Total  Size=      42225 bytes  File Size  =        754 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  55.20     *
+*............................................................................*
+*Branch  :klmcpri.                                                           *
+*Entries :    10355 : BranchElement (see below)                              *
+*............................................................................*
+*Br  301 :klmcpri.valid : Bool_t                                             *
+*Entries :    10355 : Total  Size=      11040 bytes  File Size  =        275 *
+*Baskets :        2 : Basket Size=       8192 bytes  Compression=  38.25     *
+*............................................................................*
+*Br  302 :klmcpri.pdg : Int_t                                                *
+*Entries :    10355 : Total  Size=      42093 bytes  File Size  =       4786 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   8.69     *
+*............................................................................*
+*Br  303 :klmcpri.gen : Int_t                                                *
+*Entries :    10355 : Total  Size=      42093 bytes  File Size  =        434 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  95.81     *
+*............................................................................*
+*Br  304 :klmcpri.time : Float_t                                             *
+*Entries :    10355 : Total  Size=      42099 bytes  File Size  =      37191 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.12     *
+*............................................................................*
+*Br  305 :klmcpri.mom :                                                      *
+*Entries :    10355 : Total  Size=       2674 bytes  One basket in memory    *
+*Baskets :        0 : Basket Size=      32000 bytes  Compression=   1.00     *
+*............................................................................*
+*Br  306 :klmcpri.mom.fCoordinates.fX : Float_t                              *
+*Entries :    10355 : Total  Size=      42189 bytes  File Size  =      39373 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.06     *
+*............................................................................*
+*Br  307 :klmcpri.mom.fCoordinates.fY : Float_t                              *
+*Entries :    10355 : Total  Size=      42189 bytes  File Size  =      37726 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.10     *
+*............................................................................*
+*Br  308 :klmcpri.mom.fCoordinates.fZ : Float_t                              *
+*Entries :    10355 : Total  Size=      42189 bytes  File Size  =      39262 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.06     *
+*............................................................................*
+*Br  309 :klmcpri.pos :                                                      *
+*Entries :    10355 : Total  Size=       2674 bytes  One basket in memory    *
+*Baskets :        0 : Basket Size=      32000 bytes  Compression=   1.00     *
+*............................................................................*
+*Br  310 :klmcpri.pos.fCoordinates.fX : Float_t                              *
+*Entries :    10355 : Total  Size=      42189 bytes  File Size  =      38857 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.07     *
+*............................................................................*
+*Br  311 :klmcpri.pos.fCoordinates.fY : Float_t                              *
+*Entries :    10355 : Total  Size=      42189 bytes  File Size  =        474 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  87.79     *
+*............................................................................*
+*Br  312 :klmcpri.pos.fCoordinates.fZ : Float_t                              *
+*Entries :    10355 : Total  Size=      42189 bytes  File Size  =      37893 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   1.10     *
+*............................................................................*
+*Branch  :klmcent.                                                           *
+*Entries :    10355 : BranchElement (see below)                              *
+*............................................................................*
+*Br  313 :klmcent.valid : Bool_t                                             *
+*Entries :    10355 : Total  Size=      11040 bytes  File Size  =        274 *
+*Baskets :        2 : Basket Size=       8192 bytes  Compression=  38.39     *
+*............................................................................*
+*Br  314 :klmcent.time : Float_t                                             *
+*Entries :    10355 : Total  Size=      42099 bytes  File Size  =        407 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 102.17     *
+*............................................................................*
+*Br  315 :klmcent.mom :                                                      *
+*Entries :    10355 : Total  Size=       2674 bytes  One basket in memory    *
+*Baskets :        0 : Basket Size=      32000 bytes  Compression=   1.00     *
+*............................................................................*
+*Br  316 :klmcent.mom.fCoordinates.fX : Float_t                              *
+*Entries :    10355 : Total  Size=      42189 bytes  File Size  =        437 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  95.22     *
+*............................................................................*
+*Br  317 :klmcent.mom.fCoordinates.fY : Float_t                              *
+*Entries :    10355 : Total  Size=      42189 bytes  File Size  =        437 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  95.22     *
+*............................................................................*
+*Br  318 :klmcent.mom.fCoordinates.fZ : Float_t                              *
+*Entries :    10355 : Total  Size=      42189 bytes  File Size  =        437 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  95.22     *
+*............................................................................*
+*Br  319 :klmcent.pos :                                                      *
+*Entries :    10355 : Total  Size=       2674 bytes  One basket in memory    *
+*Baskets :        0 : Basket Size=      32000 bytes  Compression=   1.00     *
+*............................................................................*
+*Br  320 :klmcent.pos.fCoordinates.fX : Float_t                              *
+*Entries :    10355 : Total  Size=      42189 bytes  File Size  =        437 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  95.22     *
+*............................................................................*
+*Br  321 :klmcent.pos.fCoordinates.fY : Float_t                              *
+*Entries :    10355 : Total  Size=      42189 bytes  File Size  =        437 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  95.22     *
+*............................................................................*
+*Br  322 :klmcent.pos.fCoordinates.fZ : Float_t                              *
+*Entries :    10355 : Total  Size=      42189 bytes  File Size  =        437 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  95.22     *
+*............................................................................*
+*Branch  :klmcmid.                                                           *
+*Entries :    10355 : BranchElement (see below)                              *
+*............................................................................*
+*Br  323 :klmcmid.valid : Bool_t                                             *
+*Entries :    10355 : Total  Size=      11040 bytes  File Size  =        274 *
+*Baskets :        2 : Basket Size=       8192 bytes  Compression=  38.39     *
+*............................................................................*
+*Br  324 :klmcmid.time : Float_t                                             *
+*Entries :    10355 : Total  Size=      42099 bytes  File Size  =        407 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 102.17     *
+*............................................................................*
+*Br  325 :klmcmid.mom :                                                      *
+*Entries :    10355 : Total  Size=       2674 bytes  One basket in memory    *
+*Baskets :        0 : Basket Size=      32000 bytes  Compression=   1.00     *
+*............................................................................*
+*Br  326 :klmcmid.mom.fCoordinates.fX : Float_t                              *
+*Entries :    10355 : Total  Size=      42189 bytes  File Size  =        437 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  95.22     *
+*............................................................................*
+*Br  327 :klmcmid.mom.fCoordinates.fY : Float_t                              *
+*Entries :    10355 : Total  Size=      42189 bytes  File Size  =        437 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  95.22     *
+*............................................................................*
+*Br  328 :klmcmid.mom.fCoordinates.fZ : Float_t                              *
+*Entries :    10355 : Total  Size=      42189 bytes  File Size  =        437 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  95.22     *
+*............................................................................*
+*Br  329 :klmcmid.pos :                                                      *
+*Entries :    10355 : Total  Size=       2674 bytes  One basket in memory    *
+*Baskets :        0 : Basket Size=      32000 bytes  Compression=   1.00     *
+*............................................................................*
+*Br  330 :klmcmid.pos.fCoordinates.fX : Float_t                              *
+*Entries :    10355 : Total  Size=      42189 bytes  File Size  =        437 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  95.22     *
+*............................................................................*
+*Br  331 :klmcmid.pos.fCoordinates.fY : Float_t                              *
+*Entries :    10355 : Total  Size=      42189 bytes  File Size  =        437 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  95.22     *
+*............................................................................*
+*Br  332 :klmcmid.pos.fCoordinates.fZ : Float_t                              *
+*Entries :    10355 : Total  Size=      42189 bytes  File Size  =        437 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  95.22     *
+*............................................................................*
+*Branch  :klmcxit.                                                           *
+*Entries :    10355 : BranchElement (see below)                              *
+*............................................................................*
+*Br  333 :klmcxit.valid : Bool_t                                             *
+*Entries :    10355 : Total  Size=      11040 bytes  File Size  =        274 *
+*Baskets :        2 : Basket Size=       8192 bytes  Compression=  38.39     *
+*............................................................................*
+*Br  334 :klmcxit.time : Float_t                                             *
+*Entries :    10355 : Total  Size=      42099 bytes  File Size  =        407 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 102.17     *
+*............................................................................*
+*Br  335 :klmcxit.mom :                                                      *
+*Entries :    10355 : Total  Size=       2674 bytes  One basket in memory    *
+*Baskets :        0 : Basket Size=      32000 bytes  Compression=   1.00     *
+*............................................................................*
+*Br  336 :klmcxit.mom.fCoordinates.fX : Float_t                              *
+*Entries :    10355 : Total  Size=      42189 bytes  File Size  =        437 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  95.22     *
+*............................................................................*
+*Br  337 :klmcxit.mom.fCoordinates.fY : Float_t                              *
+*Entries :    10355 : Total  Size=      42189 bytes  File Size  =        437 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  95.22     *
+*............................................................................*
+*Br  338 :klmcxit.mom.fCoordinates.fZ : Float_t                              *
+*Entries :    10355 : Total  Size=      42189 bytes  File Size  =        437 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  95.22     *
+*............................................................................*
+*Br  339 :klmcxit.pos :                                                      *
+*Entries :    10355 : Total  Size=       2674 bytes  One basket in memory    *
+*Baskets :        0 : Basket Size=      32000 bytes  Compression=   1.00     *
+*............................................................................*
+*Br  340 :klmcxit.pos.fCoordinates.fX : Float_t                              *
+*Entries :    10355 : Total  Size=      42189 bytes  File Size  =        437 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  95.22     *
+*............................................................................*
+*Br  341 :klmcxit.pos.fCoordinates.fY : Float_t                              *
+*Entries :    10355 : Total  Size=      42189 bytes  File Size  =        437 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  95.22     *
+*............................................................................*
+*Br  342 :klmcxit.pos.fCoordinates.fZ : Float_t                              *
+*Entries :    10355 : Total  Size=      42189 bytes  File Size  =        437 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  95.22     *
+*............................................................................*
+*Branch  :kltchmc.                                                           *
+*Entries :    10355 : BranchElement (see below)                              *
+*............................................................................*
+*Br  343 :kltchmc.nsim : Int_t                                               *
+*Entries :    10355 : Total  Size=      42099 bytes  File Size  =       1373 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  30.29     *
+*............................................................................*
+*Br  344 :kltchmc.etot : Float_t                                             *
+*Entries :    10355 : Total  Size=      42099 bytes  File Size  =       2618 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  15.88     *
+*............................................................................*
+*Br  345 :kltchmc.tavg : Float_t                                             *
+*Entries :    10355 : Total  Size=      42099 bytes  File Size  =       2608 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  15.94     *
+*............................................................................*
+*Br  346 :kltchmc.eprimary : Float_t                                         *
+*Entries :    10355 : Total  Size=      42123 bytes  File Size  =       2630 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  15.81     *
+*............................................................................*
+*Br  347 :kltchmc.tprimary : Float_t                                         *
+*Entries :    10355 : Total  Size=      42123 bytes  File Size  =       2616 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  15.90     *
+*............................................................................*
+*Br  348 :kltchmc.prel :                                                     *
+*Entries :    10355 : Total  Size=       1666 bytes  One basket in memory    *
+*Baskets :        0 : Basket Size=      32000 bytes  Compression=   1.00     *
+*............................................................................*
+*Br  349 :kltchmc.prel._rel : Char_t                                         *
+*Entries :    10355 : Total  Size=      11064 bytes  File Size  =       1025 *
+*Baskets :        2 : Basket Size=       8192 bytes  Compression=  10.27     *
+*............................................................................*
+*Br  350 :kltchmc.prel._rem : Char_t                                         *
+*Entries :    10355 : Total  Size=      11064 bytes  File Size  =       1025 *
+*Baskets :        2 : Basket Size=       8192 bytes  Compression=  10.27     *
+*............................................................................*
+*Br  351 :kltshmc   : Int_t kltshmc_                                         *
+*Entries :    10355 : Total  Size=     102928 bytes  File Size  =      27918 *
+*Baskets :        5 : Basket Size=      32000 bytes  Compression=   2.98     *
+*............................................................................*
+*Br  352 :kltshmc.pdg : Int_t pdg[kltshmc_]                                  *
+*Entries :    10355 : Total  Size=     843681 bytes  File Size  =      55794 *
+*Baskets :       22 : Basket Size=     692224 bytes  Compression=  15.11     *
+*............................................................................*
+*Br  353 :kltshmc.gen : Int_t gen[kltshmc_]                                  *
+*Entries :    10355 : Total  Size=     843681 bytes  File Size  =      30946 *
+*Baskets :       22 : Basket Size=     692224 bytes  Compression=  27.24     *
+*............................................................................*
+*Br  354 :kltshmc.proc : Int_t proc[kltshmc_]                                *
+*Entries :    10355 : Total  Size=     843707 bytes  File Size  =      39560 *
+*Baskets :       22 : Basket Size=     692224 bytes  Compression=  21.31     *
+*............................................................................*
+*Br  355 :kltshmc.ambig : Int_t ambig[kltshmc_]                              *
+*Entries :    10355 : Total  Size=     843733 bytes  File Size  =     115808 *
+*Baskets :       22 : Basket Size=     692224 bytes  Compression=   7.28     *
+*............................................................................*
+*Br  356 :kltshmc.earlyend : Int_t earlyend[kltshmc_]                        *
+*Entries :    10355 : Total  Size=     843811 bytes  File Size  =     103628 *
+*Baskets :       22 : Basket Size=     692224 bytes  Compression=   8.13     *
+*............................................................................*
+*Br  357 :kltshmc.rel._rel : Char_t _rel[kltshmc_]                           *
+*Entries :    10355 : Total  Size=     242637 bytes  File Size  =      29561 *
+*Baskets :        8 : Basket Size=     242688 bytes  Compression=   8.19     *
+*............................................................................*
+*Br  358 :kltshmc.rel._rem : Char_t _rem[kltshmc_]                           *
+*Entries :    10355 : Total  Size=     242637 bytes  File Size  =      28732 *
+*Baskets :        8 : Basket Size=     242688 bytes  Compression=   8.42     *
+*............................................................................*
+*Br  359 :kltshmc.t0 : Float_t t0[kltshmc_]                                  *
+*Entries :    10355 : Total  Size=     843655 bytes  File Size  =     722492 *
+*Baskets :       22 : Basket Size=     692224 bytes  Compression=   1.17     *
+*............................................................................*
+*Br  360 :kltshmc.tdrift : Float_t tdrift[kltshmc_]                          *
+*Entries :    10355 : Total  Size=     843759 bytes  File Size  =     617649 *
+*Baskets :       22 : Basket Size=     692224 bytes  Compression=   1.36     *
+*............................................................................*
+*Br  361 :kltshmc.rdrift : Float_t rdrift[kltshmc_]                          *
+*Entries :    10355 : Total  Size=     843759 bytes  File Size  =     690238 *
+*Baskets :       22 : Basket Size=     692224 bytes  Compression=   1.22     *
+*............................................................................*
+*Br  362 :kltshmc.tprop : Float_t tprop[kltshmc_]                            *
+*Entries :    10355 : Total  Size=     843733 bytes  File Size  =     751505 *
+*Baskets :       22 : Basket Size=     692224 bytes  Compression=   1.12     *
+*............................................................................*
+*Br  363 :kltshmc.dist : Float_t dist[kltshmc_]                              *
+*Entries :    10355 : Total  Size=     843707 bytes  File Size  =     749414 *
+*Baskets :       22 : Basket Size=     692224 bytes  Compression=   1.12     *
+*............................................................................*
+*Br  364 :kltshmc.doca : Float_t doca[kltshmc_]                              *
+*Entries :    10355 : Total  Size=     843707 bytes  File Size  =     768654 *
+*Baskets :       22 : Basket Size=     692224 bytes  Compression=   1.10     *
+*............................................................................*
+*Br  365 :kltshmc.len : Float_t len[kltshmc_]                                *
+*Entries :    10355 : Total  Size=     843681 bytes  File Size  =     766045 *
+*Baskets :       22 : Basket Size=     692224 bytes  Compression=   1.10     *
+*............................................................................*
+*Br  366 :kltshmc.edep : Float_t edep[kltshmc_]                              *
+*Entries :    10355 : Total  Size=     843707 bytes  File Size  =     745013 *
+*Baskets :       22 : Basket Size=     692224 bytes  Compression=   1.13     *
+*............................................................................*
+*Br  367 :kltshmc.mom : Float_t mom[kltshmc_]                                *
+*Entries :    10355 : Total  Size=     843681 bytes  File Size  =     533790 *
+*Baskets :       22 : Basket Size=     692224 bytes  Compression=   1.58     *
+*............................................................................*
+*Br  368 :kltshmc.twdot : Float_t twdot[kltshmc_]                            *
+*Entries :    10355 : Total  Size=     843733 bytes  File Size  =     712359 *
+*Baskets :       22 : Basket Size=     692224 bytes  Compression=   1.18     *
+*............................................................................*
+*Br  369 :kltshmc.tau : Float_t tau[kltshmc_]                                *
+*Entries :    10355 : Total  Size=     843681 bytes  File Size  =     762633 *
+*Baskets :       22 : Basket Size=     692224 bytes  Compression=   1.11     *
+*............................................................................*
+*Br  370 :kltshmc.cdist : Float_t cdist[kltshmc_]                            *
+*Entries :    10355 : Total  Size=     843733 bytes  File Size  =     739505 *
+*Baskets :       22 : Basket Size=     692224 bytes  Compression=   1.14     *
+*............................................................................*
+*Br  371 :kltshmc.cpos.fCoordinates.fX : Float_t fX[kltshmc_]                *
+*Entries :    10355 : Total  Size=     844087 bytes  File Size  =     768503 *
+*Baskets :       22 : Basket Size=     692224 bytes  Compression=   1.10     *
+*............................................................................*
+*Br  372 :kltshmc.cpos.fCoordinates.fY : Float_t fY[kltshmc_]                *
+*Entries :    10355 : Total  Size=     844087 bytes  File Size  =     767206 *
+*Baskets :       22 : Basket Size=     692224 bytes  Compression=   1.10     *
+*............................................................................*
+*Br  373 :kltshmc.cpos.fCoordinates.fZ : Float_t fZ[kltshmc_]                *
+*Entries :    10355 : Total  Size=     844087 bytes  File Size  =     754800 *
+*Baskets :       22 : Basket Size=     692224 bytes  Compression=   1.12     *
+*............................................................................*
+*Br  374 :klmcsic_protonabsorber : Int_t klmcsic_protonabsorber_             *
+*Entries :    10355 : Total  Size=      91164 bytes  File Size  =      13497 *
+*Baskets :        5 : Basket Size=      32000 bytes  Compression=   6.17     *
+*............................................................................*
+*Br  375 :klmcsic_protonabsorber.vid : Int_t vid[klmcsic_protonabsorber_]    *
+*Entries :    10355 : Total  Size=      42412 bytes  File Size  =        608 *
+*Baskets :        3 : Basket Size=      92672 bytes  Compression=  68.63     *
+*............................................................................*
+*Br  376 :klmcsic_protonabsorber.time : Float_t time[klmcsic_protonabsorber_]*
+*Entries :    10355 : Total  Size=      42419 bytes  File Size  =        611 *
+*Baskets :        3 : Basket Size=      92672 bytes  Compression=  68.30     *
+*............................................................................*
+*Br  377 :klmcsic_protonabsorber.de : Float_t de[klmcsic_protonabsorber_]    *
+*Entries :    10355 : Total  Size=      42405 bytes  File Size  =        605 *
+*Baskets :        3 : Basket Size=      92672 bytes  Compression=  68.97     *
+*............................................................................*
+*Br  378 :klmcsic_protonabsorber.dp : Float_t dp[klmcsic_protonabsorber_]    *
+*Entries :    10355 : Total  Size=      42405 bytes  File Size  =        605 *
+*Baskets :        3 : Basket Size=      92672 bytes  Compression=  68.97     *
+*............................................................................*
+*Br  379 :klmcsic_protonabsorber.mom.fCoordinates.fX :                       *
+*         | Float_t fX[klmcsic_protonabsorber_]                              *
+*Entries :    10355 : Total  Size=      42490 bytes  File Size  =        655 *
+*Baskets :        3 : Basket Size=      92672 bytes  Compression=  63.78     *
+*............................................................................*
+*Br  380 :klmcsic_protonabsorber.mom.fCoordinates.fY :                       *
+*         | Float_t fY[klmcsic_protonabsorber_]                              *
+*Entries :    10355 : Total  Size=      42490 bytes  File Size  =        655 *
+*Baskets :        3 : Basket Size=      92672 bytes  Compression=  63.78     *
+*............................................................................*
+*Br  381 :klmcsic_protonabsorber.mom.fCoordinates.fZ :                       *
+*         | Float_t fZ[klmcsic_protonabsorber_]                              *
+*Entries :    10355 : Total  Size=      42490 bytes  File Size  =        655 *
+*Baskets :        3 : Basket Size=      92672 bytes  Compression=  63.78     *
+*............................................................................*
+*Br  382 :klmcsic_protonabsorber.pos.fCoordinates.fX :                       *
+*         | Float_t fX[klmcsic_protonabsorber_]                              *
+*Entries :    10355 : Total  Size=      42490 bytes  File Size  =        655 *
+*Baskets :        3 : Basket Size=      92672 bytes  Compression=  63.78     *
+*............................................................................*
+*Br  383 :klmcsic_protonabsorber.pos.fCoordinates.fY :                       *
+*         | Float_t fY[klmcsic_protonabsorber_]                              *
+*Entries :    10355 : Total  Size=      42490 bytes  File Size  =        655 *
+*Baskets :        3 : Basket Size=      92672 bytes  Compression=  63.78     *
+*............................................................................*
+*Br  384 :klmcsic_protonabsorber.pos.fCoordinates.fZ :                       *
+*         | Float_t fZ[klmcsic_protonabsorber_]                              *
+*Entries :    10355 : Total  Size=      42490 bytes  File Size  =        655 *
+*Baskets :        3 : Basket Size=      92672 bytes  Compression=  63.78     *
+*............................................................................*
+*Branch  :klmcssi_protonabsorber                                             *
+*Entries :    10355 : BranchElement (see below)                              *
+*............................................................................*
+*Br  385 :nsteps    : UInt_t                                                 *
+*Entries :    10355 : Total  Size=      42063 bytes  File Size  =        395 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 105.24     *
+*............................................................................*
+*Br  386 :ftime     : Float_t                                                *
+*Entries :    10355 : Total  Size=      42057 bytes  File Size  =        429 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  96.90     *
+*............................................................................*
+*Br  387 :ltime     : Float_t                                                *
+*Entries :    10355 : Total  Size=      42057 bytes  File Size  =        429 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  96.90     *
+*............................................................................*
+*Br  388 :de        : Float_t                                                *
+*Entries :    10355 : Total  Size=      42039 bytes  File Size  =        387 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 107.40     *
+*............................................................................*
+*Br  389 :dp        : Float_t                                                *
+*Entries :    10355 : Total  Size=      42039 bytes  File Size  =        387 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 107.40     *
+*............................................................................*
+*Br  390 :klmcsic_stoppingtarget : Int_t klmcsic_stoppingtarget_             *
+*Entries :    10355 : Total  Size=      91164 bytes  File Size  =      13497 *
+*Baskets :        5 : Basket Size=      32000 bytes  Compression=   6.17     *
+*............................................................................*
+*Br  391 :klmcsic_stoppingtarget.vid : Int_t vid[klmcsic_stoppingtarget_]    *
+*Entries :    10355 : Total  Size=      42412 bytes  File Size  =        608 *
+*Baskets :        3 : Basket Size=      92672 bytes  Compression=  68.63     *
+*............................................................................*
+*Br  392 :klmcsic_stoppingtarget.time : Float_t time[klmcsic_stoppingtarget_]*
+*Entries :    10355 : Total  Size=      42419 bytes  File Size  =        611 *
+*Baskets :        3 : Basket Size=      92672 bytes  Compression=  68.30     *
+*............................................................................*
+*Br  393 :klmcsic_stoppingtarget.de : Float_t de[klmcsic_stoppingtarget_]    *
+*Entries :    10355 : Total  Size=      42405 bytes  File Size  =        605 *
+*Baskets :        3 : Basket Size=      92672 bytes  Compression=  68.97     *
+*............................................................................*
+*Br  394 :klmcsic_stoppingtarget.dp : Float_t dp[klmcsic_stoppingtarget_]    *
+*Entries :    10355 : Total  Size=      42405 bytes  File Size  =        605 *
+*Baskets :        3 : Basket Size=      92672 bytes  Compression=  68.97     *
+*............................................................................*
+*Br  395 :klmcsic_stoppingtarget.mom.fCoordinates.fX :                       *
+*         | Float_t fX[klmcsic_stoppingtarget_]                              *
+*Entries :    10355 : Total  Size=      42490 bytes  File Size  =        655 *
+*Baskets :        3 : Basket Size=      92672 bytes  Compression=  63.78     *
+*............................................................................*
+*Br  396 :klmcsic_stoppingtarget.mom.fCoordinates.fY :                       *
+*         | Float_t fY[klmcsic_stoppingtarget_]                              *
+*Entries :    10355 : Total  Size=      42490 bytes  File Size  =        655 *
+*Baskets :        3 : Basket Size=      92672 bytes  Compression=  63.78     *
+*............................................................................*
+*Br  397 :klmcsic_stoppingtarget.mom.fCoordinates.fZ :                       *
+*         | Float_t fZ[klmcsic_stoppingtarget_]                              *
+*Entries :    10355 : Total  Size=      42490 bytes  File Size  =        655 *
+*Baskets :        3 : Basket Size=      92672 bytes  Compression=  63.78     *
+*............................................................................*
+*Br  398 :klmcsic_stoppingtarget.pos.fCoordinates.fX :                       *
+*         | Float_t fX[klmcsic_stoppingtarget_]                              *
+*Entries :    10355 : Total  Size=      42490 bytes  File Size  =        655 *
+*Baskets :        3 : Basket Size=      92672 bytes  Compression=  63.78     *
+*............................................................................*
+*Br  399 :klmcsic_stoppingtarget.pos.fCoordinates.fY :                       *
+*         | Float_t fY[klmcsic_stoppingtarget_]                              *
+*Entries :    10355 : Total  Size=      42490 bytes  File Size  =        655 *
+*Baskets :        3 : Basket Size=      92672 bytes  Compression=  63.78     *
+*............................................................................*
+*Br  400 :klmcsic_stoppingtarget.pos.fCoordinates.fZ :                       *
+*         | Float_t fZ[klmcsic_stoppingtarget_]                              *
+*Entries :    10355 : Total  Size=      42490 bytes  File Size  =        655 *
+*Baskets :        3 : Basket Size=      92672 bytes  Compression=  63.78     *
+*............................................................................*
+*Branch  :klmcssi_stoppingtarget                                             *
+*Entries :    10355 : BranchElement (see below)                              *
+*............................................................................*
+*Br  401 :nsteps    : UInt_t                                                 *
+*Entries :    10355 : Total  Size=      42063 bytes  File Size  =        395 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 105.24     *
+*............................................................................*
+*Br  402 :ftime     : Float_t                                                *
+*Entries :    10355 : Total  Size=      42057 bytes  File Size  =        429 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  96.90     *
+*............................................................................*
+*Br  403 :ltime     : Float_t                                                *
+*Entries :    10355 : Total  Size=      42057 bytes  File Size  =        429 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=  96.90     *
+*............................................................................*
+*Br  404 :de        : Float_t                                                *
+*Entries :    10355 : Total  Size=      42039 bytes  File Size  =        387 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 107.40     *
+*............................................................................*
+*Br  405 :dp        : Float_t                                                *
+*Entries :    10355 : Total  Size=      42039 bytes  File Size  =        387 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression= 107.40     *
+*............................................................................*
+*Branch  :crvsummary.                                                        *
+*Entries :    10355 : BranchElement (see below)                              *
+*............................................................................*
+*Br  406 :crvsummary._totalPEs : Int_t                                       *
+*Entries :    10355 : Total  Size=      42147 bytes  File Size  =       9636 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   4.32     *
+*............................................................................*
+*Br  407 :crvsummary._nHitCounters : Int_t                                   *
+*Entries :    10355 : Total  Size=      42171 bytes  File Size  =       5641 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   7.38     *
+*............................................................................*
+*Br  408 :crvinfo   : Int_t crvinfo_                                         *
+*Entries :    10355 : Total  Size=      90491 bytes  File Size  =      20199 *
+*Baskets :        5 : Basket Size=      32000 bytes  Compression=   4.12     *
+*............................................................................*
+*Br  409 :crvinfo._crvSectorType : Int_t _crvSectorType[crvinfo_]            *
+*Entries :    10355 : Total  Size=      59301 bytes  File Size  =       9695 *
+*Baskets :        4 : Basket Size=     105472 bytes  Compression=   6.05     *
+*............................................................................*
+*Br  410 :crvinfo._x : Float_t _x[crvinfo_]                                  *
+*Entries :    10355 : Total  Size=      59205 bytes  File Size  =      10668 *
+*Baskets :        4 : Basket Size=     105472 bytes  Compression=   5.49     *
+*............................................................................*
+*Br  411 :crvinfo._y : Float_t _y[crvinfo_]                                  *
+*Entries :    10355 : Total  Size=      59205 bytes  File Size  =      21131 *
+*Baskets :        4 : Basket Size=     105472 bytes  Compression=   2.77     *
+*............................................................................*
+*Br  412 :crvinfo._z : Float_t _z[crvinfo_]                                  *
+*Entries :    10355 : Total  Size=      59205 bytes  File Size  =      21367 *
+*Baskets :        4 : Basket Size=     105472 bytes  Compression=   2.74     *
+*............................................................................*
+*Br  413 :crvinfo._timeWindowStart : Float_t _timeWindowStart[crvinfo_]      *
+*Entries :    10355 : Total  Size=      59317 bytes  File Size  =      20807 *
+*Baskets :        4 : Basket Size=     105472 bytes  Compression=   2.82     *
+*............................................................................*
+*Br  414 :crvinfo._timeWindowEnd : Float_t _timeWindowEnd[crvinfo_]          *
+*Entries :    10355 : Total  Size=      59301 bytes  File Size  =      21785 *
+*Baskets :        4 : Basket Size=     105472 bytes  Compression=   2.69     *
+*............................................................................*
+*Br  415 :crvinfo._PEs : Int_t _PEs[crvinfo_]                                *
+*Entries :    10355 : Total  Size=      59221 bytes  File Size  =      16082 *
+*Baskets :        4 : Basket Size=     105472 bytes  Compression=   3.65     *
+*............................................................................*
+*Br  416 :crvinfo._nCoincidenceHits : Int_t _nCoincidenceHits[crvinfo_]      *
+*Entries :    10355 : Total  Size=      59325 bytes  File Size  =      11935 *
+*Baskets :        4 : Basket Size=     105472 bytes  Compression=   4.92     *
+*............................................................................*
+*Br  417 :crvinfo._nCoincidenceLayers : Int_t _nCoincidenceLayers[crvinfo_]  *
+*Entries :    10355 : Total  Size=      59341 bytes  File Size  =       8452 *
+*Baskets :        4 : Basket Size=     105472 bytes  Compression=   6.94     *
+*............................................................................*
+*Br  418 :crvinfo._angle : Float_t _angle[crvinfo_]                          *
+*Entries :    10355 : Total  Size=      59237 bytes  File Size  =      23608 *
+*Baskets :        4 : Basket Size=     105472 bytes  Compression=   2.48     *
+*............................................................................*
+*Branch  :crvsummarymc.                                                      *
+*Entries :    10355 : BranchElement (see below)                              *
+*............................................................................*
+*Br  419 :crvsummarymc._totalEnergyDeposited : Double_t                      *
+*Entries :    10355 : Total  Size=      83754 bytes  File Size  =      20382 *
+*Baskets :        3 : Basket Size=      62464 bytes  Compression=   4.08     *
+*............................................................................*
+*Br  420 :crvsummarymc._minPathLayer : Double_t                              *
+*Entries :    10355 : Total  Size=      83698 bytes  File Size  =      17942 *
+*Baskets :        3 : Basket Size=      62464 bytes  Compression=   4.63     *
+*............................................................................*
+*Br  421 :crvsummarymc._maxPathLayer : Double_t                              *
+*Entries :    10355 : Total  Size=      83698 bytes  File Size  =      19074 *
+*Baskets :        3 : Basket Size=      62464 bytes  Compression=   4.36     *
+*............................................................................*
+*Br  422 :crvsummarymc._nHitCounters : Int_t                                 *
+*Entries :    10355 : Total  Size=      42183 bytes  File Size  =       5959 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   6.98     *
+*............................................................................*
+*Br  423 :crvsummarymc._x : Float_t                                          *
+*Entries :    10355 : Total  Size=      42117 bytes  File Size  =      15227 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   2.73     *
+*............................................................................*
+*Br  424 :crvsummarymc._y : Float_t                                          *
+*Entries :    10355 : Total  Size=      42117 bytes  File Size  =       5223 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   7.96     *
+*............................................................................*
+*Br  425 :crvsummarymc._z : Float_t                                          *
+*Entries :    10355 : Total  Size=      42117 bytes  File Size  =      14655 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   2.84     *
+*............................................................................*
+*Br  426 :crvsummarymc._crvSectorNumber : Int_t                              *
+*Entries :    10355 : Total  Size=      42201 bytes  File Size  =       4437 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   9.38     *
+*............................................................................*
+*Br  427 :crvsummarymc._crvSectorType : Int_t                                *
+*Entries :    10355 : Total  Size=      42189 bytes  File Size  =       4195 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   9.92     *
+*............................................................................*
+*Br  428 :crvsummarymc._pdgId : Int_t                                        *
+*Entries :    10355 : Total  Size=      42141 bytes  File Size  =       5473 *
+*Baskets :        2 : Basket Size=      31232 bytes  Compression=   7.60     *
+*............................................................................*
+*Br  429 :crvinfomc : Int_t crvinfomc_                                       *
+*Entries :    10355 : Total  Size=      97933 bytes  File Size  =      20214 *
+*Baskets :        5 : Basket Size=      32000 bytes  Compression=   4.12     *
+*............................................................................*
+*Br  430 :crvinfomc._valid : Bool_t _valid[crvinfomc_]                       *
+*Entries :    10355 : Total  Size=      46621 bytes  File Size  =       7788 *
+*Baskets :        4 : Basket Size=      95744 bytes  Compression=   5.91     *
+*............................................................................*
+*Br  431 :crvinfomc._pdgId : Int_t _pdgId[crvinfomc_]                        *
+*Entries :    10355 : Total  Size=      59257 bytes  File Size  =       9666 *
+*Baskets :        4 : Basket Size=     105472 bytes  Compression=   6.07     *
+*............................................................................*
+*Br  432 :crvinfomc._primaryPdgId : Int_t _primaryPdgId[crvinfomc_]          *
+*Entries :    10355 : Total  Size=      59313 bytes  File Size  =       9592 *
+*Baskets :        4 : Basket Size=     105472 bytes  Compression=   6.12     *
+*............................................................................*
+*Br  433 :crvinfomc._primaryE : Float_t _primaryE[crvinfomc_]                *
+*Entries :    10355 : Total  Size=      59281 bytes  File Size  =      19501 *
+*Baskets :        4 : Basket Size=     105472 bytes  Compression=   3.01     *
+*............................................................................*
+*Br  434 :crvinfomc._primaryX : Float_t _primaryX[crvinfomc_]                *
+*Entries :    10355 : Total  Size=      59281 bytes  File Size  =      19762 *
+*Baskets :        4 : Basket Size=     105472 bytes  Compression=   2.97     *
+*............................................................................*
+*Br  435 :crvinfomc._primaryY : Float_t _primaryY[crvinfomc_]                *
+*Entries :    10355 : Total  Size=      59281 bytes  File Size  =       7501 *
+*Baskets :        4 : Basket Size=     105472 bytes  Compression=   7.82     *
+*............................................................................*
+*Br  436 :crvinfomc._primaryZ : Float_t _primaryZ[crvinfomc_]                *
+*Entries :    10355 : Total  Size=      59281 bytes  File Size  =      18899 *
+*Baskets :        4 : Basket Size=     105472 bytes  Compression=   3.10     *
+*............................................................................*
+*Br  437 :crvinfomc._parentPdgId : Int_t _parentPdgId[crvinfomc_]            *
+*Entries :    10355 : Total  Size=      59305 bytes  File Size  =       9597 *
+*Baskets :        4 : Basket Size=     105472 bytes  Compression=   6.11     *
+*............................................................................*
+*Br  438 :crvinfomc._parentE : Float_t _parentE[crvinfomc_]                  *
+*Entries :    10355 : Total  Size=      59273 bytes  File Size  =      19560 *
+*Baskets :        4 : Basket Size=     105472 bytes  Compression=   3.00     *
+*............................................................................*
+*Br  439 :crvinfomc._parentX : Float_t _parentX[crvinfomc_]                  *
+*Entries :    10355 : Total  Size=      59273 bytes  File Size  =      19835 *
+*Baskets :        4 : Basket Size=     105472 bytes  Compression=   2.96     *
+*............................................................................*
+*Br  440 :crvinfomc._parentY : Float_t _parentY[crvinfomc_]                  *
+*Entries :    10355 : Total  Size=      59273 bytes  File Size  =       7570 *
+*Baskets :        4 : Basket Size=     105472 bytes  Compression=   7.75     *
+*............................................................................*
+*Br  441 :crvinfomc._parentZ : Float_t _parentZ[crvinfomc_]                  *
+*Entries :    10355 : Total  Size=      59273 bytes  File Size  =      18926 *
+*Baskets :        4 : Basket Size=     105472 bytes  Compression=   3.10     *
+*............................................................................*
+*Br  442 :crvinfomc._gparentPdgId : Int_t _gparentPdgId[crvinfomc_]          *
+*Entries :    10355 : Total  Size=      59313 bytes  File Size  =       9605 *
+*Baskets :        4 : Basket Size=     105472 bytes  Compression=   6.11     *
+*............................................................................*
+*Br  443 :crvinfomc._gparentE : Float_t _gparentE[crvinfomc_]                *
+*Entries :    10355 : Total  Size=      59281 bytes  File Size  =      19505 *
+*Baskets :        4 : Basket Size=     105472 bytes  Compression=   3.01     *
+*............................................................................*
+*Br  444 :crvinfomc._gparentX : Float_t _gparentX[crvinfomc_]                *
+*Entries :    10355 : Total  Size=      59281 bytes  File Size  =      19765 *
+*Baskets :        4 : Basket Size=     105472 bytes  Compression=   2.97     *
+*............................................................................*
+*Br  445 :crvinfomc._gparentY : Float_t _gparentY[crvinfomc_]                *
+*Entries :    10355 : Total  Size=      59281 bytes  File Size  =       7527 *
+*Baskets :        4 : Basket Size=     105472 bytes  Compression=   7.79     *
+*............................................................................*
+*Br  446 :crvinfomc._gparentZ : Float_t _gparentZ[crvinfomc_]                *
+*Entries :    10355 : Total  Size=      59281 bytes  File Size  =      18903 *
+*Baskets :        4 : Basket Size=     105472 bytes  Compression=   3.10     *
+*............................................................................*
+*Br  447 :crvinfomc._x : Float_t _x[crvinfomc_]                              *
+*Entries :    10355 : Total  Size=      59225 bytes  File Size  =      23523 *
+*Baskets :        4 : Basket Size=     105472 bytes  Compression=   2.49     *
+*............................................................................*
+*Br  448 :crvinfomc._y : Float_t _y[crvinfomc_]                              *
+*Entries :    10355 : Total  Size=      59225 bytes  File Size  =      10629 *
+*Baskets :        4 : Basket Size=     105472 bytes  Compression=   5.52     *
+*............................................................................*
+*Br  449 :crvinfomc._z : Float_t _z[crvinfomc_]                              *
+*Entries :    10355 : Total  Size=      59225 bytes  File Size  =      22737 *
+*Baskets :        4 : Basket Size=     105472 bytes  Compression=   2.58     *
+*............................................................................*
+*Br  450 :crvinfomc._time : Float_t _time[crvinfomc_]                        *
+*Entries :    10355 : Total  Size=      59249 bytes  File Size  =      22793 *
+*Baskets :        4 : Basket Size=     105472 bytes  Compression=   2.57     *
+*............................................................................*
+*Br  451 :crvinfomc._depositedEnergy : Float_t _depositedEnergy[crvinfomc_]  *
+*Entries :    10355 : Total  Size=      59337 bytes  File Size  =      23168 *
+*Baskets :        4 : Basket Size=     105472 bytes  Compression=   2.53     *
+*............................................................................*
+*Br  452 :crvinfomcplane : Int_t crvinfomcplane_                             *
+*Entries :    10355 : Total  Size=      93943 bytes  File Size  =      13894 *
+*Baskets :        5 : Basket Size=      32000 bytes  Compression=   6.00     *
+*............................................................................*
+*Br  453 :crvinfomcplane._pdgId : Int_t _pdgId[crvinfomcplane_]              *
+*Entries :    10355 : Total  Size=      83643 bytes  File Size  =      19584 *
+*Baskets :        4 : Basket Size=     123392 bytes  Compression=   4.24     *
+*............................................................................*
+*Br  454 :crvinfomcplane._primaryPdgId : Int_t _primaryPdgId[crvinfomcplane_]*
+*Entries :    10355 : Total  Size=      83699 bytes  File Size  =      19604 *
+*Baskets :        4 : Basket Size=     123392 bytes  Compression=   4.24     *
+*............................................................................*
+*Br  455 :crvinfomcplane._primaryE : Float_t _primaryE[crvinfomcplane_]      *
+*Entries :    10355 : Total  Size=      83667 bytes  File Size  =      54690 *
+*Baskets :        4 : Basket Size=     123392 bytes  Compression=   1.52     *
+*............................................................................*
+*Br  456 :crvinfomcplane._primaryX : Float_t _primaryX[crvinfomcplane_]      *
+*Entries :    10355 : Total  Size=      83667 bytes  File Size  =      55560 *
+*Baskets :        4 : Basket Size=     123392 bytes  Compression=   1.49     *
+*............................................................................*
+*Br  457 :crvinfomcplane._primaryY : Float_t _primaryY[crvinfomcplane_]      *
+*Entries :    10355 : Total  Size=      83667 bytes  File Size  =      13452 *
+*Baskets :        4 : Basket Size=     123392 bytes  Compression=   6.17     *
+*............................................................................*
+*Br  458 :crvinfomcplane._primaryZ : Float_t _primaryZ[crvinfomcplane_]      *
+*Entries :    10355 : Total  Size=      83667 bytes  File Size  =      54054 *
+*Baskets :        4 : Basket Size=     123392 bytes  Compression=   1.54     *
+*............................................................................*
+*Br  459 :crvinfomcplane._x : Float_t _x[crvinfomcplane_]                    *
+*Entries :    10355 : Total  Size=      83611 bytes  File Size  =      53512 *
+*Baskets :        4 : Basket Size=     123392 bytes  Compression=   1.55     *
+*............................................................................*
+*Br  460 :crvinfomcplane._y : Float_t _y[crvinfomcplane_]                    *
+*Entries :    10355 : Total  Size=      83611 bytes  File Size  =      13425 *
+*Baskets :        4 : Basket Size=     123392 bytes  Compression=   6.18     *
+*............................................................................*
+*Br  461 :crvinfomcplane._z : Float_t _z[crvinfomcplane_]                    *
+*Entries :    10355 : Total  Size=      83611 bytes  File Size  =      51575 *
+*Baskets :        4 : Basket Size=     123392 bytes  Compression=   1.61     *
+*............................................................................*
+*Br  462 :crvinfomcplane._xDir : Float_t _xDir[crvinfomcplane_]              *
+*Entries :    10355 : Total  Size=      83635 bytes  File Size  =      55635 *
+*Baskets :        4 : Basket Size=     123392 bytes  Compression=   1.49     *
+*............................................................................*
+*Br  463 :crvinfomcplane._yDir : Float_t _yDir[crvinfomcplane_]              *
+*Entries :    10355 : Total  Size=      83635 bytes  File Size  =      52986 *
+*Baskets :        4 : Basket Size=     123392 bytes  Compression=   1.57     *
+*............................................................................*
+*Br  464 :crvinfomcplane._zDir : Float_t _zDir[crvinfomcplane_]              *
+*Entries :    10355 : Total  Size=      83635 bytes  File Size  =      55463 *
+*Baskets :        4 : Basket Size=     123392 bytes  Compression=   1.50     *
+*............................................................................*
+*Br  465 :crvinfomcplane._time : Float_t _time[crvinfomcplane_]              *
+*Entries :    10355 : Total  Size=      83635 bytes  File Size  =      54075 *
+*Baskets :        4 : Basket Size=     123392 bytes  Compression=   1.53     *
+*............................................................................*
+*Br  466 :crvinfomcplane._kineticEnergy :                                    *
+*         | Float_t _kineticEnergy[crvinfomcplane_]                          *
+*Entries :    10355 : Total  Size=      83707 bytes  File Size  =      55081 *
+*Baskets :        4 : Basket Size=     123392 bytes  Compression=   1.51     *
+*............................................................................*
+*Br  467 :crvinfomcplane._dataSource : Int_t _dataSource[crvinfomcplane_]    *
+*Entries :    10355 : Total  Size=      83683 bytes  File Size  =      13400 *
+*Baskets :        4 : Basket Size=     123392 bytes  Compression=   6.20     *
+*............................................................................*

@@ -19,6 +19,12 @@ public:
    Float_t klmcsim_pos_fCoordinates_fZ;
 
    // CRV variables 
+
+   Float_t crvinfomc_time; 
+   Float_t crvinfomc_x; 
+   Float_t crvinfomc_y; 
+   Float_t crvinfomc_z; 
+
    Float_t crvinfomcplane_time; 
    Float_t crvinfomcplane_x; 
    Float_t crvinfomcplane_y; 
@@ -37,6 +43,12 @@ InitBranches::InitBranches(TTree* tree) {
    tree->SetBranchAddress("klmcsim.pos.fCoordinates.fX", &klmcsim_pos_fCoordinates_fX);
    tree->SetBranchAddress("klmcsim.pos.fCoordinates.fY", &klmcsim_pos_fCoordinates_fY);
    tree->SetBranchAddress("klmcsim.pos.fCoordinates.fZ", &klmcsim_pos_fCoordinates_fZ);
+
+
+   tree->SetBranchAddress("crvinfomc._time", &crvinfomc_time); 
+   tree->SetBranchAddress("crvinfomc._x", &crvinfomc_x); 
+   tree->SetBranchAddress("crvinfomc._y", &crvinfomc_y); 
+   tree->SetBranchAddress("crvinfomc._z", &crvinfomc_z); 
 
    tree->SetBranchAddress("crvinfomcplane._time", &crvinfomcplane_time); 
    tree->SetBranchAddress("crvinfomcplane._x", &crvinfomcplane_x); 

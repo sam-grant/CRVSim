@@ -3,3 +3,5 @@
 *.root
 *.pdf
 /Offline
+out
+Analyses/__pycache__/

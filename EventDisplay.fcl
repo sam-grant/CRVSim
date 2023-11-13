@@ -1,0 +1,51 @@
+# Originally from ../Offline/EventDisplay/fcl/EventDisplay.fcl
+# Modified to use to extruded geometry for CRV KPP
+
+#include "Offline/fcl/minimalMessageService.fcl"
+#include "Offline/fcl/standardProducers.fcl"
+#include "Offline/fcl/standardServices.fcl"
+#include "Offline/CommonMC/fcl/prolog.fcl"
+
+process_name : EventDisplay
+
+source : {
+  module_type : RootInput
+  inputCommands: ["keep *", 
+                  "drop *KalRepPayload*_*_*_*",
+                  "drop *CaloCrystalOnlyHit*_*_*_*"]
+}
+
+services : {
+  @table::Services.Core
+}
+
+physics : {
+  analyzers: {
+    eventdisplay: {
+
+      module_type               : EventDisplay # Offline/EventDisplay/src/EventDisplay_module.cc
+
+      # fcl parameters in Offline/EventDisplay/src/EventDisplayFrame_module.cc
+      # Seem like they're filters
+      # g4ModuleLabel             : "g4run"
+      # g4ModuleLabel             : "compressRecoMCs" 
+      # physicalVolumesMultiLabel : "compressPV"
+
+      # I can't find this parameter anywhere but it seg faults without it...
+      kalSeedStepSize           : 0.1
+
+      timeOffsets               : { inputs : [ ] }  #if the art file has no time maps
+      # timeOffsets               : { inputs : [ @sequence::CommonMC.TimeMaps ] }
+      # timeOffsets               : { inputs : [ @sequence::RecoCompression.TimeMaps ] }
+      
+    }
+  }
+
+  e1 : [eventdisplay]
+  end_paths      : [e1]
+
+}
+
+services.GeometryService.simulatedDetector.tool_type : "Mu2e"
+services.GeometryService.inputFile                   : "Offline/Mu2eG4/geom/geom_common_extracted.txt"
+# services.GeometryService.inputFile                 : "Offline/Mu2eG4/geom/crv_counters_extracted_v01.txt"

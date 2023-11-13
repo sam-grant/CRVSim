@@ -1,3 +1,0 @@
-source /cvmfs/mu2e.opensciencegrid.org/setupmu2e-art.sh 
-muse setup SimJob
-setup mu2efiletools

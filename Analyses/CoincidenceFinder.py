@@ -11,6 +11,7 @@ import Utils as ut
 #                Helper functions 
 # ------------------------------------------------
 
+# Stolen from Yuri
 def GetPosition3D(arr_, branch="crvhit"):
 
     pos_ = ak.zip({"px": ak.flatten(arr_['%s.pos.fCoordinates.fX'%branch]), 
@@ -124,7 +125,8 @@ def CountCoincidences(arr_):
     # Count coincidences event-by-event, append the event IDs to lists 
     singles_ = { "sector_1" : [], "sector_2" : [],  "sector_3" : [], }
     doubles_ = { "sector_1" : [], "sector_2" : [],  "sector_3" : [], }
-    triples_ = { "sector_1" : [], "sector_2" : [],  "sector_3" : [], }    
+    triples_ = { "sector_1" : [], "sector_2" : [],  "sector_3" : [], }   
+    beyond_ = []
 
     # Iterate event-by-event
     for i, entry in enumerate(arr_):
@@ -153,22 +155,33 @@ def CountCoincidences(arr_):
         # These are events with more than one cosmic!!! 
         # Not sure how to handle these just yet
         else: 
-            print(
-                f"*** WARNING: CountCoincidences() ***\n"
-                f"Event ID: {eventID}\n"
-                f"Number of coincidences: {len(entry['is_coincidence'])}\n"
-            )
+            beyond_.append(eventID)
+            # print(
+            #     f"*** WARNING: CountCoincidences() ***\n"
+            #     f"Event ID: {eventID}\n"
+            #     f"Number of coincidences: {len(entry['is_coincidence'])}\n"
+            # )
 
         progress = (i + 1) / totEvents * 100
         print(f"Progress: {progress:.2f}%", end='\r', flush=True)
 
-        if (i > 500): break
+        # if (i > 500): break
 
-    print(
-        f"\nSingles: {singles_}\n"
-        f"Doubles: {doubles_}\n"
-        f"Triples: {triples_}\n"
-    )
+    # print(
+    #     f"\nSingles: {singles_}\n"
+    #     f"Doubles: {doubles_}\n"
+    #     f"Triples: {triples_}\n"
+    # )
+
+    # Make bar charts 
+    # TODO: handle this better!
+    singlesCounts_ = { "sector_1" : len(singles_["sector_1"]), "sector_2" : len(singles_["sector_2"]),  "sector_3" : len(singles_["sector_3"]) }
+    doublesCounts_ = { "sector_1" : len(doubles_["sector_1"]), "sector_2" : len(doubles_["sector_2"]),  "sector_3" : len(doubles_["sector_3"]) }
+    triplesCounts_ = { "sector_1" : len(triples_["sector_1"]), "sector_2" : len(triples_["sector_2"]),  "sector_3" : len(triples_["sector_3"]) }
+
+    ut.BarChart2(data_dict=singlesCounts_, ylabel="Counts / sector", fout="Images/Coincidences/bar_singles.png")
+    ut.BarChart2(data_dict=doublesCounts_, ylabel="Counts / sector", fout="Images/Coincidences/bar_doubles.png")
+    ut.BarChart2(data_dict=triplesCounts_, ylabel="Counts / sector", fout="Images/Coincidences/bar_triples.png")
 
     print("Done!")
 

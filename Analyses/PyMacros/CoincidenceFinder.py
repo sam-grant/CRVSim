@@ -8,6 +8,7 @@ import sys
 import numpy as np
 import awkward as ak
 import h5py
+from collections import Counter
 
 import Utils as ut
 
@@ -25,7 +26,7 @@ def GetPosition3D(arr_, branch="crvhit"):
     return pos_
 
 # ------------------------------------------------
-#                Analysis functions 
+#                Debugging functions 
 # ------------------------------------------------
 
 def SanityPlots(arr_):
@@ -34,17 +35,45 @@ def SanityPlots(arr_):
 
     pos_ = GetPosition3D(arr_)
 
-    ut.PlotGraph(pos_["px"], pos_["py"], xlabel="x-position [mm]", ylabel="y-position [mm]", fout="Images/Sanity/gr_XY.png")
-    ut.PlotGraph(pos_["pz"], pos_["py"], xlabel="z-position [mm]", ylabel="y-position [mm]", fout="Images/Sanity/gr_ZY.png")
+    ut.PlotGraph(pos_["px"], pos_["py"], xlabel="x-position [mm]", ylabel="y-position [mm]", fout="../Images/Sanity/gr_XY.png")
+    ut.PlotGraph(pos_["pz"], pos_["py"], xlabel="z-position [mm]", ylabel="y-position [mm]", fout="../Images/Sanity/gr_ZY.png")
 
     print("Done!")
 
     return
 
+def PrintEvent(event):
+
+    print(
+        f"\n"
+        f"evtinfo.eventid: {event['evtinfo.eventid']}\n"
+        f"is_coincidence: {event['is_coincidence']}\n"
+        f"PE_condition: {event['PE_condition']}\n"
+        f"layer_condition: {event['layer_condition']}\n"
+        f"angle_condition: {event['angle_condition']}\n"
+        f"time_condition: {event['time_condition']}\n"
+        f"crvhit.nLayers {event['crvhit.nLayers']}\n"
+        f"crvhit.angle: {event['crvhit.angle']}\n"
+        f"crvhit.sectorType: {event['crvhit.sectorType']}\n"
+        f"crvhit.pos.fCoordinates: ({event['crvhit.pos.fCoordinates.fX']}, {event['crvhit.pos.fCoordinates.fY']}, {event['crvhit.pos.fCoordinates.fZ']})\n"
+        f"crvhit.timeStart: {event['crvhit.timeStart']}\n"
+        f"crvhit.timeEnd: {event['crvhit.timeEnd']}\n"
+        f"crvhit.time: {event['crvhit.time']}\n"
+        f"crvhit.PEs: {event['crvhit.PEs']}\n"
+        f"crvhit.nHit: {event['crvhit.nHits']}\n"
+    )
+
+    return
+
+# ------------------------------------------------
+#      Coincidence finding and filtering
+# ------------------------------------------------
+
 # Get per module coincindences 
+# These will need some tuning 
 def MarkCoincidences(arr_):
 
-    print("\n---> Getting coincidences")
+    print("\n---> Marking coincidences")
 
     # PE threshold of 10 for now
     print("* PE threshold condition")
@@ -83,111 +112,189 @@ def MarkCoincidences(arr_):
 
     return arr_
 
-# Print coincidences in human readable format
-def PrintCoincidence(arr_, n):
+# Filter coincidences 
+def Filter(event, filterCondition, verbose=False):
 
-    for i, entry in enumerate(arr_):
+    if verbose: print(f"\n---> Filter event with condition {filterCondition}")
 
-        # Check if any of the arrays in the entry are empty
-        if any(not entry[field].tolist() for field in entry.fields):
+    if filterCondition=="no_filter": 
+        return False
+
+    # return False
+
+# ------------------------------------------------
+#                       Run
+# ------------------------------------------------
+
+def Run(finName, filterCondition="no_filter", sanityPlots=False, verbose=False):
+
+    # Get data as a set of awkward arrays
+    arr_ = ut.TTreeToAwkwardArray(finName, "TrkAnaExt/trkana", ut.branchNamesTrkAna_)
+
+    # Sanity plots 
+    if (sanityPlots): SanityPlots(arr_)
+
+    # Mark coincidences
+    arr_ = MarkCoincidences(arr_)
+
+    # Setup counting dicts, element is a list of event IDS
+    trueCoincidences_ = { "S1" : [], "S2" : [],  "S3" : [] }
+    falseCoincidences_ = { "S1" : [], "S2" : [],  "S3" : [] }
+
+    # Start iterating through coincidences
+    print("\n---> Iterating through coincidences.\n")
+
+    # For tracking progress inside the loop
+    totEvents = len(arr_)
+
+    # Iterate event-by-event
+    for i, event in enumerate(arr_):
+
+        if verbose: 
+            print("\n****************************\n")
+            print(f"---> Next event i: {i}.")
+            PrintEvent(event)
+
+        # Get coincidence list
+        coincidences_ = event["is_coincidence"]
+
+        # Skip empty events (ones which miss the CRV)
+        nCoin = len(event["is_coincidence"])
+        if nCoin < 1: 
+            if verbose: print("---> Skipping empty event.")
             continue
 
-        print(
-            f"\n"
-            f"evtinfo.eventid: {entry['evtinfo.eventid']}\n"
-            f"is_coincidence: {entry['is_coincidence']}\n"
-            f"PE_condition: {entry['PE_condition']}\n"
-            f"layer_condition: {entry['layer_condition']}\n"
-            f"angle_condition: {entry['angle_condition']}\n"
-            f"time_condition: {entry['time_condition']}\n"
-            f"crvhit.nLayers {entry['crvhit.nLayers']}\n"
-            f"crvhit.angle: {entry['crvhit.angle']}\n"
-            f"crvhit.sectorType: {entry['crvhit.sectorType']}\n"
-            f"crvhit.pos.fCoordinates: ({entry['crvhit.pos.fCoordinates.fX']}, {entry['crvhit.pos.fCoordinates.fY']}, {entry['crvhit.pos.fCoordinates.fZ']})\n"
-            f"crvhit.timeStart: {entry['crvhit.timeStart']}\n"
-            f"crvhit.timeEnd: {entry['crvhit.timeEnd']}\n"
-            f"crvhit.time: {entry['crvhit.time']}\n"
-            f"crvhit.PEs: {entry['crvhit.PEs']}\n"
-            f"crvhit.nHit: {entry['crvhit.nHits']}\n"
-        )
+        # Filtering events
+        # 0. "no_filter"
+        # 1. "one_coincidence_per_sector"
+        # 2. "one_coincidence_per_trigger_sector" 
+        # if Filter(event, filterCondition=filterCondition, verbose=verbose):
+        #     continue
 
-        if(i > n):
-            break
+        # Event IDs and sectors and 
+        eventID = event["evtinfo.eventid"]
+        sectors_ = event["crvhit.sectorType"]
+
+        # Start counting 
+        for j, coincidence in enumerate(coincidences_):
+            sectorKey = "S" + str(sectors_[j])
+
+            if coincidence == True:
+                if verbose: print(f"\n---> True coincidence at index {j}")
+                trueCoincidences_[sectorKey].append(eventID)
+            elif coincidence == False:
+                if verbose: print(f"\n---> False coincidence at index {j}")
+                falseCoincidences_[sectorKey].append(eventID)
+            else: 
+                # This should never happen
+                print("!!! Error, no coincidence found !!!")
+                break
+
+        progress = (i + 1) / totEvents * 100
+        print(f"Progress: {progress:.2f}%", end='\r', flush=True)
+
+    print("Done!")
+
+    if verbose:
+        print("\ntrueCoincidences_:\n", trueCoincidences_)
+        print("falseCoincidences_:\n", falseCoincidences_)
+
+    return
+
+# ------------------------------------------------
+#                      Main
+# ------------------------------------------------
+
+def main():
+    
+    # Take input file name command-line argument
+    # if len(sys.argv) != 2:
+    #     # print("Input and outname file names required as arguments")
+    #     print("Input file name required as argument")
+    #     sys.exit(1)
+    
+    # finName = sys.argv[1] # 
+    finName = "/pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/82/e8/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00000000.tka" # sys.argv[1] # "/pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/82/e8/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00000000.tka"
+
+    Run(finName=finName, verbose=False) 
 
     return
 
-def PrintEntry(entry):
+if __name__ == "__main__":
+    main()
 
-    print(
-        f"\n"
-        f"evtinfo.eventid: {entry['evtinfo.eventid']}\n"
-        f"is_coincidence: {entry['is_coincidence']}\n"
-        f"PE_condition: {entry['PE_condition']}\n"
-        f"layer_condition: {entry['layer_condition']}\n"
-        f"angle_condition: {entry['angle_condition']}\n"
-        f"time_condition: {entry['time_condition']}\n"
-        f"crvhit.nLayers {entry['crvhit.nLayers']}\n"
-        f"crvhit.angle: {entry['crvhit.angle']}\n"
-        f"crvhit.sectorType: {entry['crvhit.sectorType']}\n"
-        f"crvhit.pos.fCoordinates: ({entry['crvhit.pos.fCoordinates.fX']}, {entry['crvhit.pos.fCoordinates.fY']}, {entry['crvhit.pos.fCoordinates.fZ']})\n"
-        f"crvhit.timeStart: {entry['crvhit.timeStart']}\n"
-        f"crvhit.timeEnd: {entry['crvhit.timeEnd']}\n"
-        f"crvhit.time: {entry['crvhit.time']}\n"
-        f"crvhit.PEs: {entry['crvhit.PEs']}\n"
-        f"crvhit.nHit: {entry['crvhit.nHits']}\n"
-    )
 
-    return
 
 # How often do you get a coincidence in sectors 2 & 3 when you also have on in sector 1
 # We need to handle multiple hits
 
-def CountCoincidences(arr_):
+def FilterAndCountCoincidences(arr_):
 
-    print("\n---> Counting coincidences")
+    print("\n---> Filtering and counting coincidences")
 
     totEvents = len(arr_)
 
     # Dictionary to count coincidences event-by-event
-    # Need to know how many coincidences there are and what sector they are in
 
     # Count coincidences event-by-event, append the event IDs to lists 
     singles_ = { "sector_1" : [], "sector_2" : [],  "sector_3" : [], }
     doubles_ = { "sector_1" : [], "sector_2" : [],  "sector_3" : [], }
     triples_ = { "sector_1" : [], "sector_2" : [],  "sector_3" : [], }   
-    beyond_ = []
+    
+    # Count false coincidences 
+    falses_ = { "sector_1" : [], "sector_2" : [],  "sector_3" : [], }  
 
     # Iterate event-by-event
     for i, entry in enumerate(arr_):
 
-        
-
         # Check if any of the arrays in the entry are empty
-        if any(not entry[field].tolist() for field in entry.fields):
-            continue
-
-        # Also check if coincidences is actually true!!!!
-        # You've been getting away with it because most of them are true.
+        # This just slows everything down!
+        # if any(not entry[field].tolist() for field in entry.fields):
+        #     continue
 
         # Number of coincidences, event ID and sectors
         nCoin = len(entry["is_coincidence"])
         eventID = entry['evtinfo.eventid']
         sectors_ = entry["crvhit.sectorType"]
 
+        # Check for false coincidences
+        if any(entry["is_coincidence"] == False):
+            print("\n!!! False coincidence found !!!")
+            PrintEntry(entry)
+            # Store them 
+            for sector in sectors_:  
+                falses_["sector_"+str(sector)].append(eventID)
+            # If there are any, we can cycle back later
+
+
+        # Handle multiple coincidences per trigger sector 
+        sectorCounts = Counter(sectors_)
+        # print(f"\nEvent {eventID}")
+        for sector, n in sectorCounts.items():
+            if n>1: 
+                print(f"Sector {sector} has {n} counts")
+                PrintEntry(entry)
+
+        # break
+        
+        continue
+
+
+        # You've been getting away with it because most of them are true.
+
+
         # Count single coincidences
         if (nCoin == 1):
-            singles_["sector_"+str(sectors_[0])].append(eventID)
+            for sector in sector_: # this should always be the top sector 
+                singles_["sector_"+str(sector)].append(eventID)
         # Count double coincidences 
         elif (len(entry["is_coincidence"]) == 2):
-            for sector in sectors_:
+            for sector in sector_:
                 doubles_["sector_"+str(sector)].append(eventID)
         # Count triple coincidences
         elif (len(entry["is_coincidence"]) == 3):
-            for sector in sectors_:
+            for sector in sector_:
                 triples_["sector_"+str(sector)].append(eventID)
-        # Else something has gone wrong
-        # These are events with more than one cosmic!!! 
-        # Not sure how to handle these just yet
         else: 
             # Is this the correct place to be doing this?
 
@@ -223,66 +330,10 @@ def CountCoincidences(arr_):
     doublesCounts_ = { "sector_1" : len(doubles_["sector_1"]), "sector_2" : len(doubles_["sector_2"]),  "sector_3" : len(doubles_["sector_3"]) }
     triplesCounts_ = { "sector_1" : len(triples_["sector_1"]), "sector_2" : len(triples_["sector_2"]),  "sector_3" : len(triples_["sector_3"]) }
 
-    ut.BarChart2(data_dict=singlesCounts_, ylabel="Counts / sector", fout="Images/Coincidences/bar_singles.png")
-    ut.BarChart2(data_dict=doublesCounts_, ylabel="Counts / sector", fout="Images/Coincidences/bar_doubles.png")
-    ut.BarChart2(data_dict=triplesCounts_, ylabel="Counts / sector", fout="Images/Coincidences/bar_triples.png")
+    ut.BarChart2(data_dict=singlesCounts_, ylabel="Counts / sector", fout="../Images/Coincidences/bar_singles.png")
+    ut.BarChart2(data_dict=doublesCounts_, ylabel="Counts / sector", fout="../Images/Coincidences/bar_doubles.png")
+    ut.BarChart2(data_dict=triplesCounts_, ylabel="Counts / sector", fout="../Images/Coincidences/bar_triples.png")
 
     print("Done!")
 
     return
-
-# ------------------------------------------------
-#                       Run
-# ------------------------------------------------
-
-def Run(finName, sanityPlots=False, coincidencePrintout=False):
-
-    # Get data as a set of awkward arrays
-    arr_ = ut.TTreeToAwkwardArray(finName, "TrkAnaExt/trkana", ut.branchNamesTrkAna_)
-
-    # Sanity plots 
-    if (sanityPlots): SanityPlots(arr_)
-
-    # Mark coincidences
-    arr_ = MarkCoincidences(arr_)
-
-    # print(arr_["evtinfo.eventid"][200])
-    # print(arr_["is_coincidence"][200])
-
-    # return
-
-
-    # Printout
-    if (coincidencePrintout): PrintCoincidence(arr_, 100)
-
-    # ClusterCoincidences(arr_)
-
-    # How often do you get a coincidence in sectors 2 & 3 when you also have on in sector 1
-    # CountCoincidences(arr_)
-
-    # Write to file
-    # WriteCoincidencesToHDF5(arr_, foutName)
-
-    return
-
-# ------------------------------------------------
-#                      Main
-# ------------------------------------------------
-
-def main():
-    
-    # Take input file name command-line argument
-    # if len(sys.argv) != 2:
-    #     # print("Input and outname file names required as arguments")
-    #     print("Input file name required as argument")
-    #     sys.exit(1)
-    
-    # finName = sys.argv[1] # 
-    finName = "/pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/82/e8/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00000000.tka" # sys.argv[1] # "/pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/82/e8/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00000000.tka"
-
-    Run(finName=finName, coincidencePrintout=True) 
-
-    return
-
-if __name__ == "__main__":
-    main()

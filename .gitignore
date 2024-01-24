@@ -1,7 +1,10 @@
-/Analyses/Images
+
 *.png
 *.root
 *.pdf
 /Offline
 out
-Analyses/__pycache__/
+/h5
+/Analyses/Macros/__pycache__/
+/Analyses/Images
+/Analyses/Txt

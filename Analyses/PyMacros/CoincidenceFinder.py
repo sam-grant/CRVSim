@@ -1,5 +1,9 @@
-# Samuel Grant 2023
-# Test coincidence finding
+# Samuel Grant 2024
+# Find CRV KPP coincidences
+# Trigger on coincidences in the top and bottom sectors
+# Count the number of coincidences in the middle sector / number of triggers
+# Ignore events with more than one coincience in the same trigger sector 
+
 import sys
 import numpy as np
 import awkward as ak
@@ -85,8 +89,8 @@ def PrintCoincidence(arr_, n):
     for i, entry in enumerate(arr_):
 
         # Check if any of the arrays in the entry are empty
-        # if any(not entry[field].tolist() for field in entry.fields):
-        #     continue
+        if any(not entry[field].tolist() for field in entry.fields):
+            continue
 
         print(
             f"\n"
@@ -107,12 +111,37 @@ def PrintCoincidence(arr_, n):
             f"crvhit.nHit: {entry['crvhit.nHits']}\n"
         )
 
-        if(i == n):
+        if(i > n):
             break
 
     return
 
+def PrintEntry(entry):
+
+    print(
+        f"\n"
+        f"evtinfo.eventid: {entry['evtinfo.eventid']}\n"
+        f"is_coincidence: {entry['is_coincidence']}\n"
+        f"PE_condition: {entry['PE_condition']}\n"
+        f"layer_condition: {entry['layer_condition']}\n"
+        f"angle_condition: {entry['angle_condition']}\n"
+        f"time_condition: {entry['time_condition']}\n"
+        f"crvhit.nLayers {entry['crvhit.nLayers']}\n"
+        f"crvhit.angle: {entry['crvhit.angle']}\n"
+        f"crvhit.sectorType: {entry['crvhit.sectorType']}\n"
+        f"crvhit.pos.fCoordinates: ({entry['crvhit.pos.fCoordinates.fX']}, {entry['crvhit.pos.fCoordinates.fY']}, {entry['crvhit.pos.fCoordinates.fZ']})\n"
+        f"crvhit.timeStart: {entry['crvhit.timeStart']}\n"
+        f"crvhit.timeEnd: {entry['crvhit.timeEnd']}\n"
+        f"crvhit.time: {entry['crvhit.time']}\n"
+        f"crvhit.PEs: {entry['crvhit.PEs']}\n"
+        f"crvhit.nHit: {entry['crvhit.nHits']}\n"
+    )
+
+    return
+
 # How often do you get a coincidence in sectors 2 & 3 when you also have on in sector 1
+# We need to handle multiple hits
+
 def CountCoincidences(arr_):
 
     print("\n---> Counting coincidences")
@@ -131,9 +160,14 @@ def CountCoincidences(arr_):
     # Iterate event-by-event
     for i, entry in enumerate(arr_):
 
+        
+
         # Check if any of the arrays in the entry are empty
         if any(not entry[field].tolist() for field in entry.fields):
             continue
+
+        # Also check if coincidences is actually true!!!!
+        # You've been getting away with it because most of them are true.
 
         # Number of coincidences, event ID and sectors
         nCoin = len(entry["is_coincidence"])
@@ -155,11 +189,21 @@ def CountCoincidences(arr_):
         # These are events with more than one cosmic!!! 
         # Not sure how to handle these just yet
         else: 
+            # Is this the correct place to be doing this?
+
             beyond_.append(eventID)
+            print(
+                f"*** WARNING: CountCoincidences() ***\n"
+            )
+
+            PrintEntry(entry)
+
             # print(
             #     f"*** WARNING: CountCoincidences() ***\n"
             #     f"Event ID: {eventID}\n"
             #     f"Number of coincidences: {len(entry['is_coincidence'])}\n"
+            #     f"Coincidences: {entry['is_coincidence']}\n"
+            #     f"Entry: {entry}"
             # )
 
         progress = (i + 1) / totEvents * 100
@@ -202,12 +246,19 @@ def Run(finName, sanityPlots=False, coincidencePrintout=False):
     # Mark coincidences
     arr_ = MarkCoincidences(arr_)
 
+    # print(arr_["evtinfo.eventid"][200])
+    # print(arr_["is_coincidence"][200])
+
+    # return
+
+
     # Printout
     if (coincidencePrintout): PrintCoincidence(arr_, 100)
 
-    # How often do you get a coincidence in sectors 2 & 3 when you also have on in sector 1
-    CountCoincidences(arr_)
+    # ClusterCoincidences(arr_)
 
+    # How often do you get a coincidence in sectors 2 & 3 when you also have on in sector 1
+    # CountCoincidences(arr_)
 
     # Write to file
     # WriteCoincidencesToHDF5(arr_, foutName)
@@ -221,15 +272,15 @@ def Run(finName, sanityPlots=False, coincidencePrintout=False):
 def main():
     
     # Take input file name command-line argument
-    if len(sys.argv) != 2:
-        print("Input and outname file names required as arguments")
-        sys.exit(1)
+    # if len(sys.argv) != 2:
+    #     # print("Input and outname file names required as arguments")
+    #     print("Input file name required as argument")
+    #     sys.exit(1)
     
-    finName = sys.argv[1] # "/pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/82/e8/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00000000.tka" # sys.argv[1] # "/pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/82/e8/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00000000.tka"
-    # foutName = "test.h5" # sys.argv[2] 
-    # treeName = "TrkAnaExt/trkana"
+    # finName = sys.argv[1] # 
+    finName = "/pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/82/e8/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00000000.tka" # sys.argv[1] # "/pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/82/e8/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00000000.tka"
 
-    Run(finName=finName) # , coincidencePrintout=F) 
+    Run(finName=finName, coincidencePrintout=True) 
 
     return
 

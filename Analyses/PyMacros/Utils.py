@@ -58,27 +58,37 @@ def GetBasicStats(data, xmin, xmax):
 import uproot
 import pandas as pd
 
-branchNames_ = [
+branchNamesTrkAna_ = [
     # ---> evtinfo
-    "evtinfo.eventid"
-    , "evtinfo.runid"
-    , "evtinfo.subrunid"
-    # , "evtinfo.nprotons"
-    # , "evtinfo.pbtime"
-    # , "evtinfo.pbterr"
-    # ---> crvhit
-    , "crvhit.sectorType"
-    , "crvhit.pos.fCoordinates.fX"
-    , "crvhit.pos.fCoordinates.fY"
-    , "crvhit.pos.fCoordinates.fZ"
-    , "crvhit.timeStart"
-    , "crvhit.timeEnd"
-    , "crvhit.time"
-    , "crvhit.PEs"
-    , "crvhit.nHits"
-    , "crvhit.nLayers"
-    , "crvhit.angle"
-    , "@size"
+    "evtinfo.eventid" # the event number
+    # ---> crvhit (reco)
+    ,"crvhit.sectorType" # CRV sector hit
+    , "crvhit.pos.fCoordinates.fX" # Reconstructed position of the cluster in X 
+    , "crvhit.pos.fCoordinates.fY" # Reconstructed position of the cluster in Y
+    , "crvhit.pos.fCoordinates.fZ" # Reconstructed position of the cluster in Z
+    , "crvhit.timeStart" # Earliest time recorded at either end of all bars in the hit
+    , "crvhit.timeEnd" # Latest time recorded at either end of all bars in the hit
+    , "crvhit.time" # average reconstructed hit time of the cluster.
+    , "crvhit.PEs" # total number of photoelectrons in this cluser
+    , "crvhit.nHits" # Number of individual bar hits combined in this hit
+    , "crvhit.nLayers" # Number of CRV layers that are part of this cluster
+    , "crvhit.angle" # slope (in the plane perpendicular to the bar axis of a sector) of the track assumed to be responsible for the cluster (=change in the "layer direction" / change in the "thickness direction")
+    # ---> crvhitmc (truth)
+    # , "crvhitmc.valid" # Records if there is a valid MC match to this CRV reco hit
+    # , "crvhitmc.pdgId" # PDG ID of the track mostly likely responsible for this cluster
+    # , "crvhitmc.primaryPdgId" # PDG ID of the primary particle of the track mostly likely responsible for this cluster
+    # , "crvhitmc.primaryE" # energy of the primary particle of the track mostly likely responsible for this cluster
+    # , "crvhitmc.primary.pos.fCoordinates.fX" # start position of the primary particle of the track mostly likely responsible for this cluster
+    # , "crvhitmc.parentPdgId" # PDG ID of the parent particle of the track mostly likely responsible for this cluster
+    # , "crvhitmc.parentE" # start energy of the parent particle of the track mostly likely responsible for this cluster
+    # , "crvhitmc.parent.fCoordinates.fX" # X start position of the parent particle of the track mostly likely responsible for this cluster
+    # , "crvhitmc.parent.fCoordinates.fY" # Y
+    # , "crvhitmc.parent.fCoordinates.fZ" # Z
+    # , "crvhitmc.gparentPdgId" # grandparent info...
+    # , "crvhitmc.gparentE" # "
+    # , "crvhitmc.gparent" # "
+
+    # , "crvhitmc.depositedEnergy" # total deposited energy of the cluster based on the CrvSteps
 ]
 
 def TTreeToDataFrame(finName, treeName, branchNames):
@@ -110,11 +120,26 @@ def TTreeToDataFrame(finName, treeName, branchNames):
     # Close the ROOT file
     fin.file.close()
 
-    # Print the DataFrame
-    # print(df)
-
     # Return the DataFrame
     return df
+
+import awkward as ak
+
+# Awkward arrays are more suited to the nested tree structure of TrkAna
+def TTreeToAwkwardArray(finName, treeName, branchNames):
+
+    print("---> Converting TTree to awkward array")
+
+    # Open the ROOT file and access the TTree
+    file = uproot.open(finName)
+    tree = file[treeName]
+
+    # Read the data into Awkward Arrays, if you exclude branchNames it reads all of them 
+    arrays = tree.arrays(branchNames, library="ak")
+
+    print("Done!")
+
+    return arrays
 
 # --------
 # Plotting
@@ -609,6 +634,63 @@ def BarChart(data, label_dict, title=None, xlabel=None, ylabel=None, fout="bar_c
     #     ax.xaxis.set_major_formatter(ScalarFormatter(useMathText=True))
     #     ax.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
     #     ax.xaxis.offsetText.set_fontsize(14)
+    if ax.get_ylim()[1] > 999:
+        ax.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
+        ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+        ax.yaxis.offsetText.set_fontsize(14)
+
+    # Save the figure
+    plt.savefig(fout, dpi=NDPI, bbox_inches="tight")
+    print("---> Written", fout)
+
+    # Clear memory
+    plt.clf()
+    plt.close()
+
+def BarChart2(data_dict, title=None, xlabel=None, ylabel=None, fout="bar_chart.png", percentage=False, bar_alpha=1.0, bar_color='black', NDPI=300):
+    
+    # Extract labels and counts from the data_dict
+    labels = list(data_dict.keys())
+    label_counts = list(data_dict.values())
+
+    # Sort labels and counts in descending order
+    sorted_indices = np.argsort(label_counts)[::-1]
+    labels = np.array(labels)[sorted_indices]
+    label_counts = np.array(label_counts)[sorted_indices]
+
+    if percentage: 
+        label_counts = (label_counts / np.sum(label_counts))*100
+
+    # Create figure and axes
+    fig, ax = plt.subplots()
+
+    # Plot the bar chart
+    indices = np.arange(len(labels))
+
+    # TODO: handle this better
+    n_bars = len(indices)
+    bar_width = 3.0 / n_bars
+    if n_bars == 3:
+        bar_width = 2.0 / n_bars
+    elif n_bars == 2:
+        bar_width = 1.0 / n_bars
+
+    ax.bar(indices, label_counts, align='center', alpha=bar_alpha, color=bar_color, width=bar_width, fill=False, hatch='/', linewidth=1, edgecolor='black')
+
+    # Set x-axis labels
+    ax.set_xticks(indices)
+    ax.set_xticklabels(labels, rotation=0)
+
+    # Set labels for the chart
+    ax.set_title(title, fontsize=16, pad=10)
+    ax.set_xlabel(xlabel, fontsize=14, labelpad=10) 
+    ax.set_ylabel(ylabel, fontsize=14, labelpad=10) 
+
+    # Set font size of tick labels on x and y axes
+    ax.tick_params(axis='x', labelsize=14)
+    ax.tick_params(axis='y', labelsize=14)
+
+    # Scientific notation
     if ax.get_ylim()[1] > 999:
         ax.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
         ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))

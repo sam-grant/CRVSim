@@ -53,7 +53,7 @@ def MarkCoincidences(arr_):
 
     print("Done.")
 
-    return arr_ 
+    return arr_
 
 # ------------------------------------------------
 #                       Run
@@ -63,10 +63,6 @@ def Run(finName, foutName):
 
     # Get data as a set of awkward arrays
     arr_ = ut.TTreeToAwkwardArray(finName, "TrkAnaExt/trkana", ut.branchNamesTrkAna_)
-
-    # Remove empty arrays (some tracks have no CRV hits)
-    # This just slows everything down massively
-    # arr_ = RemoveEmptyArrays(arr_)
 
     # Mark coincidences
     arr_ = MarkCoincidences(arr_)

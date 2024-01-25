@@ -1,4 +1,4 @@
-# Samuel Grant 2024
+# Samuel Grant -- Jan 2024
 # Count CRV KPP coincidences
 # Output lists of event IDs for true/false coincidences per sector
 # Filter conditions: no_filter, one_coincidence_per_sector, one_coincidence_per_trigger_sector
@@ -131,7 +131,7 @@ def Filter(event, filterCondition, sectors_, debug):
         print("!!! Error: invalid filterCondition. !!!")
         return True        
 
-    return False
+    # return False
 
 def CountCoincidences(arr_, filterCondition, debug):
 
@@ -272,9 +272,8 @@ def Run(finName, filterCondition="no_filter", sanityPlots=False, debug=False):
     trueCoincidences_, falseCoincidences_ = CountCoincidences(arr_, filterCondition, debug)
 
     # Write to counts to h5
-
     # Strip path name and extension from input file  string (input file name without path and extension)
-    foutName = "../h5/TrueAndFalseCoincidences/"+os.path.splitext(os.path.basename(finName))[0]+".h5"
+    foutName = "../h5/TrueAndFalseCoincidences/"+filterCondition+"/"+os.path.splitext(os.path.basename(finName))[0]+".h5"
     # Write
     WriteCoincidences(trueCoincidences_, falseCoincidences_, foutName, debug)
     # Check that the write worked as expected

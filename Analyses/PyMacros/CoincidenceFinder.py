@@ -1,8 +1,7 @@
 # Samuel Grant 2024
-# Find CRV KPP coincidences
-# Trigger on coincidences in the top and bottom sectors
-# Count the number of coincidences in the middle sector / number of triggers
-# Ignore events with more than one coincience in the same trigger sector 
+# Count CRV KPP coincidences
+# Output lists of event IDs for true/false coincidences per sector
+# Filter conditions: no_filter, one_coincidence_per_sector, one_coincidence_per_trigger_sector
 
 import sys
 import numpy as np

@@ -8,6 +8,7 @@ import sys
 import numpy as np
 import awkward as ak
 import h5py
+import os
 from collections import Counter
 
 import Utils as ut
@@ -18,7 +19,7 @@ import Utils as ut
 
 # Stolen from Yuri
 def GetPosition3D(arr_, branch="crvhit"):
-
+    
     pos_ = ak.zip({"px": ak.flatten(arr_['%s.pos.fCoordinates.fX'%branch]), 
                     "py": ak.flatten(arr_['%s.pos.fCoordinates.fY'%branch]), 
                     "pz": ak.flatten(arr_['%s.pos.fCoordinates.fZ'%branch]),}, with_name="Position3D")
@@ -30,7 +31,7 @@ def GetPosition3D(arr_, branch="crvhit"):
 # ------------------------------------------------
 
 def SanityPlots(arr_):
-
+    
     print("\n---> Making sanity plots")
 
     pos_ = GetPosition3D(arr_)
@@ -38,12 +39,12 @@ def SanityPlots(arr_):
     ut.PlotGraph(pos_["px"], pos_["py"], xlabel="x-position [mm]", ylabel="y-position [mm]", fout="../Images/Sanity/gr_XY.png")
     ut.PlotGraph(pos_["pz"], pos_["py"], xlabel="z-position [mm]", ylabel="y-position [mm]", fout="../Images/Sanity/gr_ZY.png")
 
-    print("Done!")
+    print("...Done!")
 
     return
 
 def PrintEvent(event):
-
+    
     print(
         f"\n"
         f"evtinfo.eventid: {event['evtinfo.eventid']}\n"
@@ -71,8 +72,8 @@ def PrintEvent(event):
 
 # Get per module coincindences 
 # These will need some tuning 
-def MarkCoincidences(arr_):
-
+def MarkCoincidences(arr_, debug=False): # debug is just a placeholder here
+    
     print("\n---> Marking coincidences")
 
     # PE threshold of 10 for now
@@ -108,25 +109,156 @@ def MarkCoincidences(arr_):
     arr_["angle_condition"] = angleCondition 
     arr_["time_condition"] = timeCondition
 
-    print("Done!")
+    print("...Done!")
 
     return arr_
 
 # Filter coincidences 
-def Filter(event, filterCondition, verbose=False):
+def Filter(event, filterCondition, sectors_, debug):
+    
+    if debug: print(f"\n---> Filtering event with condition {filterCondition}")
 
-    if verbose: print(f"\n---> Filter event with condition {filterCondition}")
-
-    if filterCondition=="no_filter": 
+    if filterCondition == "no_filter": 
         return False
+    elif filterCondition == "one_coincidence_per_sector":
+        # More than one instance of any sector in the event
+        if len(sectors_) != len(set(sectors_)): 
+            return True
+    elif filterCondition == "one_coincidence_per_trigger_sector":
+        # More than one instance of sectors 2 or 3 in the event
+        if np.count_nonzero(sectors_ == 2) > 1 or np.count_nonzero(sectors_ == 3) > 1: 
+            return True
+    else: 
+        print("!!! Error: invalid filterCondition. !!!")
+        return True        
 
-    # return False
+    return False
+
+def CountCoincidences(arr_, filterCondition, debug):
+
+    print("\n---> Counting coincidences.")
+    
+    # Setup counting dicts, element is a list of event IDS
+    trueCoincidences_ = { "S1" : [], "S2" : [],  "S3" : [] }
+    falseCoincidences_ = { "S1" : [], "S2" : [],  "S3" : [] }
+
+    # Start iterating through coincidences
+    
+
+    # For tracking progress inside the loop
+    totEvents = len(arr_)
+
+    # Iterate event-by-event
+    for i, event in enumerate(arr_):
+
+        if debug: 
+            print("\n****************************")
+            print(f"---> Next event i: {i}.")
+
+        # Coincidences
+        coincidences_ = event["is_coincidence"]
+        # Event IDs 
+        eventID = event["evtinfo.eventid"]
+        # Sectors
+        sectors_ = event["crvhit.sectorType"]
+
+        # Skip empty events (ones which miss the CRV)
+        # nCoin = len(event["is_coincidence"])
+        if len(coincidences_) < 1: 
+            if debug: print("---> Skipping empty event.")
+            continue
+
+        if debug: PrintEvent(event)
+        
+        # Filtering events
+        # 0. "no_filter"
+        # 1. "one_coincidence_per_sector"
+        # 2. "one_coincidence_per_trigger_sector" 
+        if Filter(event, filterCondition=filterCondition, sectors_=sectors_, debug=debug):  
+            if debug: print("---> Sector list is", sectors_, "... filtering!")
+            continue
+
+        # Start counting 
+        for j, coincidence in enumerate(coincidences_):
+            sectorKey = "S" + str(sectors_[j])
+
+            if coincidence == True:
+                if debug: print(f"\n---> True coincidence at index {j}")
+                trueCoincidences_[sectorKey].append(eventID)
+            elif coincidence == False:
+                if debug: print(f"\n---> False coincidence at index {j}")
+                falseCoincidences_[sectorKey].append(eventID)
+            else: 
+                # This should never happen
+                print("!!! Error, coincidence not found !!!")
+                break
+
+        progress = (i + 1) / totEvents * 100
+        print(f"Progress: {progress:.2f}%", end='\r', flush=True)
+
+        # Testing
+        # if progress > 5.0: 
+        #     break
+
+    print("\n...Done!")
+
+    print("\nNumber of True Coincidences:")
+    for key, value in trueCoincidences_.items():
+        print(f"{key}: {len(value)}")
+
+    print("\nNumber of False Coincidences:")
+    for key, value in falseCoincidences_.items():
+        print(f"{key}: {len(value)}")
+
+    return trueCoincidences_, falseCoincidences_
+
+def WriteCoincidences(trueCoincidences_, falseCoincidences_, foutName, debug):
+
+    print(f"\n---> Writing to h5.")
+
+    # Write to HDF5 file
+    with h5py.File(foutName, "w") as file:
+        # Write data 
+        for key, value in trueCoincidences_.items():
+            file.create_dataset(f'trueCoincidences/{key}', data=np.array(value))
+        # Write data from dict2
+        for key, value in falseCoincidences_.items():
+            file.create_dataset(f'falseCoincidences/{key}', data=np.array(value))
+    print("...Done")    
+
+    return
+
+def CheckWrite(trueCoincidences_, falseCoincidences_, foutName, debug):
+
+    print("\n---> Checking write!")
+
+    # Read the h5 file
+    readDict1 = {}
+    readDict2 = {}
+
+    with h5py.File(foutName, 'r') as file:
+        # Read data into dict1
+        for key in file['trueCoincidences']:
+            readDict1[key] = list(file[f'trueCoincidences/{key}'])
+        # Read data into dict2
+        for key in file['falseCoincidences']:
+            readDict2[key] = list(file[f'falseCoincidences/{key}'])
+
+    if readDict1 != trueCoincidences_ or readDict2 != falseCoincidences_:
+        print("\n!!! Error writing coincidences to file !!!")
+        return
+    if readDict2 != falseCoincidences_:
+        print("\n!!! Error writing falseCoincidences_ to file !!!")
+
+    print("...Done!")
+
+    return
 
 # ------------------------------------------------
 #                       Run
 # ------------------------------------------------
 
-def Run(finName, filterCondition="no_filter", sanityPlots=False, verbose=False):
+def Run(finName, filterCondition="no_filter", sanityPlots=False, debug=False):
 
     # Get data as a set of awkward arrays
     arr_ = ut.TTreeToAwkwardArray(finName, "TrkAnaExt/trkana", ut.branchNamesTrkAna_)
@@ -137,67 +269,21 @@ def Run(finName, filterCondition="no_filter", sanityPlots=False, verbose=False):
     # Mark coincidences
     arr_ = MarkCoincidences(arr_)
 
-    # Setup counting dicts, element is a list of event IDS
-    trueCoincidences_ = { "S1" : [], "S2" : [],  "S3" : [] }
-    falseCoincidences_ = { "S1" : [], "S2" : [],  "S3" : [] }
+    # Count coincidences 
+    trueCoincidences_, falseCoincidences_ = CountCoincidences(arr_, filterCondition, debug)
 
-    # Start iterating through coincidences
-    print("\n---> Iterating through coincidences.\n")
+    # Write to counts to h5
 
-    # For tracking progress inside the loop
-    totEvents = len(arr_)
+    # Strip path name and extension from input file  string (input file name without path and extension)
+    foutName = "../h5/TrueAndFalseCoincidences/"+os.path.splitext(os.path.basename(finName))[0]+".h5"
+    # Write
+    WriteCoincidences(trueCoincidences_, falseCoincidences_, foutName, debug)
+    # Check that the write worked as expected
+    CheckWrite(trueCoincidences_, falseCoincidences_, foutName, debug)
 
-    # Iterate event-by-event
-    for i, event in enumerate(arr_):
+    print(f"\n---> Output file is:\n{foutName}")
 
-        if verbose: 
-            print("\n****************************\n")
-            print(f"---> Next event i: {i}.")
-            PrintEvent(event)
-
-        # Get coincidence list
-        coincidences_ = event["is_coincidence"]
-
-        # Skip empty events (ones which miss the CRV)
-        nCoin = len(event["is_coincidence"])
-        if nCoin < 1: 
-            if verbose: print("---> Skipping empty event.")
-            continue
-
-        # Filtering events
-        # 0. "no_filter"
-        # 1. "one_coincidence_per_sector"
-        # 2. "one_coincidence_per_trigger_sector" 
-        # if Filter(event, filterCondition=filterCondition, verbose=verbose):
-        #     continue
-
-        # Event IDs and sectors and 
-        eventID = event["evtinfo.eventid"]
-        sectors_ = event["crvhit.sectorType"]
-
-        # Start counting 
-        for j, coincidence in enumerate(coincidences_):
-            sectorKey = "S" + str(sectors_[j])
-
-            if coincidence == True:
-                if verbose: print(f"\n---> True coincidence at index {j}")
-                trueCoincidences_[sectorKey].append(eventID)
-            elif coincidence == False:
-                if verbose: print(f"\n---> False coincidence at index {j}")
-                falseCoincidences_[sectorKey].append(eventID)
-            else: 
-                # This should never happen
-                print("!!! Error, no coincidence found !!!")
-                break
-
-        progress = (i + 1) / totEvents * 100
-        print(f"Progress: {progress:.2f}%", end='\r', flush=True)
-
-    print("Done!")
-
-    if verbose:
-        print("\ntrueCoincidences_:\n", trueCoincidences_)
-        print("falseCoincidences_:\n", falseCoincidences_)
+    # Analysis is done in CoincidenceAna.py
 
     return
 
@@ -206,134 +292,25 @@ def Run(finName, filterCondition="no_filter", sanityPlots=False, verbose=False):
 # ------------------------------------------------
 
 def main():
-    
+  
     # Take input file name command-line argument
-    # if len(sys.argv) != 2:
-    #     # print("Input and outname file names required as arguments")
-    #     print("Input file name required as argument")
-    #     sys.exit(1)
+    if len(sys.argv) != 3:
+        # print("Input and outname file names required as arguments")
+        print("Error: filter condition and input file name required as argument, example:")
+        print("python CoincidenceFinder.py one_coincidence_per_trigger_sector /pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/82/e8/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00000000.tka")
+        sys.exit(1)
     
-    # finName = sys.argv[1] # 
-    finName = "/pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/82/e8/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00000000.tka" # sys.argv[1] # "/pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/82/e8/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00000000.tka"
+    filterCondition = sys.argv[1]
+    finName = sys.argv[2] 
 
-    Run(finName=finName, verbose=False) 
+    # finName = "/pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/82/e8/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00000000.tka" # sys.argv[1] # "/pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/82/e8/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00000000.tka"
+    # filterCondition = "no_filter"
+    # filterCondition = "one_coincidence_per_sector"
+    # filterCondition = "one_coincidence_per_trigger_sector"
+
+    Run(finName=finName, filterCondition=filterCondition, debug=False) 
 
     return
 
 if __name__ == "__main__":
     main()
-
-
-
-# How often do you get a coincidence in sectors 2 & 3 when you also have on in sector 1
-# We need to handle multiple hits
-
-def FilterAndCountCoincidences(arr_):
-
-    print("\n---> Filtering and counting coincidences")
-
-    totEvents = len(arr_)
-
-    # Dictionary to count coincidences event-by-event
-
-    # Count coincidences event-by-event, append the event IDs to lists 
-    singles_ = { "sector_1" : [], "sector_2" : [],  "sector_3" : [], }
-    doubles_ = { "sector_1" : [], "sector_2" : [],  "sector_3" : [], }
-    triples_ = { "sector_1" : [], "sector_2" : [],  "sector_3" : [], }   
-    
-    # Count false coincidences 
-    falses_ = { "sector_1" : [], "sector_2" : [],  "sector_3" : [], }  
-
-    # Iterate event-by-event
-    for i, entry in enumerate(arr_):
-
-        # Check if any of the arrays in the entry are empty
-        # This just slows everything down!
-        # if any(not entry[field].tolist() for field in entry.fields):
-        #     continue
-
-        # Number of coincidences, event ID and sectors
-        nCoin = len(entry["is_coincidence"])
-        eventID = entry['evtinfo.eventid']
-        sectors_ = entry["crvhit.sectorType"]
-
-        # Check for false coincidences
-        if any(entry["is_coincidence"] == False):
-            print("\n!!! False coincidence found !!!")
-            PrintEntry(entry)
-            # Store them 
-            for sector in sectors_:  
-                falses_["sector_"+str(sector)].append(eventID)
-            # If there are any, we can cycle back later
-
-
-        # Handle multiple coincidences per trigger sector 
-        sectorCounts = Counter(sectors_)
-        # print(f"\nEvent {eventID}")
-        for sector, n in sectorCounts.items():
-            if n>1: 
-                print(f"Sector {sector} has {n} counts")
-                PrintEntry(entry)
-
-        # break
-        
-        continue
-
-
-        # You've been getting away with it because most of them are true.
-
-
-        # Count single coincidences
-        if (nCoin == 1):
-            for sector in sector_: # this should always be the top sector 
-                singles_["sector_"+str(sector)].append(eventID)
-        # Count double coincidences 
-        elif (len(entry["is_coincidence"]) == 2):
-            for sector in sector_:
-                doubles_["sector_"+str(sector)].append(eventID)
-        # Count triple coincidences
-        elif (len(entry["is_coincidence"]) == 3):
-            for sector in sector_:
-                triples_["sector_"+str(sector)].append(eventID)
-        else: 
-            # Is this the correct place to be doing this?
-
-            beyond_.append(eventID)
-            print(
-                f"*** WARNING: CountCoincidences() ***\n"
-            )
-
-            PrintEntry(entry)
-
-            # print(
-            #     f"*** WARNING: CountCoincidences() ***\n"
-            #     f"Event ID: {eventID}\n"
-            #     f"Number of coincidences: {len(entry['is_coincidence'])}\n"
-            #     f"Coincidences: {entry['is_coincidence']}\n"
-            #     f"Entry: {entry}"
-            # )
-
-        progress = (i + 1) / totEvents * 100
-        print(f"Progress: {progress:.2f}%", end='\r', flush=True)
-
-        # if (i > 500): break
-
-    # print(
-    #     f"\nSingles: {singles_}\n"
-    #     f"Doubles: {doubles_}\n"
-    #     f"Triples: {triples_}\n"
-    # )
-
-    # Make bar charts 
-    # TODO: handle this better!
-    singlesCounts_ = { "sector_1" : len(singles_["sector_1"]), "sector_2" : len(singles_["sector_2"]),  "sector_3" : len(singles_["sector_3"]) }
-    doublesCounts_ = { "sector_1" : len(doubles_["sector_1"]), "sector_2" : len(doubles_["sector_2"]),  "sector_3" : len(doubles_["sector_3"]) }
-    triplesCounts_ = { "sector_1" : len(triples_["sector_1"]), "sector_2" : len(triples_["sector_2"]),  "sector_3" : len(triples_["sector_3"]) }
-
-    ut.BarChart2(data_dict=singlesCounts_, ylabel="Counts / sector", fout="../Images/Coincidences/bar_singles.png")
-    ut.BarChart2(data_dict=doublesCounts_, ylabel="Counts / sector", fout="../Images/Coincidences/bar_doubles.png")
-    ut.BarChart2(data_dict=triplesCounts_, ylabel="Counts / sector", fout="../Images/Coincidences/bar_triples.png")
-
-    print("Done!")
-
-    return

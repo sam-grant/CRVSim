@@ -2,6 +2,22 @@
 # Oct 2023
 # Common functions and utilities for CRV KPP analysis
 
+# Colours 
+
+colours = [
+    # (0., 0., 0.),                                                   # Black
+    (0.8392156862745098, 0.15294117647058825, 0.1568627450980392),  # Red
+    (0.12156862745098039, 0.4666666666666667, 0.7058823529411765),  # Blue
+    (0.17254901960784313, 0.6274509803921569, 0.17254901960784313), # Green
+    (1.0, 0.4980392156862745, 0.054901960784313725),                # Orange
+    (0.5803921568627451, 0.403921568627451, 0.7411764705882353),    # Purple
+    (0.09019607843137255, 0.7450980392156863, 0.8117647058823529),  # Cyan
+    (0.8901960784313725, 0.4666666666666667, 0.7607843137254902),   # Pink
+    (0.5490196078431373, 0.33725490196078434, 0.29411764705882354), # Brown
+    (0.4980392156862745, 0.4980392156862745, 0.4980392156862745),   # Gray 
+    (0.7372549019607844, 0.7411764705882353, 0.13333333333333333)   # Yellow
+]
+    
 # ------------------------------------------------
 # Calculations, value formatting, array operations
 # ------------------------------------------------
@@ -507,28 +523,13 @@ def PlotGraph3D(x, y, z, title=None, xlabel=None, ylabel=None, zlabel=None, fout
     plt.clf()
     plt.close()
 
-def Plot1DOverlay(hists, nbins=100, xmin=-1.0, xmax=1.0, title=None, xlabel=None, ylabel=None, fout="hist.png", labels=None, legPos="upper right", NDPI=300, includeBlack=False, logY=False, legFontSize=12):
+def Plot1DOverlayOriginal(hists, nbins=100, xmin=-1.0, xmax=1.0, title=None, xlabel=None, ylabel=None, fout="hist.png", labels=None, legPos="upper right", NDPI=300, includeBlack=False, logY=False, legFontSize=12):
 
     # Create figure and axes
     fig, ax = plt.subplots()
 
     # Define a colormap
     # cmap = cm.get_cmap('tab10') # !!deprecated!!
-
-    # Define the colourmap colours
-    colours = [
-        (0., 0., 0.),                                                   # Black
-        (0.12156862745098039, 0.4666666666666667, 0.7058823529411765),  # Blue
-        (0.8392156862745098, 0.15294117647058825, 0.1568627450980392),  # Red
-        (0.17254901960784313, 0.6274509803921569, 0.17254901960784313), # Green
-        (1.0, 0.4980392156862745, 0.054901960784313725),                # Orange
-        (0.5803921568627451, 0.403921568627451, 0.7411764705882353),    # Purple
-        (0.09019607843137255, 0.7450980392156863, 0.8117647058823529),   # Cyan
-        (0.8901960784313725, 0.4666666666666667, 0.7607843137254902),   # Pink
-        (0.5490196078431373, 0.33725490196078434, 0.29411764705882354), # Brown
-        (0.4980392156862745, 0.4980392156862745, 0.4980392156862745),   # Gray 
-        (0.7372549019607844, 0.7411764705882353, 0.13333333333333333)  # Yellow
-    ]
 
     # Create the colormap
     cmap = ListedColormap(colours)
@@ -572,55 +573,31 @@ def Plot1DOverlay(hists, nbins=100, xmin=-1.0, xmax=1.0, title=None, xlabel=None
     # Clear memory
     plt.close()
 
-from matplotlib.ticker import ScalarFormatter
-
-def BarChart(data, label_dict, title=None, xlabel=None, ylabel=None, fout="bar_chart.png", percentage=False, bar_alpha=1.0, bar_color='black', NDPI=300):
-    
-    # This came from ChatGPT
-    # it matches the key of the dict with row in the data array and returns the element as the label
-    labels = [label_dict.get(p, 'other') for p in data]
-
-    # Count occurrences of each label
-    unique_labels, label_counts = np.unique(labels, return_counts=True)
-
-    # Only works for particles 
-
-    # Sort labels and counts in descending order
-    sorted_indices = np.argsort(label_counts)[::-1]
-    unique_labels = unique_labels[sorted_indices]
-    label_counts = label_counts[sorted_indices]
-
-    if percentage: 
-        label_counts = (label_counts / np.sum(label_counts))*100
+def Plot1DOverlay(data_dict, nbins=100, xmin=-1.0, xmax=1.0, title=None, xlabel=None, ylabel=None, fout="hist.png", labels=None, legPos="best", NDPI=300, includeBlack=False, logY=False, legFontSize=12):
 
     # Create figure and axes
     fig, ax = plt.subplots()
 
-    # print(unique_labels)
+    # Define a colormap
+    # cmap = cm.get_cmap('tab10') # !!deprecated!!
 
-    # Plot the bar chart
-    indices = np.arange(len(unique_labels))
+    # Create the colormap
+    cmap = ListedColormap(colours)
 
-    # print(indices)
-    # for i, index in enumerate(indices):
-    #     indices[i] = GetLatexParticleName(index)
+    # cmap = cm.get_cmap('tab10')
 
-    # TODO: handle this better
-    n_bars = len(indices)
-    bar_width = 3.0 / n_bars
-    if(n_bars == 3.0): 
-        bar_width = 2.0 / n_bars
-    elif(n_bars == 2.0):
-        bar_width = 1.0 / n_bars
+    # Iterate over the hists and plot each one
+    i = 0
+    for label, data in data_dict.items():
+        # print(label)
+        colour = cmap(i)
+        i += 1
+        # if not includeBlack: colour = cmap(i+1)
+        counts, bin_edges, _ = ax.hist(data, bins=nbins, range=(xmin, xmax), histtype='step', edgecolor=colour, linewidth=1.0, fill=False, density=False, color=colour, label=label , log=logY)
 
+    # Set x-axis limits
+    # ax.set_xlim(xmin, xmax)
 
-    ax.bar(indices, label_counts, align='center', alpha=bar_alpha, color=bar_color, width=bar_width, fill=False, hatch='/', linewidth=1, edgecolor='black')
-
-    # Set x-axis labels
-    ax.set_xticks(indices)
-    ax.set_xticklabels(unique_labels, rotation=0) # 45)
-
-    # Set labels for the chart
     ax.set_title(title, fontsize=16, pad=10)
     ax.set_xlabel(xlabel, fontsize=14, labelpad=10) 
     ax.set_ylabel(ylabel, fontsize=14, labelpad=10) 
@@ -628,26 +605,103 @@ def BarChart(data, label_dict, title=None, xlabel=None, ylabel=None, fout="bar_c
     # Set font size of tick labels on x and y axes
     ax.tick_params(axis='x', labelsize=14)  # Set x-axis tick label font size
     ax.tick_params(axis='y', labelsize=14)  # Set y-axis tick label font size
-
+    
     # Scientific notation
-    # if ax.get_xlim()[1] > 999:
-    #     ax.xaxis.set_major_formatter(ScalarFormatter(useMathText=True))
-    #     ax.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
-    #     ax.xaxis.offsetText.set_fontsize(14)
-    if ax.get_ylim()[1] > 999:
+    if ax.get_xlim()[1] > 9999:
+        ax.xaxis.set_major_formatter(ScalarFormatter(useMathText=True))
+        ax.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+        ax.xaxis.offsetText.set_fontsize(14)
+    if ax.get_ylim()[1] > 9999:
         ax.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
         ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
         ax.yaxis.offsetText.set_fontsize(14)
+
+    # Add legend to the plot
+    ax.legend(loc=legPos, frameon=False, fontsize=legFontSize)
 
     # Save the figure
     plt.savefig(fout, dpi=NDPI, bbox_inches="tight")
     print("---> Written", fout)
 
     # Clear memory
-    plt.clf()
     plt.close()
 
-def BarChart2(data_dict, title=None, xlabel=None, ylabel=None, fout="bar_chart.png", percentage=False, bar_alpha=1.0, bar_color='black', NDPI=300):
+from matplotlib.ticker import ScalarFormatter
+
+# def BarChart(data, label_dict, title=None, xlabel=None, ylabel=None, fout="bar_chart.png", percentage=False, bar_alpha=1.0, bar_color='black', NDPI=300):
+    
+#     # This came from ChatGPT
+#     # it matches the key of the dict with row in the data array and returns the element as the label
+#     labels = [label_dict.get(p, 'other') for p in data]
+
+#     # Count occurrences of each label
+#     unique_labels, label_counts = np.unique(labels, return_counts=True)
+
+#     # Only works for particles 
+
+#     # Sort labels and counts in descending order
+#     sorted_indices = np.argsort(label_counts)[::-1]
+#     unique_labels = unique_labels[sorted_indices]
+#     label_counts = label_counts[sorted_indices]
+
+#     if percentage: 
+#         label_counts = (label_counts / np.sum(label_counts))*100
+
+#     # Create figure and axes
+#     fig, ax = plt.subplots()
+
+#     # print(unique_labels)
+
+#     # Plot the bar chart
+#     indices = np.arange(len(unique_labels))
+
+#     # print(indices)
+#     # for i, index in enumerate(indices):
+#     #     indices[i] = GetLatexParticleName(index)
+
+#     # TODO: handle this better
+#     n_bars = len(indices)
+#     bar_width = 3.0 / n_bars
+#     if(n_bars == 3.0): 
+#         bar_width = 2.0 / n_bars
+#     elif(n_bars == 2.0):
+#         bar_width = 1.0 / n_bars
+
+
+#     ax.bar(indices, label_counts, align='center', alpha=bar_alpha, color=bar_color, width=bar_width, fill=False, hatch='/', linewidth=1, edgecolor='black')
+
+#     # Set x-axis labels
+#     ax.set_xticks(indices)
+#     ax.set_xticklabels(unique_labels, rotation=0) # 45)
+
+#     # Set labels for the chart
+#     ax.set_title(title, fontsize=16, pad=10)
+#     ax.set_xlabel(xlabel, fontsize=14, labelpad=10) 
+#     ax.set_ylabel(ylabel, fontsize=14, labelpad=10) 
+
+#     # Set font size of tick labels on x and y axes
+#     ax.tick_params(axis='x', labelsize=14)  # Set x-axis tick label font size
+#     ax.tick_params(axis='y', labelsize=14)  # Set y-axis tick label font size
+
+#     # Scientific notation
+#     # if ax.get_xlim()[1] > 999:
+#     #     ax.xaxis.set_major_formatter(ScalarFormatter(useMathText=True))
+#     #     ax.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+#     #     ax.xaxis.offsetText.set_fontsize(14)
+#     if ax.get_ylim()[1] > 999:
+#         ax.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
+#         ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+#         ax.yaxis.offsetText.set_fontsize(14)
+
+#     # Save the figure
+#     plt.savefig(fout, dpi=NDPI, bbox_inches="tight")
+#     print("---> Written", fout)
+
+#     # Clear memory
+#     plt.clf()
+#     plt.close()
+
+def BarChart(data_dict, title=None, xlabel=None, ylabel=None, fout="bar_chart.png", percentage=False, bar_alpha=1.0, bar_color='black', NDPI=300):
     
     # Extract labels and counts from the data_dict
     labels = list(data_dict.keys())
@@ -675,7 +729,7 @@ def BarChart2(data_dict, title=None, xlabel=None, ylabel=None, fout="bar_chart.p
     elif n_bars == 2:
         bar_width = 1.0 / n_bars
 
-    ax.bar(indices, label_counts, align='center', alpha=bar_alpha, color=bar_color, width=bar_width, fill=False, hatch='/', linewidth=1, edgecolor='black')
+    ax.bar(indices, label_counts, align='center', alpha=bar_alpha, color=colours[0], width=bar_width, fill=False, hatch='/', linewidth=1, edgecolor=colours[0])
 
     # Set x-axis labels
     ax.set_xticks(indices)
@@ -695,6 +749,129 @@ def BarChart2(data_dict, title=None, xlabel=None, ylabel=None, fout="bar_chart.p
         ax.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
         ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
         ax.yaxis.offsetText.set_fontsize(14)
+
+    # Save the figure
+    plt.savefig(fout, dpi=NDPI, bbox_inches="tight")
+    print("---> Written", fout)
+
+    # Clear memory
+    plt.clf()
+    plt.close()
+
+# def BarChartOverlay(data_dict, title=None, xlabel=None, ylabel=None, fout="bar_chart.png", percentage=False, bar_alpha=1.0, bar_color='black', NDPI=300):
+    
+#     # Extract labels and counts from the data_dict
+#     labels = list(data_dict.keys())
+#     label_counts = list(data_dict.values())
+
+#     # Sort labels and counts in descending order
+#     sorted_indices = np.argsort(label_counts)[::-1]
+#     labels = np.array(labels)[sorted_indices]
+#     label_counts = np.array(label_counts)[sorted_indices]
+
+#     if percentage: 
+#         label_counts = (label_counts / np.sum(label_counts))*100
+
+#     # Create figure and axes
+#     fig, ax = plt.subplots()
+
+#     # Plot the bar chart
+#     indices = np.arange(len(labels))
+
+#     # TODO: handle this better
+#     n_bars = len(indices)
+#     bar_width = 3.0 / n_bars
+#     if n_bars == 3:
+#         bar_width = 2.0 / n_bars
+#     elif n_bars == 2:
+#         bar_width = 1.0 / n_bars
+
+#     ax.bar(indices, label_counts, align='center', alpha=bar_alpha, color=bar_color, width=bar_width, fill=False, hatch='/', linewidth=1, edgecolor='black')
+
+#     # Set x-axis labels
+#     ax.set_xticks(indices)
+#     ax.set_xticklabels(labels, rotation=0)
+
+#     # Set labels for the chart
+#     ax.set_title(title, fontsize=16, pad=10)
+#     ax.set_xlabel(xlabel, fontsize=14, labelpad=10) 
+#     ax.set_ylabel(ylabel, fontsize=14, labelpad=10) 
+
+#     # Set font size of tick labels on x and y axes
+#     ax.tick_params(axis='x', labelsize=14)
+#     ax.tick_params(axis='y', labelsize=14)
+
+#     # Scientific notation
+#     if ax.get_ylim()[1] > 999:
+#         ax.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
+#         ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+#         ax.yaxis.offsetText.set_fontsize(14)
+
+#     # Save the figure
+#     plt.savefig(fout, dpi=NDPI, bbox_inches="tight")
+#     print("---> Written", fout)
+
+#     # Clear memory
+#     plt.clf()
+#     plt.close()
+
+def BarChartOverlay(data_dict_, title=None, xlabel=None, ylabel=None, labels_=[], fout="bar_chart.png", percentage=False, bar_alpha=1.0, bar_color='black', NDPI=300):
+    
+    # Create figure and axes
+    fig, ax = plt.subplots()
+
+    # This will only work if all input dictionaries have the same keys 
+    # Extract labels and counts from the data_dict
+    
+
+    # # Sort labels and counts in descending order, why?
+    # sorted_indices = np.argsort(label_counts)[::-1]
+    # Sort
+    # labels = np.array(labels)[sorted_indices]
+
+    for i, data_dict in enumerate(data_dict_):
+
+        print(data_dict)
+        labels = list(data_dict.keys())
+        counts = list(data_dict.values())
+
+        if percentage: 
+            counts = (counts / np.sum(counts))*100
+
+        # Plot the bar chart
+        indices = np.arange(len(labels))
+
+        # TODO: handle this better
+        n_bars = len(indices)
+        bar_width = 3.0 / n_bars
+        if n_bars == 3:
+            bar_width = 2.0 / n_bars
+        elif n_bars == 2:
+            bar_width = 1.0 / n_bars
+
+        ax.bar(indices, counts, align='center', alpha=bar_alpha, color=colours[i], width=bar_width, fill=False, hatch='/', linewidth=1, edgecolor=colours[i], label=labels_[i])
+        
+    # Set x-axis labels
+    ax.set_xticks(indices)
+    ax.set_xticklabels(labels, rotation=0)
+
+    # Set labels for the chart
+    ax.set_title(title, fontsize=15, pad=10)
+    ax.set_xlabel(xlabel, fontsize=13, labelpad=10) 
+    ax.set_ylabel(ylabel, fontsize=13, labelpad=10) 
+
+    # Set font size of tick labels on x and y axes
+    ax.tick_params(axis='x', labelsize=13)
+    ax.tick_params(axis='y', labelsize=13)
+
+    # Scientific notation
+    if ax.get_ylim()[1] > 999:
+        ax.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
+        ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+        ax.yaxis.offsetText.set_fontsize(14)
+
+
+    ax.legend(loc="best", frameon=False, fontsize=13)
 
     # Save the figure
     plt.savefig(fout, dpi=NDPI, bbox_inches="tight")

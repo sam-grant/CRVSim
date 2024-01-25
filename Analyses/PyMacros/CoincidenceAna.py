@@ -1,6 +1,7 @@
 
 import h5py
 import os
+import numpy as np
 
 import Utils as ut
 
@@ -11,7 +12,7 @@ import Utils as ut
 def ReadCoincidences(finName, debug):
 
     # Read the h5 file
-    print("\n---> Reading in coincidences from {finName}")
+    print(f"\n---> Reading in coincidences from {finName}")
 
     # True/false coincidences dicts
     trueCoincidences_ = {}
@@ -35,15 +36,35 @@ def ReadCoincidences(finName, debug):
 #                      Analyse
 # ------------------------------------------------
 
-def AnalyseCoincidences(trueCoincidences_, falseCoincidences_, debug):
+def AnalyseCoincidences(trueCoincidences_, falseCoincidences_, filterCondition, debug):
 
     print("\n---> Analysing coincidences.\n")
 
     # Count true and false coincidences in all sectors
     trueCounts_ = { "Sector 1" : len(trueCoincidences_["S1"]), "Sector 2" : len(trueCoincidences_["S2"]),  "Sector 3" : len(trueCoincidences_["S3"]) }
     falseCounts_ = { "Sector 1" : len(falseCoincidences_["S1"]), "Sector 2" : len(falseCoincidences_["S2"]),  "Sector 3" : len(falseCoincidences_["S3"]) }
+    # fractionPassing_ = { "Sector 1" : 1-(falseCounts_["Sector 1"]/trueCounts_["Sector 1"]), "Sector 2" : 1-(falseCounts_["Sector 2"]/trueCounts_["Sector 2"]),  "Sector 3" : 1-(falseCounts_["Sector 3"]/trueCounts_["Sector 3"]) }
 
-    ut.BarChartOverlay(data=[trueCounts_, falseCounts_], ylabel="Counts / sector", fout="../Images/bar_coincidence_counts.png")
+    print("Passing coincidences:\n", trueCounts_)
+    print("Failing coincidences:\n", falseCounts_)
+
+    ut.BarChart(data_dict=trueCounts_, title="Passing coincidences", ylabel="Counts / sector", fout="../Images/TrueAndFalseCoincidences/"+filterCondition+"/bar_true_coin_counts_per_sector.png")
+    ut.BarChart(data_dict=falseCounts_, title="Failing coincidences", ylabel="Counts / sector", fout="../Images/TrueAndFalseCoincidences/"+filterCondition+"/bar_false_coin_counts_per_sector.png")
+
+    # ut.BarChart(data_dict=fractionPassing_, ylabel="Fraction passing / sector", fout="../Images/TrueAndFalseCoincidences/bar_frac_pass_coin_counts_per_sector.png")
+    # ut.BarChartOverlay(data_dict_=[trueCounts_, falseCounts_], labels_=["Passing coincidences", "Failing coincidences"], ylabel="Counts / sector", fout="../Images/TrueAndFalseCoincidences/bar_true_false_coin_counts_per_sector.png")
+
+    # Fraction of hits in S1 to triggers, event-by-event
+    # print(trueCoincidences_)
+    # print(np.min(trueCoincidences_["S1"]))
+
+    ut.Plot1DOverlay(trueCoincidences_, nbins=int(np.max(trueCoincidences_["S1"])), xmin=0, xmax=np.max(trueCoincidences_["S1"]), xlabel="Event ID", ylabel="Passing coincidences / event", fout="../Images/TrueAndFalseCoincidences/"+filterCondition+"/h1_passing_coin_vs_eventID_per_sector.png")
+    ut.Plot1DOverlay(falseCoincidences_, nbins=int(np.max(trueCoincidences_["S1"])), xmin=0, xmax=np.max(trueCoincidences_["S1"]), xlabel="Event ID", ylabel="Failing coincidences / event", fout="../Images/TrueAndFalseCoincidences/"+filterCondition+"/h1_failing_coin_vs_eventID_per_sector.png")
+
+    # Triggers? 
+
+    # Probably easier to do this during the event loop, right?
+
 
     return
 
@@ -51,12 +72,13 @@ def AnalyseCoincidences(trueCoincidences_, falseCoincidences_, debug):
 #                      Run
 # ------------------------------------------------
 
-def Run(finName, filterCondition, debug=False):
+def Run(finName, filterCondition, debug=True):
 
     # Read in
     trueCoincidences_, falseCoincidences_ = ReadCoincidences(finName, debug)
 
-    print(falseCoincidences_)
+    # Analyse
+    AnalyseCoincidences(trueCoincidences_, falseCoincidences_, filterCondition, debug)
 
     return
 
@@ -78,10 +100,9 @@ def main():
 
     # finName = "/pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/82/e8/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00000000.tka" # sys.argv[1] # "/pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/82/e8/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00000000.tka"
     # filterCondition = "no_filter"
-    # filterCondition = "one_coincidence_per_sector"
+    filterCondition = "one_coincidence_per_sector"
     # filterCondition = "one_coincidence_per_trigger_sector"
 
-    filterCondition = "no_filter"
     finName = "../h5/TrueAndFalseCoincidences/"+filterCondition+"/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00000000.h5"
 
     Run(finName=finName, filterCondition=filterCondition, debug=False) 

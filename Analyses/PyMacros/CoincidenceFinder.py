@@ -1,7 +1,21 @@
-# Samuel Grant -- Jan 2024
-# Count CRV KPP coincidences
-# Output lists of event IDs for true/false coincidences per sector
-# Filter conditions: no_filter, one_coincidence_per_sector, one_coincidence_per_trigger_sector
+"""
+Samuel Grant
+Jan 2024
+
+* Take input from simulation CRV in KPP configuration (three sectors, sectors 3 1 2 top to bottom, where 3 and 2 are the trigger sectors)
+* Read TrkAna ROOT trees to Python Awkward arrays 
+* ID coincidences in all sectors, based on certain conditions 
+* Filter and simplify the dataset, based on requirements
+* Calculate the inefficiency and store failed event IDs for event display 
+
+Pass 1: 
+
+* Filter events that have more than one coincidence (passing or failing) in the trigger sectors 
+* Calculate the inefficiency as (no successful coincidence in sector 1) / (# successful trigger)
+# Write out the events that fulfill this condition
+# Will need to adjust to run over multiple files
+
+"""
 
 import sys
 import numpy as np
@@ -9,6 +23,7 @@ import awkward as ak
 import h5py
 import os
 from collections import Counter
+from itertools import combinations
 
 import Utils as ut
 
@@ -17,11 +32,11 @@ import Utils as ut
 # ------------------------------------------------
 
 # Stolen from Yuri
-def GetPosition3D(arr_, branch="crvhit"):
+def GetPosition3D(data_, branch="crvhit"):
     
-    pos_ = ak.zip({"px": ak.flatten(arr_['%s.pos.fCoordinates.fX'%branch]), 
-                    "py": ak.flatten(arr_['%s.pos.fCoordinates.fY'%branch]), 
-                    "pz": ak.flatten(arr_['%s.pos.fCoordinates.fZ'%branch]),}, with_name="Position3D")
+    pos_ = ak.zip({"px": ak.flatten(data_['%s.pos.fCoordinates.fX'%branch]), 
+                    "py": ak.flatten(data_['%s.pos.fCoordinates.fY'%branch]), 
+                    "pz": ak.flatten(data_['%s.pos.fCoordinates.fZ'%branch]),}, with_name="Position3D")
 
     return pos_
 
@@ -29,11 +44,20 @@ def GetPosition3D(arr_, branch="crvhit"):
 #                Debugging functions 
 # ------------------------------------------------
 
-def SanityPlots(arr_):
+def SanityPlots(data_):
     
     print("\n---> Making sanity plots")
 
-    pos_ = GetPosition3D(arr_)
+    sectors = ak.flatten(data_["crvhit.sectorType"])
+    times = ak.flatten(data_["crvhit.time"])
+    startTimes = ak.flatten(data_["crvhit.timeStart"])
+    endTimes = ak.flatten(data_["crvhit.timeEnd"])
+
+    ut.Plot1DOverlayOriginal([times[sectors == 3], times[sectors == 1], times[sectors == 2]], nbins=1000, xmin = np.min(times), xmax = np.max(times), xlabel="Average hit time [ns]", ylabel="Hits", labels = ["Sector 3", "Sector 1", "Sector 2"], fout="../Images/Sanity/h1_overlay_time.png")
+    ut.Plot1DOverlayOriginal([startTimes[sectors == 3], startTimes[sectors == 1], startTimes[sectors == 2]], nbins=1000, xmin = np.min(startTimes), xmax = np.max(startTimes), xlabel="Hit start time [ns]", ylabel="Hits", labels = ["Sector 3", "Sector 1", "Sector 2"], fout="../Images/Sanity/h1_overlay_startTime.png")
+    ut.Plot1DOverlayOriginal([endTimes[sectors == 3], endTimes[sectors == 1], endTimes[sectors == 2]], nbins=1000, xmin = np.min(endTimes), xmax = np.max(endTimes), xlabel="Hit end time [ns]", ylabel="Hits", labels = ["Sector 3", "Sector 1", "Sector 2"], fout="../Images/Sanity/h1_overlay_endTime.png")
+
+    pos_ = GetPosition3D(data_)
 
     ut.PlotGraph(pos_["px"], pos_["py"], xlabel="x-position [mm]", ylabel="y-position [mm]", fout="../Images/Sanity/gr_XY.png")
     ut.PlotGraph(pos_["pz"], pos_["py"], xlabel="z-position [mm]", ylabel="y-position [mm]", fout="../Images/Sanity/gr_ZY.png")
@@ -60,194 +84,146 @@ def PrintEvent(event):
         f"crvhit.timeEnd: {event['crvhit.timeEnd']}\n"
         f"crvhit.time: {event['crvhit.time']}\n"
         f"crvhit.PEs: {event['crvhit.PEs']}\n"
-        f"crvhit.nHit: {event['crvhit.nHits']}\n"
+        f"crvhit.nHits: {event['crvhit.nHits']}\n"
+        # f"cluster_ID: {event['cluster_ID']}\n"
     )
 
     return
 
+def PrintNEvents(data_, nEvents=10):
+
+     # Iterate event-by-event
+    for i, event in enumerate(data_):
+        
+        # print(f"\n ----> Event {i}:")
+        PrintEvent(event)
+
+        if i >= nEvents: 
+            return
+
+def PrintSpecificEvent(data_, eventID=0): 
+
+    return
 # ------------------------------------------------
-#      Coincidence finding and filtering
+#               Coincidence finding 
 # ------------------------------------------------
 
-# Get per module coincindences 
-# These will need some tuning 
-def MarkCoincidences(arr_, debug=False): # debug is just a placeholder here
+# Get coincindences 
+# These will need some tuning! 
+def MarkCoincidences(data_, debug=False): # debug is just a placeholder here
     
     print("\n---> Marking coincidences")
 
     # PE threshold of 10 for now
     print("* PE threshold condition")
-    PE_ = arr_["crvhit.PEs"]
+    PE_ = data_["crvhit.PEs"]
     PECondition = PE_ >= 10
 
     # Hit must have >=3 layers hits per module
     print("* Layers condition")
-    nLayers_ = arr_["crvhit.nLayers"]
+    nLayers_ = data_["crvhit.nLayers"]
     layerCondition = nLayers_ >= 3 
 
     # Hit must not have an angle greater than tan(2)
     print("* Angle condition")
-    # angleCondition = abs(np.arctan(arr_["crvhit.angle"])) <= 2.0
     # "Angle" is just the slope
-    angleCondition = abs(arr_["crvhit.angle"]) <= 2.0
+    angleCondition = abs(data_["crvhit.angle"]) <= 2.0
 
     # Hit must have (timeEnd - timeStart) <= 15 ms
     print("* Time difference condition")
-    arr_["crvhit.timeDiff"] = arr_["crvhit.timeEnd"] - arr_["crvhit.timeStart"]
-    timeCondition = arr_["crvhit.timeDiff"] <= (15.0 * 1e6) # ns -> ms
+    data_["crvhit.timeDiff"] = data_["crvhit.timeEnd"] - data_["crvhit.timeStart"]
+    timeCondition = data_["crvhit.timeDiff"] <= (15.0 * 1e6) # ns -> ms
 
     # Combine conditions to mark per-module coincidences
     coincidenceMask = PECondition & layerCondition & angleCondition & timeCondition 
 
     # Add a new field 'is_coincidence' to mark coincidences
-    arr_["is_coincidence"] = coincidenceMask
+    data_["is_coincidence"] = coincidenceMask
 
     # Mark the individual coniditions for debugging 
-    arr_["PE_condition"] = PECondition 
-    arr_["layer_condition"] = layerCondition 
-    arr_["angle_condition"] = angleCondition 
-    arr_["time_condition"] = timeCondition
+    data_["PE_condition"] = PECondition 
+    data_["layer_condition"] = layerCondition 
+    data_["angle_condition"] = angleCondition 
+    data_["time_condition"] = timeCondition
 
     print("...Done!")
 
-    return arr_
+    return data_
+
+# ------------------------------------------------
+#                     Filter 
+# ------------------------------------------------   
 
 # Filter coincidences 
-def Filter(event, filterCondition, sectors_, debug):
+def Filter(data_, filterCondition, debug):
     
-    if debug: print(f"\n---> Filtering event with condition {filterCondition}")
+    print(f"\n---> Filtering event with condition {filterCondition}")
 
     if filterCondition == "no_filter": 
-        return False
-    elif filterCondition == "one_coincidence_per_sector":
-        # More than one instance of any sector in the event
-        if len(sectors_) != len(set(sectors_)): 
-            return True
-    elif filterCondition == "one_coincidence_per_trigger_sector":
-        # More than one instance of sectors 2 or 3 in the event
-        if np.count_nonzero(sectors_ == 2) > 1 or np.count_nonzero(sectors_ == 3) > 1: 
-            return True
-    else: 
-        print("!!! Error: invalid filterCondition. !!!")
-        return True        
+        return data_
+    else:
+        oneHitInSector1 = ak.sum(data_["crvhit.sectorType"] == 1, axis=1) == 1
+        oneHitInSector2 = ak.sum(data_["crvhit.sectorType"] == 2, axis=1) == 1
+        oneHitInSector3 = ak.sum(data_["crvhit.sectorType"] == 3, axis=1) == 1
+        if filterCondition == "one_coincidence_per_sector":
+            return data_[oneHitInSector1 & oneHitInSector2 & oneHitInSector3]
+        elif filterCondition == "one_coincidence_per_trigger_sector":
+            return data_[oneHitInSector2 & oneHitInSector3]
+        else: 
+            raise ValueError(f"!!! Invalid filter condition {filterCondition} !!!") 
 
-    # return False
+    print("...Done!")
 
-def CountCoincidences(arr_, filterCondition, debug):
+# ------------------------------------------------
+#                     Trigger 
+# ------------------------------------------------   
+ 
+def Trigger(data_, debug):
 
-    print("\n---> Counting coincidences.")
-    
-    # Setup counting dicts, element is a list of event IDS
-    trueCoincidences_ = { "S1" : [], "S2" : [],  "S3" : [] }
-    falseCoincidences_ = { "S1" : [], "S2" : [],  "S3" : [] }
+    print(f"\n---> Triggering (at least one passing coincidence in each trigger sector)")
+    # Pass 1: at least one = one 
 
-    # Start iterating through coincidences
-    
+    # We should ID distinct triggers within each event as well...
 
-    # For tracking progress inside the loop
-    totEvents = len(arr_)
+    # Ensure at least one passing coincidence in each trigger sector
+    triggerCondition = (
+        ak.any(data_["is_coincidence"] & (data_["crvhit.sectorType"] == 2), axis=1) &
+        ak.any(data_["is_coincidence"] & (data_["crvhit.sectorType"] == 3), axis=1)
+    )
 
-    # Iterate event-by-event
-    for i, event in enumerate(arr_):
+    print("...Done!")
 
-        if debug: 
-            print("\n****************************")
-            print(f"---> Next event i: {i}.")
+    return data_[triggerCondition]
 
-        # Coincidences
-        coincidences_ = event["is_coincidence"]
-        # Event IDs 
-        eventID = event["evtinfo.eventid"]
-        # Sectors
-        sectors_ = event["crvhit.sectorType"]
+# Needs to come after the initial trigger 
+def SuccessfulTriggers(data_, success, debug):
 
-        # Skip empty events (ones which miss the CRV)
-        # nCoin = len(event["is_coincidence"])
-        if len(coincidences_) < 1: 
-            if debug: print("---> Skipping empty event.")
-            continue
+    successStr = ""
+    if success: successStr += "successful"
+    else: successStr += "unsuccessful"
 
-        if debug: PrintEvent(event)
-        
-        # Filtering events
-        # 0. "no_filter"
-        # 1. "one_coincidence_per_sector"
-        # 2. "one_coincidence_per_trigger_sector" 
-        if Filter(event, filterCondition=filterCondition, sectors_=sectors_, debug=debug):  
-            if debug: print("---> Sector list is", sectors_, "... filtering!")
-            continue
+    print(f"\n---> Getting {successStr} triggers")
 
-        # Start counting 
-        for j, coincidence in enumerate(coincidences_):
-            sectorKey = "S" + str(sectors_[j])
+    # Pass 1: is there a true coincidence in sector 1?
 
-            if coincidence == True:
-                if debug: print(f"\n---> True coincidence at index {j}")
-                trueCoincidences_[sectorKey].append(eventID)
-            elif coincidence == False:
-                if debug: print(f"\n---> False coincidence at index {j}")
-                falseCoincidences_[sectorKey].append(eventID)
-            else: 
-                # This should never happen
-                print("!!! Error, coincidence not found !!!")
-                break
+    # We should ID distinct triggers within each event as well...
 
-        progress = (i + 1) / totEvents * 100
-        print(f"Progress: {progress:.2f}%", end='\r', flush=True)
+    # Ensure at least one passing coincidence in each trigger sector
+    successCondition = (
+        ak.any(data_["is_coincidence"] & (data_["crvhit.sectorType"] == 1), axis=1) 
+    )
 
-        # Testing
-        # if progress > 5.0: 
-        #     break
+    print("...Done!")
 
-    print("\n...Done!")
+    if success: return data_[successCondition] # successful triggers
+    else: return data_[~successCondition] # unsuccessful triggers
 
-    print("\nNumber of True Coincidences:")
-    for key, value in trueCoincidences_.items():
-        print(f"{key}: {len(value)}")
+def WriteToAwkd(data_, foutName="out.awkd"):
 
-    print("\nNumber of False Coincidences:")
-    for key, value in falseCoincidences_.items():
-        print(f"{key}: {len(value)}")
+    print(f"\n---> Writing {foutName}")
 
-    return trueCoincidences_, falseCoincidences_
-
-def WriteCoincidences(trueCoincidences_, falseCoincidences_, foutName, debug):
-
-    print(f"\n---> Writing to h5.")
-
-    # Write to HDF5 file
-    with h5py.File(foutName, "w") as file:
-        # Write data 
-        for key, value in trueCoincidences_.items():
-            file.create_dataset(f'trueCoincidences/{key}', data=np.array(value))
-        # Write data from dict2
-        for key, value in falseCoincidences_.items():
-            file.create_dataset(f'falseCoincidences/{key}', data=np.array(value))
-    print("...Done")    
-
-    return
-
-def CheckWrite(trueCoincidences_, falseCoincidences_, foutName, debug):
-
-    print("\n---> Checking write!")
-
-    # Read the h5 file
-    readDict1 = {}
-    readDict2 = {}
-
-    with h5py.File(foutName, 'r') as file:
-        # Read data into dict1
-        for key in file['trueCoincidences']:
-            readDict1[key] = list(file[f'trueCoincidences/{key}'])
-        # Read data into dict2
-        for key in file['falseCoincidences']:
-            readDict2[key] = list(file[f'falseCoincidences/{key}'])
-
-    if readDict1 != trueCoincidences_ or readDict2 != falseCoincidences_:
-        print("\n!!! Error writing coincidences to file !!!")
-        return
-    if readDict2 != falseCoincidences_:
-        print("\n!!! Error writing falseCoincidences_ to file !!!")
+    with open(foutName, "wb") as fout:
+        ak.to_parquet(fout, data_)
 
     print("...Done!")
 
@@ -257,31 +233,58 @@ def CheckWrite(trueCoincidences_, falseCoincidences_, foutName, debug):
 #                       Run
 # ------------------------------------------------
 
-def Run(finName, filterCondition="no_filter", sanityPlots=False, debug=False):
+def Run(finName, filterCondition, sanityPlots, debug):
 
     # Get data as a set of awkward arrays
-    arr_ = ut.TTreeToAwkwardArray(finName, "TrkAnaExt/trkana", ut.branchNamesTrkAna_)
+    data_ = ut.TTreeToAwkwardArray(finName, "TrkAnaExt/trkana", ut.branchNamesTrkAna_)
+
+    # PrintSpecificEvent(data_, eventID=8830)
+
+    # return
 
     # Sanity plots 
-    if (sanityPlots): SanityPlots(arr_)
+    if (sanityPlots): SanityPlots(data_)
 
     # Mark coincidences
-    arr_ = MarkCoincidences(arr_)
+    data_ = MarkCoincidences(data_)
 
-    # Count coincidences 
-    trueCoincidences_, falseCoincidences_ = CountCoincidences(arr_, filterCondition, debug)
+    # Filter dataset 
+    data_ = Filter(data_, filterCondition, debug)
 
-    # Write to counts to h5
-    # Strip path name and extension from input file  string (input file name without path and extension)
-    foutName = "../h5/TrueAndFalseCoincidences/"+filterCondition+"/"+os.path.splitext(os.path.basename(finName))[0]+".h5"
-    # Write
-    WriteCoincidences(trueCoincidences_, falseCoincidences_, foutName, debug)
-    # Check that the write worked as expected
-    CheckWrite(trueCoincidences_, falseCoincidences_, foutName, debug)
+    # Trigger
+    data_ = Trigger(data_, debug)
 
-    print(f"\n---> Output file is:\n{foutName}")
+    # Successful and unsuccessful triggers
+    successes_ = SuccessfulTriggers(data_, success=True, debug=debug)
+    failures_ = SuccessfulTriggers(data_, success=False, debug=debug)
 
-    # Analysis is done in CoincidenceAna.py
+    if debug: PrintNEvents(failures_)
+    PrintNEvents(failures_, len(failures_))
+
+    print("\n****************************************************")
+
+    print("File:", finName)
+
+    print("Number of failures:", len(failures_))
+    print("Number of successes:", len(successes_))
+
+    tot = len(data_) # after filtering
+
+    print(f"Efficiency: {len(successes_)}/{tot} = {len(successes_)/tot*100:.2f}%")
+
+    inefficiency = (len(failures_) / tot) * 100
+    print(f"Inefficiency: {len(failures_)}/{tot} = {inefficiency:.2f}%")
+
+    print("****************************************************\n")
+
+    # Write to counts to file
+
+    # Strip path name and extension from input file string 
+    # foutNameSuccess = "../awkd/"+filterCondition+"/success_"+os.path.splitext(os.path.basename(finName))[0]+".awkd"  
+    # foutNameFailures = "../awkd/"+filterCondition+"/failures_"+os.path.splitext(os.path.basename(finName))[0]+".awkd"  
+    # # Write
+    # WriteToAwkd(successes_, foutNameSuccess)
+    # WriteToAwkd(failures_, foutNameFailures)
 
     return
 
@@ -291,22 +294,53 @@ def Run(finName, filterCondition="no_filter", sanityPlots=False, debug=False):
 
 def main():
   
-    # Take input file name command-line argument
-    if len(sys.argv) != 3:
-        # print("Input and outname file names required as arguments")
-        print("Error: filter condition and input file name required as argument, example:")
-        print("python CoincidenceFinder.py one_coincidence_per_trigger_sector /pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/82/e8/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00000000.tka")
-        sys.exit(1)
+    # # Take input file name command-line argument
+    # if len(sys.argv) != 3:
+    #     # print("Input and outname file names required as arguments")
+    #     print("Error: filter condition and input file name required as argument, example:")
+    #     print("python CoincidenceFinder.py one_coincidence_per_trigger_sector /pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/82/e8/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00000000.tka")
+    #     sys.exit(1)
     
-    filterCondition = sys.argv[1]
-    finName = sys.argv[2] 
+    # Take input file name command-line argument
+    if len(sys.argv) != 2:
+        # print("Input and outname file names required as arguments")
+        print("Input file name required as argument, example:")
+        print("python CoincidenceFinder.py /pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/82/e8/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00000000.tka")
+        sys.exit(1)
 
+    # filterCondition = sys.argv[1]
+    finName = sys.argv[1] 
     # finName = "/pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/82/e8/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00000000.tka" # sys.argv[1] # "/pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/82/e8/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00000000.tka"
+ 
     # filterCondition = "no_filter"
     # filterCondition = "one_coincidence_per_sector"
-    # filterCondition = "one_coincidence_per_trigger_sector"
+    filterCondition = "one_coincidence_per_trigger_sector"
+    sanityPlots = False
+    debug = False
 
-    Run(finName=finName, filterCondition=filterCondition, debug=False) 
+    # I haven't thought of a sensible way to store the output from each file, so just do the whole dataset in one step
+    # h5 doesn't work well with awkward arrays
+    # awkd just doesn't seem to work at all
+    # Maybe as the analysis matures I will figure out exactly what I need to store, and can be more selective 
+    # Or could just fill histograms 
+    #  /pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/dc/2e/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00002077.tka
+    finName_ = [
+        "/pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/82/e8/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00000000.tka"
+        ,"/pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/2a/d4/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00001415.tka"
+        ,"/pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/e4/1b/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00001697.tka"
+        ,"/pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/dc/2e/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00002077.tka"
+        # ,"/pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/8f/d1/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00004890.tka"
+        ,"/pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/0e/04/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00005361.tka"
+        ,"/pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/6a/e1/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00005673.tka"
+        ,"/pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/58/a1/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00006238.tka"
+        ,"/pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/3b/37/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00009634.tka"
+        ,"/pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/2e/9c/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00009752.tka"
+        ]
+
+    # for finName in finName_:
+    #     Run(finName=finName, filterCondition=filterCondition, sanityPlots=sanityPlots, debug=debug) 
+
+    Run(finName=finName, filterCondition=filterCondition, sanityPlots=sanityPlots, debug=debug) 
 
     return
 

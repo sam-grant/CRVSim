@@ -45,11 +45,13 @@ def SanityPlots(data_):
     nHits_ = ak.flatten(data_["crvhit.nHits"]) 
     nLayers_ = ak.flatten(data_["crvhit.nLayers"]) 
     slopes_ = ak.flatten(data_["crvhit.angle"])
+    # PEsPerHit_ = PEs_ / nHits_ 
 
     ut.PlotGraphOverlay(graphs_=[(x_[sectors_ == 3], y_[sectors_ == 3]), (x_[sectors_ == 1], y_[sectors_ == 1]), (x_[sectors_ == 2], y_[sectors_ == 2]) ], labels_=["Top", "Middle", "Bottom"], xlabel="x-position [m]", ylabel="y-position [m]", fout="../Images/Sanity/gr_XY.png")
     ut.PlotGraphOverlay(graphs_=[(z_[sectors_ == 3], y_[sectors_ == 3]), (z_[sectors_ == 1], y_[sectors_ == 1]), (z_[sectors_ == 2], y_[sectors_ == 2]) ], labels_=["Top", "Middle", "Bottom"], xlabel="z-position [m]", ylabel="y-position [m]", fout="../Images/Sanity/gr_ZY.png")
     ut.Plot1DOverlay(hists_=[t_[sectors_ == 3], t_[sectors_ == 1], t_[sectors_ == 2]], nbins=1000, xmin = np.min(t_), xmax = np.max(t_), xlabel="Average hit time [ns]", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout="../Images/Sanity/h1_times.png") 
-    ut.Plot1DOverlay(hists_=[PEs_[sectors_ == 3], PEs_[sectors_ == 1], PEs_[sectors_ == 2]], nbins=1000, xmin = 0, xmax = 1000, xlabel="Number of photoelectrons", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout="../Images/Sanity/h1_PEs.png") 
+    ut.Plot1DOverlay(hists_=[PEs_[sectors_ == 3], PEs_[sectors_ == 1], PEs_[sectors_ == 2]], nbins=1000, xmin = 0, xmax = 1000, xlabel="PEs", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout="../Images/Sanity/h1_PEs.png") 
+    # ut.Plot1DOverlay(hists_=[PEsPerHit_[sectors_ == 3], PEsPerHit_[sectors_ == 1], PEsPerHit_[sectors_ == 2]], nbins=100, xmin = 0, xmax = 100, xlabel="Average PEs per hit", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout="../Images/Sanity/h1_PEs_per_hit.png") 
     ut.Plot1DOverlay(hists_=[nHits_[sectors_ == 3], nHits_[sectors_ == 1], nHits_[sectors_ == 2]], nbins=41, xmin = -0.5, xmax = 40.5, xlabel="Number of hits", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout="../Images/Sanity/h1_nHits.png") 
     ut.Plot1DOverlay(hists_=[nLayers_[sectors_ == 3], nLayers_[sectors_ == 1], nLayers_[sectors_ == 2]], nbins=5, xmin = -0.5, xmax = 4.5, xlabel="Number of layers hit", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout="../Images/Sanity/h1_nLayers.png") 
     ut.Plot1DOverlay(hists_=[slopes_[sectors_ == 3], slopes_[sectors_ == 1], slopes_[sectors_ == 2]], nbins=1000, xmin = -2, xmax = 2, xlabel="Slope", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout="../Images/Sanity/h1_slopes.png") 
@@ -72,8 +74,8 @@ def SanityPlots(data_):
         # Add more particle entries as needed
     }
 
-    ut.BarChart(data_=pdgid_, label_dict=ut.particle_dict, ylabel="Coincidences", fout="../Images/Sanity/bar_pdgid.png", percentage=True)
-    ut.BarChartOverlay(data_=[pdgid_[sectors_ == 3], pdgid_[sectors_ == 1], pdgid_[sectors_ == 2]], label_dict=label_dict, ylabel="Coincidences", fout="../Images/Sanity/bar_overlay_pdgid.png", percentage=True, label_= ["Top", "Middle", "Bottom"])
+    ut.BarChart(data_=pdgid_, label_dict=ut.particle_dict, ylabel="Coincidences [%]", fout="../Images/Sanity/bar_pdgid.png", percentage=True)
+    ut.BarChartOverlay(data_=[pdgid_[sectors_ == 3], pdgid_[sectors_ == 1], pdgid_[sectors_ == 2]], label_dict=label_dict, ylabel="Coincidences [%]", fout="../Images/Sanity/bar_overlay_pdgid.png", percentage=True, label_= ["Top", "Middle", "Bottom"])
 
     print("...Done!")
 
@@ -201,6 +203,7 @@ def FilterParticles(data_, particle):
 
     print(f"\n---> Filtering particles, keeping {particle}")
 
+    # I think this really should be in trigger sectors only FIXME
     muonCondition = ak.any((data_["crvhitmc.pdgId"] == 13) | (data_["crvhitmc.pdgId"] == -13), axis=1)
 
     if particle == "all":
@@ -306,7 +309,7 @@ def WriteFailuresToFile(failures_, foutTag):
 
 def WriteResultsToFile(data_, successes_, failures_, foutTag):
 
-    foutName = f"../Txt/results_{foutTag}.txt"
+    foutName = f"../Txt/results_{foutTag}.csv"
     print(f"\n---> Writing results to {foutName}")
     tot = len(data_)
     efficiency = len(successes_) / tot * 100
@@ -322,7 +325,9 @@ def WriteResultsToFile(data_, successes_, failures_, foutTag):
     """
 
     with open(foutName, "w") as fout:
-        fout.write(outputStr)
+        fout.write("Total, Successes, Failures, Efficiency [%], Inefficiency [%]\n")
+        fout.write(f"{tot}, {len(successes_)}, {len(failures_)}, {efficiency}, {inefficiency}\n")
+        # fout.write(outputStr)
 
     print(outputStr)
 

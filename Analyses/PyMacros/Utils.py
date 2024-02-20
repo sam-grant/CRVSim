@@ -3,6 +3,8 @@
 # Common functions and utilities for CRV KPP analysis
 # Utils.py should ONLY contain functions that are actually in-use, unused functions belong in ExtensiveUtils.py
 
+
+
 # Colours 
 
 colours = [
@@ -63,6 +65,7 @@ branchNamesTrkAna_ = [
 
 import uproot
 import awkward as ak
+import numpy as np
 
 # Awkward arrays are more suited to the nested tree structure of TrkAna
 def TTreeToAwkwardArray(finName, treeName, branchNames):
@@ -156,14 +159,6 @@ def Plot1DOverlay(hists_, nbins=100, xmin=-1.0, xmax=1.0, title=None, xlabel=Non
 
     # Create figure and axes
     fig, ax = plt.subplots()
-
-    # Define a colormap
-    # cmap = cm.get_cmap('tab10') # !!deprecated!!
-
-    # Create the colormap
-    cmap = ListedColormap(colours)
-
-    # cmap = cm.get_cmap('tab10')
 
     # Iterate over the hists and plot each one
     for i, hist in enumerate(hists_):
@@ -290,6 +285,28 @@ def BarChartOverlay(data_, label_dict, title=None, xlabel=None, ylabel=None, lab
     # Get unique labels from the label dictionary
     unique_labels = list(label_dict.values())
 
+    # # Accumulate label counts over all datasets
+    # total_label_counts = np.zeros(len(unique_labels))
+    # for dataset in data_:
+    #     labels = [label_dict.get(p, 'other') for p in dataset]
+    #     unique_labels_data, label_counts_data = np.unique(labels, return_counts=True)
+    #     for i, label in enumerate(unique_labels_data):
+    #         index = np.where(unique_labels == label)[0][0]
+    #         total_label_counts[index] += label_counts_data[i]
+
+    # # Loop through each dataset
+    # for i, dataset in enumerate(data_):
+
+    #     labels = [label_dict.get(p, 'other') for p in dataset]
+    #     unique_labels_data, label_counts_data = np.unique(labels, return_counts=True)
+
+    #     # Reorder label counts based on unique_labels
+    #     label_counts = [label_counts_data[np.where(unique_labels_data == label)[0][0]] if label in unique_labels_data else 0 for label in unique_labels]
+
+    #     if percentage:
+    #         label_counts_percentage = [(count / sum(total_label_counts)) * 100 for count in label_counts]  # Calculate percentage for each label using the total count over all datasets
+    #         label_counts = label_counts_percentage
+
     # Loop through each dataset
     for i, dataset in enumerate(data_):
     
@@ -298,6 +315,11 @@ def BarChartOverlay(data_, label_dict, title=None, xlabel=None, ylabel=None, lab
 
         # Reorder label counts based on unique_labels
         label_counts = [label_counts_data[unique_labels_data == label][0] if label in unique_labels_data else 0 for label in unique_labels]
+
+        # if percentage:
+        #     total_count = sum(label_counts_data)  # Total count of all labels
+        #     label_counts_percentage = [(count / total_count) * 100 for count in label_counts]  # Calculate percentage for each label
+        #     label_counts = label_counts_percentage
 
         if percentage:
             label_counts = (np.array(label_counts) / sum(label_counts)) * 100

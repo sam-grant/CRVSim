@@ -16,17 +16,25 @@
 coincidenceConditions_ = { 
 
     "default" : {
+        "PEthreshold" : 1 
+        ,"nLayers" : 1
+        ,"minSlope" : -100
+        ,"maxSlope" : 100
+    },
+
+    "ana1" : {
+        "PEthreshold" : 10 
+        ,"nLayers" : 3
+        ,"minSlope" : -11
+        ,"maxSlope" : 11
+    },
+
+    "original" : {
         "PEthreshold" : 20 
         ,"nLayers" : 3
         ,"minSlope" : -11
         ,"maxSlope" : 11
     },
 
-    "strict" : {
-        "PEthreshold" : 20
-        ,"nLayers" : 3
-        ,"minSlope" : -5
-        ,"maxSlope" : 2
-    }
 
 }

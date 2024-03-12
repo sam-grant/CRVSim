@@ -23,7 +23,7 @@ coincidenceConditions_ = {
     },
 
     "ana1" : {
-        "PEthreshold" : 10 
+        "PEthreshold" : 55
         ,"nLayers" : 3
         ,"minSlope" : -11
         ,"maxSlope" : 11

@@ -3,7 +3,7 @@
 # Common functions and utilities for CRV KPP analysis
 # Utils.py should ONLY contain functions that are actually in-use, unused functions belong in ExtensiveUtils.py
 
-
+coincsBranchName = "crvcoincs" # crvhit
 
 # Colours 
 
@@ -33,21 +33,22 @@ branchNamesTrkAna_ = [
     ,"evtinfo.eventid" # event ID 
     
     # ---> crvhit (reco)
-    ,"crvhit.sectorType" # CRV sector hit
-    , "crvhit.pos.fCoordinates.fX" # Reconstructed position of the cluster in X 
-    , "crvhit.pos.fCoordinates.fY" # Reconstructed position of the cluster in Y
-    , "crvhit.pos.fCoordinates.fZ" # Reconstructed position of the cluster in Z
-    , "crvhit.timeStart" # Earliest time recorded at either end of all bars in the hit
-    , "crvhit.timeEnd" # Latest time recorded at either end of all bars in the hit
-    , "crvhit.time" # average reconstructed hit time of the cluster.
-    , "crvhit.PEs" # total number of photoelectrons in this cluser
-    , "crvhit.nHits" # Number of individual bar hits combined in this hit
-    , "crvhit.nLayers" # Number of CRV layers that are part of this cluster
-    , "crvhit.angle" # slope (in the plane perpendicular to the bar axis of a sector) of the track assumed to be responsible for the cluster (=change in the "layer direction" / change in the "thickness direction")
+    , coincsBranchName+".sectorType" # CRV sector hit
+    , coincsBranchName+".pos.fCoordinates.fX" # Reconstructed position of the cluster in X 
+    , coincsBranchName+".pos.fCoordinates.fY" # Reconstructed position of the cluster in Y
+    , coincsBranchName+".pos.fCoordinates.fZ" # Reconstructed position of the cluster in Z
+    , coincsBranchName+".timeStart" # Earliest time recorded at either end of all bars in the hit
+    , coincsBranchName+".timeEnd" # Latest time recorded at either end of all bars in the hit
+    , coincsBranchName+".time" # average reconstructed hit time of the cluster.
+    , coincsBranchName+".PEs" # total number of photoelectrons in this cluser
+    , coincsBranchName+".nHits" # Number of individual bar hits combined in this hit
+    , coincsBranchName+".nLayers" # Number of CRV layers that are part of this cluster
+    , coincsBranchName+".PEsPerLayer[4]"
+    , coincsBranchName+".angle" # slope (in the plane perpendicular to the bar axis of a sector) of the track assumed to be responsible for the cluster (=change in the "layer direction" / change in the "thickness direction")
 
     # ---> crvhitmc (truth)
-    , "crvhitmc.valid" # Records if there is a valid MC match to this CRV reco hit
-    , "crvhitmc.pdgId" # PDG ID of the track mostly likely responsible for this cluster
+    , coincsBranchName+"mc.valid" # Records if there is a valid MC match to this CRV reco hit
+    , coincsBranchName+"mc.pdgId" # PDG ID of the track mostly likely responsible for this cluster
     # , "crvhitmc.primaryPdgId" # PDG ID of the primary particle of the track mostly likely responsible for this cluster
     # , "crvhitmc.primaryE" # energy of the primary particle of the track mostly likely responsible for this cluster
     # , "crvhitmc.primary.pos.fCoordinates.fX" # start position of the primary particle of the track mostly likely responsible for this cluster

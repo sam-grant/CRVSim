@@ -9,7 +9,7 @@ KPP: three tiers, top and bottom tiers are trigger tiers, middle is the measurem
 
 Procedure: 
  
-1. Find coincidences in all sectors for each unique eventID/runid/subrunid. TrkAna V4 crvhits are already concidences, but we can tighten the conditions if desired.
+1. Find coincidences in all sectors for each unique eventID/runid/subrunid. TrkAna V4 crvcoincs are already concidences, but we can tighten the conditions if desired.
 2. Filter the dataset by particle and the number of cosmics per trigger sector -- simplify things and remove the need for clustering.
 3. Trigger on cosmics in the top and bottom tier.
 4. Check for successful and unsuccessful triggers. 
@@ -31,36 +31,48 @@ import CoincidenceConditions as cc
 #                Debugging functions 
 # ------------------------------------------------
 
-def SanityPlots(data_):
+def SanityPlots(data_, reproc, foutTag):
     
     print("\n---> Making sanity plots")
 
     # Reco
-    sectors_ = ak.flatten(data_["crvhit.sectorType"]) 
-    t_ = ak.flatten(data_["crvhit.time"]) 
-    x_ = ak.flatten(data_["crvhit.pos.fCoordinates.fX"]) * 1e-3 # mm -> m
-    y_ = ak.flatten(data_["crvhit.pos.fCoordinates.fY"]) * 1e-3 # mm -> m
-    z_ = ak.flatten(data_["crvhit.pos.fCoordinates.fZ"]) * 1e-3 # mm -> m
-    PEs_ = ak.flatten(data_["crvhit.PEs"]) 
-    nHits_ = ak.flatten(data_["crvhit.nHits"]) 
-    nLayers_ = ak.flatten(data_["crvhit.nLayers"]) 
-    slopes_ = ak.flatten(data_["crvhit.angle"])
+    sectors_ = ak.flatten(data_[ut.coincsBranchName+".sectorType"]) 
+    t_ = ak.flatten(data_[ut.coincsBranchName+".time"]) 
+    x_ = ak.flatten(data_[ut.coincsBranchName+".pos.fCoordinates.fX"]) * 1e-3 # mm -> m
+    y_ = ak.flatten(data_[ut.coincsBranchName+".pos.fCoordinates.fY"]) * 1e-3 # mm -> m
+    z_ = ak.flatten(data_[ut.coincsBranchName+".pos.fCoordinates.fZ"]) * 1e-3 # mm -> m
+    PEs_ = ak.flatten(data_[ut.coincsBranchName+".PEs"]) 
+    PEsPerLayer_ = ak.flatten(data_[ut.coincsBranchName+".PEsPerLayer[4]"])
+    nHits_ = ak.flatten(data_[ut.coincsBranchName+".nHits"]) 
+    nLayers_ = ak.flatten(data_[ut.coincsBranchName+".nLayers"]) 
+    slopes_ = ak.flatten(data_[ut.coincsBranchName+".angle"])
     # PEsPerHit_ = PEs_ / nHits_ 
 
-    ut.PlotGraphOverlay(graphs_=[(x_[sectors_ == 3], y_[sectors_ == 3]), (x_[sectors_ == 1], y_[sectors_ == 1]), (x_[sectors_ == 2], y_[sectors_ == 2]) ], labels_=["Top", "Middle", "Bottom"], xlabel="x-position [m]", ylabel="y-position [m]", fout="../Images/Sanity/gr_XY.png")
-    ut.PlotGraphOverlay(graphs_=[(z_[sectors_ == 3], y_[sectors_ == 3]), (z_[sectors_ == 1], y_[sectors_ == 1]), (z_[sectors_ == 2], y_[sectors_ == 2]) ], labels_=["Top", "Middle", "Bottom"], xlabel="z-position [m]", ylabel="y-position [m]", fout="../Images/Sanity/gr_ZY.png")
-    ut.Plot1DOverlay(hists_=[t_[sectors_ == 3], t_[sectors_ == 1], t_[sectors_ == 2]], nbins=1000, xmin = np.min(t_), xmax = np.max(t_), xlabel="Average hit time [ns]", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout="../Images/Sanity/h1_times.png") 
-    ut.Plot1DOverlay(hists_=[PEs_[sectors_ == 3], PEs_[sectors_ == 1], PEs_[sectors_ == 2]], nbins=1000, xmin = 0, xmax = 1000, xlabel="PEs", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout="../Images/Sanity/h1_PEs.png") 
-    # ut.Plot1DOverlay(hists_=[PEsPerHit_[sectors_ == 3], PEsPerHit_[sectors_ == 1], PEsPerHit_[sectors_ == 2]], nbins=100, xmin = 0, xmax = 100, xlabel="Average PEs per hit", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout="../Images/Sanity/h1_PEs_per_hit.png") 
-    ut.Plot1DOverlay(hists_=[nHits_[sectors_ == 3], nHits_[sectors_ == 1], nHits_[sectors_ == 2]], nbins=41, xmin = -0.5, xmax = 40.5, xlabel="Number of hits", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout="../Images/Sanity/h1_nHits.png") 
-    ut.Plot1DOverlay(hists_=[nLayers_[sectors_ == 3], nLayers_[sectors_ == 1], nLayers_[sectors_ == 2]], nbins=5, xmin = -0.5, xmax = 4.5, xlabel="Number of layers hit", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout="../Images/Sanity/h1_nLayers.png") 
-    ut.Plot1DOverlay(hists_=[slopes_[sectors_ == 3], slopes_[sectors_ == 1], slopes_[sectors_ == 2]], nbins=1000, xmin = -2, xmax = 2, xlabel="Slope", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout="../Images/Sanity/h1_slopes.png") 
+    ut.PlotGraphOverlay(graphs_=[(x_[sectors_ == 3], y_[sectors_ == 3]), (x_[sectors_ == 1], y_[sectors_ == 1]), (x_[sectors_ == 2], y_[sectors_ == 2]) ], labels_=["Top", "Middle", "Bottom"], xlabel="x-position [m]", ylabel="y-position [m]", fout=f"../Images/{reproc}/Sanity/gr_XY_{foutTag}.png")
+    ut.PlotGraphOverlay(graphs_=[(z_[sectors_ == 3], y_[sectors_ == 3]), (z_[sectors_ == 1], y_[sectors_ == 1]), (z_[sectors_ == 2], y_[sectors_ == 2]) ], labels_=["Top", "Middle", "Bottom"], xlabel="z-position [m]", ylabel="y-position [m]", fout=f"../Images/{reproc}/Sanity/gr_ZY_{foutTag}.png")
+    ut.Plot1DOverlay(hists_=[t_[sectors_ == 3], t_[sectors_ == 1], t_[sectors_ == 2]], nbins=1000, xmin = np.min(t_), xmax = np.max(t_), xlabel="Average hit time [ns]", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout=f"../Images/{reproc}/Sanity/h1_times_{foutTag}.png") 
+    # ut.Plot1DOverlay(hists_=[PEs_[sectors_ == 3], PEs_[sectors_ == 1], PEs_[sectors_ == 2]], nbins=1000, xmin = 0, xmax = 1000, xlabel="PEs", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout=f"../Images/{reproc}/Sanity/h1_PEs.png") 
+    # ut.Plot1DOverlay(hists_=[PEsPerHit_[sectors_ == 3], PEsPerHit_[sectors_ == 1], PEsPerHit_[sectors_ == 2]], nbins=100, xmin = 0, xmax = 100, xlabel="Average PEs per hit", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout=f"../Images/{reproc}/Sanity/h1_PEs_per_hit.png") 
+    ut.Plot1DOverlay(hists_=[nHits_[sectors_ == 3], nHits_[sectors_ == 1], nHits_[sectors_ == 2]], nbins=41, xmin = -0.5, xmax = 40.5, xlabel="Number of hits", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout=f"../Images/{reproc}/Sanity/h1_nHits_{foutTag}.png") 
+    ut.Plot1DOverlay(hists_=[nLayers_[sectors_ == 3], nLayers_[sectors_ == 1], nLayers_[sectors_ == 2]], nbins=5, xmin = -0.5, xmax = 4.5, xlabel="Number of layers hit", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout=f"../Images/{reproc}/Sanity/h1_nLayers_{foutTag}.png") 
+    ut.Plot1DOverlay(hists_=[slopes_[sectors_ == 3], slopes_[sectors_ == 1], slopes_[sectors_ == 2]], nbins=1000, xmin = -2, xmax = 2, xlabel="Slope", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout=f"../Images/{reproc}/Sanity/h1_slopes_{foutTag}.png") 
+
+    # Calculate the sum of each length-4 array in PEsPerLayer_
+    PEsPerLayerSum_ = ak.sum(PEsPerLayer_, axis=-1)
+    PEsDiff_ = PEs_ - PEsPerLayerSum_
+
+    ut.Plot1DOverlay(hists_=[PEs_[sectors_ == 3], PEs_[sectors_ == 1], PEs_[sectors_ == 2]], nbins=1000, xmin = 0, xmax = 1000, title="PEs", xlabel="PEs", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout=f"../Images/{reproc}/Sanity/h1_PEs_{foutTag}.png")
+    ut.Plot1DOverlay(hists_=[PEsPerLayerSum_[sectors_ == 3], PEsPerLayerSum_[sectors_ == 1], PEsPerLayerSum_[sectors_ == 2]], nbins=1000, xmin = 0, xmax = 1000, title="PEs per layer", xlabel="PEs", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout=f"../Images/{reproc}/Sanity/h1_PEsPerLayer_{foutTag}.png")
+
+    ut.Plot1DOverlay(hists_=[PEsPerLayer_[:, 0], PEsPerLayer_[:, 1], PEsPerLayer_[:, 2], PEsPerLayer_[:, 3]], nbins=500, xmin = 0, xmax = 500, title="PEs per layer", ylabel="Coincidences", label_=["Layer0", "Layer 1", "Layer 2", "Layer 3"], fout=f"../Images/{reproc}/Sanity//h1_PEsPerLayerAllSectors_{foutTag}.png")
+    ut.Plot1DOverlay(hists_=[PEsDiff_[sectors_ == 3], PEsDiff_[sectors_ == 1], PEsDiff_[sectors_ == 2]], nbins=40, xmin = -0.0002, xmax = 0.0002, xlabel="PEs $\minus$ PEs per layer sum", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout=f"../Images/{reproc}/Sanity/h1_PEsDiff_{foutTag}.png", logY=True)
+    ut.Plot1DOverlay(hists_=[PEsDiff_], nbins=200, xmin = np.min(PEsDiff_)-1e-4, xmax = np.max(PEsDiff_)+1e-4, xlabel="PEs $\minus$ PEs per layer sum", ylabel="Coincidences", label_=["All modules"], fout=f"../Images/{reproc}/Sanity/h1_PEsDiffAll_{foutTag}.png", logY=True, includeBlack=True)
 
     # MC 
-    valid_ = ak.flatten(data_["crvhitmc.valid"])
-    pdgid_ = ak.flatten(data_["crvhitmc.pdgId"])
+    valid_ = ak.flatten(data_[ut.coincsBranchName+"mc.valid"])
+    pdgid_ = ak.flatten(data_[ut.coincsBranchName+"mc.pdgId"])
 
-    ut.Plot1DOverlay(hists_=[valid_[sectors_ == 3], valid_[sectors_ == 1], valid_[sectors_ == 2]], nbins=2, xmin = 0, xmax = 2, xlabel="Valid MC event", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout="../Images/Sanity/h1_valid.png") 
+    ut.Plot1DOverlay(hists_=[valid_[sectors_ == 3], valid_[sectors_ == 1], valid_[sectors_ == 2]], nbins=2, xmin = 0, xmax = 2, xlabel="Valid MC event", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout=f"../Images/{reproc}/Sanity/h1_valid_{foutTag}.png") 
     
     label_dict = {
         2212: 'proton',
@@ -74,8 +86,8 @@ def SanityPlots(data_):
         # Add more particle entries as needed
     }
 
-    ut.BarChart(data_=pdgid_, label_dict=ut.particle_dict, ylabel="Coincidences [%]", fout="../Images/Sanity/bar_pdgid.png", percentage=True)
-    ut.BarChartOverlay(data_=[pdgid_[sectors_ == 3], pdgid_[sectors_ == 1], pdgid_[sectors_ == 2]], label_dict=label_dict, ylabel="Coincidences [%]", fout="../Images/Sanity/bar_overlay_pdgid.png", percentage=True, label_= ["Top", "Middle", "Bottom"])
+    ut.BarChart(data_=pdgid_, label_dict=ut.particle_dict, ylabel="Coincidences [%]", fout=f"../Images/{reproc}/Sanity/bar_pdgid_{foutTag}.png", percentage=True)
+    ut.BarChartOverlay(data_=[pdgid_[sectors_ == 3], pdgid_[sectors_ == 1], pdgid_[sectors_ == 2]], label_dict=label_dict, ylabel="Coincidences [%]", fout=f"../Images/{reproc}/Sanity/bar_overlay_pdgid_{foutTag}.png", percentage=True, label_= ["Top", "Middle", "Bottom"])
 
     print("...Done!")
 
@@ -83,46 +95,48 @@ def SanityPlots(data_):
 
 def PrintEvent(event):
     
-    print(
-        f"evtinfo.runid: {event['evtinfo.runid']}\n"
-        f"evtinfo.subrunid: {event['evtinfo.subrunid']}\n"
+    eventStr = (
+        f"evtinfo.runid: {event['evtinfo.runid']}\n" 
+        f"evtinfo.subrunid: {event['evtinfo.subrunid']}\n" 
         f"evtinfo.eventid: {event['evtinfo.eventid']}\n"
         f"is_coincidence: {event['is_coincidence']}\n"
         f"PE_condition: {event['PE_condition']}\n"
         f"layer_condition: {event['layer_condition']}\n"
         f"angle_condition: {event['angle_condition']}\n"
-        f"crvhit.nLayers {event['crvhit.nLayers']}\n"
-        f"crvhit.angle: {event['crvhit.angle']}\n"
-        f"crvhit.sectorType: {event['crvhit.sectorType']}\n"
-        f"crvhit.pos.fCoordinates: ({event['crvhit.pos.fCoordinates.fX']}, {event['crvhit.pos.fCoordinates.fY']}, {event['crvhit.pos.fCoordinates.fZ']})\n"
-        f"crvhit.timeStart: {event['crvhit.timeStart']}\n"
-        f"crvhit.timeEnd: {event['crvhit.timeEnd']}\n"
-        f"crvhit.time: {event['crvhit.time']}\n"
-        f"crvhit.PEs: {event['crvhit.PEs']}\n"
-        f"crvhit.nHits: {event['crvhit.nHits']}\n"
-        f"crvhitmc.valid: {event['crvhitmc.valid']}\n"
-        f"crvhitmc.pdgId: {event['crvhitmc.pdgId']}\n"
+        f"{ut.coincsBranchName}.nLayers {event[f'{ut.coincsBranchName}.nLayers']}\n"
+        f"{ut.coincsBranchName}.angle: {event[f'{ut.coincsBranchName}.angle']}\n"
+        f"{ut.coincsBranchName}.sectorType: {event[f'{ut.coincsBranchName}.sectorType']}\n"
+        f"{ut.coincsBranchName}.pos.fCoordinates: ({event[f'{ut.coincsBranchName}.pos.fCoordinates.fX']}, {event[f'{ut.coincsBranchName}.pos.fCoordinates.fY']}, {event[f'{ut.coincsBranchName}.pos.fCoordinates.fZ']})\n"
+        f"{ut.coincsBranchName}.timeStart: {event[f'{ut.coincsBranchName}.timeStart']}\n"
+        f"{ut.coincsBranchName}.timeEnd: {event[f'{ut.coincsBranchName}.timeEnd']}\n"
+        f"{ut.coincsBranchName}.time: {event[f'{ut.coincsBranchName}.time']}\n"
+        f"{ut.coincsBranchName}.PEs: {event[f'{ut.coincsBranchName}.PEs']}\n"
+        f"{ut.coincsBranchName}.PEsPerLayer[4]: {event[f'{ut.coincsBranchName}.PEsPerLayer[4]']}\n"
+        f"{ut.coincsBranchName}.nHits: {event[f'{ut.coincsBranchName}.nHits']}\n"
+        f"{ut.coincsBranchName}mc.valid: {event[f'{ut.coincsBranchName}mc.valid']}\n"
+        f"{ut.coincsBranchName}mc.pdgId: {event[f'{ut.coincsBranchName}mc.pdgId']}\n"
     )
+    
 
-    return
+    return eventStr
 
 def PrintRawEvent(event):
     
-    print(
+    eventStr = (
         f"evtinfo.runid: {event['evtinfo.runid']}\n"
         f"evtinfo.subrunid: {event['evtinfo.subrunid']}\n"
         f"evtinfo.eventid: {event['evtinfo.eventid']}\n"
-        f"crvhit.nLayers {event['crvhit.nLayers']}\n"
-        f"crvhit.angle: {event['crvhit.angle']}\n"
-        f"crvhit.sectorType: {event['crvhit.sectorType']}\n"
-        f"crvhit.pos.fCoordinates: ({event['crvhit.pos.fCoordinates.fX']}, {event['crvhit.pos.fCoordinates.fY']}, {event['crvhit.pos.fCoordinates.fZ']})\n"
-        f"crvhit.timeStart: {event['crvhit.timeStart']}\n"
-        f"crvhit.timeEnd: {event['crvhit.timeEnd']}\n"
-        f"crvhit.time: {event['crvhit.time']}\n"
-        f"crvhit.PEs: {event['crvhit.PEs']}\n"
-        f"crvhit.nHits: {event['crvhit.nHits']}\n"
-        f"crvhitmc.valid: {event['crvhitmc.valid']}\n"
-        f"crvhitmc.pdgId: {event['crvhitmc.pdgId']}\n"
+        f"{ut.coincsBranchName}.nLayers {event[f'{ut.coincsBranchName}.nLayers']}\n"
+        f"{ut.coincsBranchName}.angle: {event[f'{ut.coincsBranchName}.angle']}\n"
+        f"{ut.coincsBranchName}.sectorType: {event[f'{ut.coincsBranchName}.sectorType']}\n"
+        f"{ut.coincsBranchName}.pos.fCoordinates: ({event[f'{ut.coincsBranchName}.pos.fCoordinates.fX']}, {event[f'{ut.coincsBranchName}.pos.fCoordinates.fY']}, {event[f'{ut.coincsBranchName}.pos.fCoordinates.fZ']})\n"
+        f"{ut.coincsBranchName}.timeStart: {event[f'{ut.coincsBranchName}.timeStart']}\n"
+        f"{ut.coincsBranchName}.timeEnd: {event[f'{ut.coincsBranchName}.timeEnd']}\n"
+        f"{ut.coincsBranchName}.time: {event[f'{ut.coincsBranchName}.time']}\n"
+        f"{ut.coincsBranchName}.PEs: {event[f'{ut.coincsBranchName}.PEs']}\n"
+        f"{ut.coincsBranchName}.nHits: {event[f'{ut.coincsBranchName}.nHits']}\n"
+        f"{ut.coincsBranchName}mc.valid: {event[f'{ut.coincsBranchName}mc.valid']}\n"
+        f"{ut.coincsBranchName}mc.pdgId: {event[f'{ut.coincsBranchName}mc.pdgId']}\n"
     )
 
     return
@@ -132,8 +146,8 @@ def PrintNEvents(data_, nEvents=10, raw=False):
      # Iterate event-by-event
     for i, event in enumerate(data_):
         
-        if raw: PrintRawEvent(event)
-        else: PrintEvent(event)
+        if raw: print(PrintRawEvent(event))
+        else: print(PrintEvent(event))
 
         if i >= nEvents: 
             return
@@ -152,23 +166,23 @@ def FindCoincidences(data_, coincidenceConditions="default"): # debug is just a 
 
     # PE threshold
     print("* PE threshold condition")
-    PE_ = data_["crvhit.PEs"]
+    PE_ = data_[ut.coincsBranchName+".PEs"]
     PECondition = PE_ >= coincidenceConditions_["PEthreshold"]
 
     # Layers hit 
     print("* Layers condition")
-    nLayers_ = data_["crvhit.nLayers"]
+    nLayers_ = data_[ut.coincsBranchName+".nLayers"]
     layerCondition = nLayers_ >= coincidenceConditions_["nLayers"]
 
     # Hit slope: horizontal / vertical direction 
     print("* Angle condition")
-    angleCondition = (abs(data_["crvhit.angle"]) <= coincidenceConditions_["maxSlope"]) & (abs(data_["crvhit.angle"]) >= coincidenceConditions_["minSlope"])
+    angleCondition = (abs(data_[ut.coincsBranchName+".angle"]) <= coincidenceConditions_["maxSlope"]) & (abs(data_[ut.coincsBranchName+".angle"]) >= coincidenceConditions_["minSlope"])
 
     # We do not have access to time difference in TrkAna... 
     # Hit must have (timeEnd - timeStart) <= 15 ns
     # print("* Time difference condition")
-    # data_["crvhit.timeDiff"] = data_["crvhit.timeEnd"] - data_["crvhit.timeStart"]
-    # timeCondition = abs(data_["crvhit.timeDiff"]) <= 20 # 20 # (15.0 * 1e6) # ns -> ms
+    # data_[ut.coincsBranchName+".timeDiff"] = data_[ut.coincsBranchName+".timeEnd"] - data_[ut.coincsBranchName+".timeStart"]
+    # timeCondition = abs(data_[ut.coincsBranchName+".timeDiff"]) <= 20 # 20 # (15.0 * 1e6) # ns -> ms
 
     # Combine conditions to mark per-module coincidences
     coincidenceMask = PECondition & layerCondition & angleCondition # & timeCondition 
@@ -182,6 +196,8 @@ def FindCoincidences(data_, coincidenceConditions="default"): # debug is just a 
     data_["angle_condition"] = angleCondition 
     # data_["time_condition"] = timeCondition 
 
+    print(data_)
+
     print("...Done!")
 
     return data_
@@ -194,7 +210,7 @@ def RemoveEmptyEvents(data_):
 
     print(f"\n---> Removing empty events")
 
-    emptyEventCondition = ak.num(data_["crvhit.nHits"]) == 0
+    emptyEventCondition = ak.num(data_[ut.coincsBranchName+".nHits"]) == 0
     return data_[~emptyEventCondition]
 
 # Currently just "all", "muons", "non_muons"
@@ -204,7 +220,7 @@ def FilterParticles(data_, particle):
     print(f"\n---> Filtering particles, keeping {particle}")
 
     # I think this really should be in trigger sectors only FIXME
-    muonCondition = ak.any((data_["crvhitmc.pdgId"] == 13) | (data_["crvhitmc.pdgId"] == -13), axis=1)
+    muonCondition = ak.any((data_[ut.coincsBranchName+"mc.pdgId"] == 13) | (data_[ut.coincsBranchName+"mc.pdgId"] == -13), axis=1)
 
     if particle == "all":
         return data_
@@ -223,9 +239,9 @@ def FilterCoincidences(data_, coincidenceFilter):
     if coincidenceFilter == "no_filter": 
         return data_
     else:
-        oneHitInSector1Condition = ak.sum(data_["crvhit.sectorType"] == 1, axis=1) == 1
-        oneHitInSector2Condition = ak.sum(data_["crvhit.sectorType"] == 2, axis=1) == 1
-        oneHitInSector3Condition = ak.sum(data_["crvhit.sectorType"] == 3, axis=1) == 1
+        oneHitInSector1Condition = ak.sum(data_[ut.coincsBranchName+".sectorType"] == 1, axis=1) == 1
+        oneHitInSector2Condition = ak.sum(data_[ut.coincsBranchName+".sectorType"] == 2, axis=1) == 1
+        oneHitInSector3Condition = ak.sum(data_[ut.coincsBranchName+".sectorType"] == 3, axis=1) == 1
         if coincidenceFilter == "one_coincidence_per_sector":
             return data_[oneHitInSector1Condition & oneHitInSector2Condition & oneHitInSector3Condition]
         elif coincidenceFilter == "one_coincidence_per_trigger_sector":
@@ -245,8 +261,8 @@ def Trigger(data_):
 
     # Enforce trigger condition
     triggerCondition = (
-        ak.any(data_["is_coincidence"] & (data_["crvhit.sectorType"] == 2), axis=1) &
-        ak.any(data_["is_coincidence"] & (data_["crvhit.sectorType"] == 3), axis=1)
+        ak.any(data_["is_coincidence"] & (data_[ut.coincsBranchName+".sectorType"] == 2), axis=1) &
+        ak.any(data_["is_coincidence"] & (data_[ut.coincsBranchName+".sectorType"] == 3), axis=1)
     )
 
     print("...Done!")
@@ -265,7 +281,7 @@ def SuccessfulTriggers(data_, success):
 
     # Ensure at least one passing coincidence in each trigger sector
     successCondition = (
-        ak.any(data_["is_coincidence"] & (data_["crvhit.sectorType"] == 1), axis=1) 
+        ak.any(data_["is_coincidence"] & (data_[ut.coincsBranchName+".sectorType"] == 1), axis=1) 
     )
 
     print("...Done!")
@@ -277,11 +293,11 @@ def SuccessfulTriggers(data_, success):
 #                     Output 
 # ------------------------------------------------ 
 
-def WriteFailuresToFile(failures_, foutTag):
+def WriteFailuresToFile(failures_, foutTag, reproc):
 
     # Define the output file path
-    foutNameConcise = "../Txt/failures_concise_" + foutTag + ".csv" 
-    foutNameVerbose = "../Txt/failures_verbose_" + foutTag + ".csv" 
+    foutNameConcise = f"../Txt/{reproc}/failures_concise_" + foutTag + ".csv" 
+    foutNameVerbose = f"../Txt/{reproc}/failures_verbose_" + foutTag + ".txt" 
 
     print(f"\n---> Writing failures to:\n{foutNameConcise}\n{foutNameVerbose}")
 
@@ -298,18 +314,18 @@ def WriteFailuresToFile(failures_, foutTag):
     # Verbose form
     with open(foutNameVerbose, "w") as fout:
         # Write the header
-        fout.write("evtinfo.runid,evtinfo.subrunid,evtinfo.eventid,is_coincidence,PE_condition,layer_condition,angle_condition,crvhit.nLayers,crvhit.angle,crvhit.sectorType,crvhit.pos.fCoordinates.fX,crvhit.pos.fCoordinates.fY,crvhit.pos.fCoordinates.fZ,crvhit.timeStart,crvhit.timeEnd,crvhit.time,crvhit.PEs,crvhitmc.valid,crvhitmc.pdgId\n")
+        # fout.write(f"evtinfo.runid,evtinfo.subrunid,evtinfo.eventid,is_coincidence,PE_condition,layer_condition,angle_condition,{ut.coincsBranchName}.nLayers,{ut.coincsBranchName}.angle,{ut.coincsBranchName}.sectorType,{ut.coincsBranchName}.pos.fCoordinates.fX,{ut.coincsBranchName}.pos.fCoordinates.fY,{ut.coincsBranchName}.pos.fCoordinates.fZ,{ut.coincsBranchName}.timeStart,{ut.coincsBranchName}.timeEnd,{ut.coincsBranchName}.time,{ut.coincsBranchName}.PEs,{ut.coincsBranchName}mc.valid,{ut.coincsBranchName}mc.pdgId\n")
         # Write the events
         for event in failures_:
             fout.write(
-                f"{event['evtinfo.runid']},{event['evtinfo.subrunid']},{event['evtinfo.eventid']},{event['is_coincidence']},{event['PE_condition']},{event['layer_condition']},{event['angle_condition']},{event['crvhit.nLayers']},{event['crvhit.angle']},{event['crvhit.sectorType']},{event['crvhit.pos.fCoordinates.fX']},{event['crvhit.pos.fCoordinates.fY']},{event['crvhit.pos.fCoordinates.fZ']},{event['crvhit.timeStart']},{event['crvhit.timeEnd']},{event['crvhit.time']},{event['crvhit.PEs']},{event['crvhit.nHits']},{event['crvhitmc.valid']},{event['crvhitmc.pdgId']}\n"
+                PrintEvent(event)+"\n" #f"{event['evtinfo.runid']},{event['evtinfo.subrunid']},{event['evtinfo.eventid']},{event['is_coincidence']},{event['PE_condition']},{event['layer_condition']},{event['angle_condition']},{event[f'{ut.coincsBranchName}.nLayers']},{event[f'{ut.coincsBranchName}.angle']},{event[f'{ut.coincsBranchName}.sectorType']},{event[f'{ut.coincsBranchName}.pos.fCoordinates.fX']},{event[f'{ut.coincsBranchName}.pos.fCoordinates.fY']},{event[f'{ut.coincsBranchName}.pos.fCoordinates.fZ']},{event[f'{ut.coincsBranchName}.timeStart']},{event[f'{ut.coincsBranchName}.timeEnd']},{event[f'{ut.coincsBranchName}.time']},{event[f'{ut.coincsBranchName}.PEs']},{event[f'{ut.coincsBranchName}.nHits']},{event[f'{ut.coincsBranchName}mc.valid']},{event[f'{ut.coincsBranchName}mc.pdgId']}\n"
             )
 
     return
 
-def WriteResultsToFile(data_, successes_, failures_, foutTag):
+def WriteResultsToFile(data_, successes_, failures_, foutTag, reproc):
 
-    foutName = f"../Txt/results_{foutTag}.csv"
+    foutName = f"../Txt/{reproc}/results_{foutTag}.csv"
     print(f"\n---> Writing results to {foutName}")
     tot = len(data_)
     efficiency = len(successes_) / tot * 100
@@ -337,7 +353,7 @@ def WriteResultsToFile(data_, successes_, failures_, foutTag):
 #                       Run
 # ------------------------------------------------
 
-def Run(finName, particle, coincidenceConditions, coincidenceFilter, sanityPlots):
+def Run(finName, particle, reproc, coincidenceConditions, coincidenceFilter, sanityPlots):
 
     # Get data as a set of awkward arrays
     data_ = ut.TTreeToAwkwardArray(finName, "TrkAnaExt/trkana", ut.branchNamesTrkAna_)
@@ -345,8 +361,11 @@ def Run(finName, particle, coincidenceConditions, coincidenceFilter, sanityPlots
     # Remove empty events
     data_ = RemoveEmptyEvents(data_)
 
+    # Output file tag 
+    foutTag = particle + "_" + coincidenceConditions + "_" + coincidenceFilter + "_" +finName.split('.')[-2] 
+
     # Sanity plots 
-    if (sanityPlots): SanityPlots(data_)
+    if (sanityPlots): SanityPlots(data_, reproc, foutTag)
 
     # Filter particles
     data_ = FilterParticles(data_, particle)
@@ -357,6 +376,8 @@ def Run(finName, particle, coincidenceConditions, coincidenceFilter, sanityPlots
     # Filter dataset 
     data_ = FilterCoincidences(data_, coincidenceFilter)
 
+    # PrintNEvents(data_, 100)
+
     # Trigger
     data_ = Trigger(data_)
 
@@ -364,14 +385,11 @@ def Run(finName, particle, coincidenceConditions, coincidenceFilter, sanityPlots
     successes_ = SuccessfulTriggers(data_, success=True)
     failures_ = SuccessfulTriggers(data_, success=False)
 
-    # Output file tag 
-    foutTag = particle + "_" + coincidenceConditions + "_" + coincidenceFilter + "_" +finName.split('.')[-2] 
-
     # Write failures to file
-    WriteFailuresToFile(failures_, foutTag)
+    WriteFailuresToFile(failures_, foutTag, reproc)
 
     # Write results to file
-    WriteResultsToFile(data_, successes_, failures_, foutTag) 
+    WriteResultsToFile(data_, successes_, failures_, foutTag, reproc) 
 
     return
 
@@ -382,11 +400,12 @@ def Run(finName, particle, coincidenceConditions, coincidenceFilter, sanityPlots
 def main():
 
     # Take command-line arguments
-    finName = sys.argv[1] if len(sys.argv) > 1 else "/pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/82/e8/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00000000.tka"
+    finName = sys.argv[1] if len(sys.argv) > 1 else "/pnfs/mu2e/scratch/users/sgrant/workflow/CosmicCRYExtractedTrk.MDC2020z2_best_v1_1/outstage/67605881/00/00000/nts.sgrant.CosmicCRYExtractedCatDigiTrk.MDC2020z2_best_v1_1.001205_00000000.root" # "/pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/82/e8/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00000000.tka"
     particle = sys.argv[2] if len(sys.argv) > 2 else "all"
-    coincidenceConditions = sys.argv[3] if len(sys.argv) > 3 else "default"
-    coincidenceFilter = sys.argv[4] if len(sys.argv) > 4 else "one_coincidence_per_trigger_sector"
-    sanityPlots = bool(sys.argv[5]) if len(sys.argv) > 5 else False
+    reproc = sys.argv[3] if len(sys.argv) > 3 else "reprocessed" # "original"
+    coincidenceConditions = sys.argv[4] if len(sys.argv) > 4 else "ana1" # "ana1" # "default"
+    coincidenceFilter = sys.argv[5] if len(sys.argv) > 5 else "one_coincidence_per_trigger_sector"
+    sanityPlots = bool(sys.argv[6]) if len(sys.argv) > 6 else False
 
     print("\n--->Running with inputs:\n")
     print("\tfinName:", finName)
@@ -395,7 +414,7 @@ def main():
     print("\tcoincidenceFilter:", coincidenceFilter)
     print("\tsanityPlots:", sanityPlots, "\n")
 
-    Run(finName=finName, particle=particle, coincidenceConditions=coincidenceConditions, coincidenceFilter=coincidenceFilter, sanityPlots=sanityPlots) 
+    Run(finName=finName, particle=particle, reproc=reproc, coincidenceConditions=coincidenceConditions, coincidenceFilter=coincidenceFilter, sanityPlots=sanityPlots) 
 
     return
 

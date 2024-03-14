@@ -21,9 +21,6 @@ import sys
 import numpy as np
 import awkward as ak
 
-# from collections import Counter
-# from itertools import combinations
-
 import Utils as ut
 import CoincidenceConditions as cc
 
@@ -123,6 +120,39 @@ def PrintEvent(event, coincidenceConditions):
 
     return eventStr
 
+# This seems to crash the mu2e node! 
+# def PrintEvent(event, coincidenceConditions):
+
+#     coincidenceConditions_ = cc.coincidenceConditions_[coincidenceConditions]
+    
+#     eventStr = (
+#         f"evtinfo.runid: {event['evtinfo.runid']}\n" 
+#         f"evtinfo.subrunid: {event['evtinfo.subrunid']}\n" 
+#         f"evtinfo.eventid: {event['evtinfo.eventid']}\n"
+#         f"coincidenceConditions_['PEthreshold']: {coincidenceConditions_['PEthreshold']}\n"
+#         f"coincidenceConditions_['nLayers']: {coincidenceConditions_['nLayers']}\n"
+#         f"coincidenceConditions_['minSlope']: {coincidenceConditions_['minSlope']}\n"
+#         f"coincidenceConditions_['maxSlope']: {coincidenceConditions_['maxSlope']}\n"
+#         f"is_coincidence: {event['is_coincidence']}\n"
+#         f"PE_condition: {ak.to_list(event['PE_condition'])}\n"
+#         f"layer_condition: {ak.to_list(event['layer_condition'])}\n"
+#         f"angle_condition: {ak.to_list(event['angle_condition'])}\n"
+#         f"{ut.coincsBranchName}.nLayers {ak.to_list(event[f'{ut.coincsBranchName}.nLayers'])}\n"
+#         f"{ut.coincsBranchName}.angle: {ak.to_list(event[f'{ut.coincsBranchName}.angle'])}\n"
+#         f"{ut.coincsBranchName}.sectorType: {ak.to_list(event[f'{ut.coincsBranchName}.sectorType'])}\n"
+#         f"{ut.coincsBranchName}.pos.fCoordinates: ({ak.to_list(event[f'{ut.coincsBranchName}.pos.fCoordinates.fX'])}, {ak.to_list(event[f'{ut.coincsBranchName}.pos.fCoordinates.fY'])}, {ak.to_list(event[f'{ut.coincsBranchName}.pos.fCoordinates.fZ'])})\n"
+#         f"{ut.coincsBranchName}.timeStart: {ak.to_list(event[f'{ut.coincsBranchName}.timeStart'])}\n"
+#         f"{ut.coincsBranchName}.timeEnd: {ak.to_list(event[f'{ut.coincsBranchName}.timeEnd'])}\n"
+#         f"{ut.coincsBranchName}.time: {ak.to_list(event[f'{ut.coincsBranchName}.time'])}\n"
+#         f"{ut.coincsBranchName}.PEs: {ak.to_list(event[f'{ut.coincsBranchName}.PEs'])}\n"
+#         f"{ut.coincsBranchName}.PEsPerLayer[4]: {ak.to_list(event[f'{ut.coincsBranchName}.PEsPerLayer[4]'])}\n"
+#         f"{ut.coincsBranchName}.nHits: {ak.to_list(event[f'{ut.coincsBranchName}.nHits'])}\n"
+#         f"{ut.coincsBranchName}mc.valid: {ak.to_list(event[f'{ut.coincsBranchName}mc.valid'])}\n"
+#         f"{ut.coincsBranchName}mc.pdgId: {ak.to_list(event[f'{ut.coincsBranchName}mc.pdgId'])}\n"
+#     )
+    
+#     return eventStr
+
 def PrintRawEvent(event):
     
     eventStr = (
@@ -159,6 +189,49 @@ def PrintNEvents(data_, nEvents=10, coincidenceConditions="default", raw=False):
 #               Coincidence finding 
 # ------------------------------------------------
 
+# OLD! 
+# def FindCoincidences(data_, coincidenceConditions="default"): 
+    
+#     print("\n---> Marking coincidences")
+
+#     # Get conditions from file
+#     coincidenceConditions_ = cc.coincidenceConditions_[coincidenceConditions]
+
+#     # PE threshold per layer
+#     print("* PE threshold condition")
+#     PE_ = data_[ut.coincsBranchName+".PEs"]
+    
+#     # PE condition per layer
+#     PECondition = PE_ >= coincidenceConditions_["PEthreshold"]
+
+#     # Number of layers hit 
+#     # (based on number of coincidences with PEs per layer above threshold, not nLayers which is baked into the reconstruction in mcs)
+#     print("* Layers condition")
+#     nLayers_ = data_[ut.coincsBranchName+".nLayers"]
+#     layerCondition = nLayers_ >= coincidenceConditions_["nLayers"] # This is baked into the reconstruction
+#     # layerCondition = ak.count(PE_[PECondition], axis=2) > coincidenceConditions_["nLayers"] # This can be adjusted on the level of nts 
+
+#     # Hit slope: horizontal / vertical direction 
+#     print("* Angle condition")
+#     angleCondition = (abs(data_[ut.coincsBranchName+".angle"]) <= coincidenceConditions_["maxSlope"]) & (abs(data_[ut.coincsBranchName+".angle"]) >= coincidenceConditions_["minSlope"])
+
+#     # Combine conditions to mark per-module coincidences
+#     coincidenceMask = layerCondition & angleCondition & PECondition 
+
+#     # Add a new field 'is_coincidence' to mark coincidences
+#     data_["is_coincidence"] = coincidenceMask
+
+#     # Mark the individual coniditions for debugging 
+#     data_["PE_condition"] = PECondition 
+#     data_["layer_condition"] = layerCondition 
+#     data_["angle_condition"] = angleCondition 
+
+#     # print(data_)
+
+#     print("...Done!")
+
+#     return data_
+
 # Just used to impose stricter conditions than the default, if desired
 def FindCoincidences(data_, coincidenceConditions="default"): 
     
@@ -179,7 +252,11 @@ def FindCoincidences(data_, coincidenceConditions="default"):
     print("* Layers condition")
     nLayers_ = data_[ut.coincsBranchName+".nLayers"]
     # layerCondition = nLayers_ >= coincidenceConditions_["nLayers"] # This is baked into the reconstruction
-    layerCondition = ak.count(PE_[PECondition], axis=2) > coincidenceConditions_["nLayers"] # This can be adjusted on the level of nts 
+
+    # You could also sort the array and check if the 3rd or 2nd element is above threshold 
+    # Might be more efficient
+
+    layerCondition = ak.count(PE_[PECondition], axis=2) >= coincidenceConditions_["nLayers"] # This can be adjusted on the level of nts 
 
     # Hit slope: horizontal / vertical direction 
     print("* Angle condition")
@@ -293,13 +370,38 @@ def SuccessfulTriggers(data_, success):
 #                     Output 
 # ------------------------------------------------ 
 
-def WriteFailuresToFile(failures_, foutTag, reproc, coincidenceConditions):
+def WriteFailuresToFile(failures_, doutTag, foutTag, reproc, coincidenceConditions):
 
     # Define the output file path
-    foutNameConcise = f"../Txt/{reproc}/failures_concise_" + foutTag + ".csv" 
-    foutNameVerbose = f"../Txt/{reproc}/failures_verbose_" + foutTag + ".txt" 
+    foutName = f"../Txt/{reproc}/failures_ntuple/{doutTag}/failures_ntuple_{foutTag}.csv" 
 
-    print(f"\n---> Writing failures to:\n{foutNameConcise}\n{foutNameVerbose}")
+    print(f"\n---> Writing failures to:\n{foutName}") 
+
+    with open(foutName, "w") as fout:
+        # Write the header
+        header = "\t".join(ut.branchNamesTrkAna_) + "\n"
+        fout.write(header)
+
+        for event in failures_:
+            data = "\t".join(str(event[name]) for name in ut.branchNamesTrkAna_) + "\n"
+            fout.write(data)
+
+        # # Write the events
+        # for event in failures_:
+        #     fout.write(
+        #         f"{event['evtinfo.runid']}, {event['evtinfo.subrunid']}, {event['evtinfo.eventid']}\n"
+        #     )
+
+    return
+
+def WriteFailureInfoToFile(failures_, doutTag, foutTag, reproc, coincidenceConditions, verbose):
+
+    # Define the output file path
+    foutNameConcise = f"../Txt/{reproc}/failures_concise/{doutTag}/failures_concise_{foutTag}.csv" 
+    foutNameVerbose = f"../Txt/{reproc}/failures_verbose/{doutTag}/failures_verbose_{foutTag}.csv" 
+
+    print(f"\n---> Writing failure info to:\n{foutNameConcise}") #\n{foutNameVerbose}")
+    if verbose: print(foutNameVerbose)
 
     # Concise form
     with open(foutNameConcise, "w") as fout:
@@ -312,20 +414,21 @@ def WriteFailuresToFile(failures_, foutTag, reproc, coincidenceConditions):
             )
 
     # Verbose form
-    with open(foutNameVerbose, "w") as fout:
-        # Write the header
-        # fout.write(f"evtinfo.runid,evtinfo.subrunid,evtinfo.eventid,is_coincidence,PE_condition,layer_condition,angle_condition,{ut.coincsBranchName}.nLayers,{ut.coincsBranchName}.angle,{ut.coincsBranchName}.sectorType,{ut.coincsBranchName}.pos.fCoordinates.fX,{ut.coincsBranchName}.pos.fCoordinates.fY,{ut.coincsBranchName}.pos.fCoordinates.fZ,{ut.coincsBranchName}.timeStart,{ut.coincsBranchName}.timeEnd,{ut.coincsBranchName}.time,{ut.coincsBranchName}.PEs,{ut.coincsBranchName}mc.valid,{ut.coincsBranchName}mc.pdgId\n")
-        # Write the events
-        for event in failures_:
-            fout.write(
-                PrintEvent(event, coincidenceConditions)+"\n" #f"{event['evtinfo.runid']},{event['evtinfo.subrunid']},{event['evtinfo.eventid']},{event['is_coincidence']},{event['PE_condition']},{event['layer_condition']},{event['angle_condition']},{event[f'{ut.coincsBranchName}.nLayers']},{event[f'{ut.coincsBranchName}.angle']},{event[f'{ut.coincsBranchName}.sectorType']},{event[f'{ut.coincsBranchName}.pos.fCoordinates.fX']},{event[f'{ut.coincsBranchName}.pos.fCoordinates.fY']},{event[f'{ut.coincsBranchName}.pos.fCoordinates.fZ']},{event[f'{ut.coincsBranchName}.timeStart']},{event[f'{ut.coincsBranchName}.timeEnd']},{event[f'{ut.coincsBranchName}.time']},{event[f'{ut.coincsBranchName}.PEs']},{event[f'{ut.coincsBranchName}.nHits']},{event[f'{ut.coincsBranchName}mc.valid']},{event[f'{ut.coincsBranchName}mc.pdgId']}\n"
-            )
+    if verbose: 
+        with open(foutNameVerbose, "w") as fout:
+            # Write the header
+            # fout.write(f"evtinfo.runid,evtinfo.subrunid,evtinfo.eventid,is_coincidence,PE_condition,layer_condition,angle_condition,{ut.coincsBranchName}.nLayers,{ut.coincsBranchName}.angle,{ut.coincsBranchName}.sectorType,{ut.coincsBranchName}.pos.fCoordinates.fX,{ut.coincsBranchName}.pos.fCoordinates.fY,{ut.coincsBranchName}.pos.fCoordinates.fZ,{ut.coincsBranchName}.timeStart,{ut.coincsBranchName}.timeEnd,{ut.coincsBranchName}.time,{ut.coincsBranchName}.PEs,{ut.coincsBranchName}mc.valid,{ut.coincsBranchName}mc.pdgId\n")
+            # Write the events
+            for event in failures_:
+                fout.write(
+                    PrintEvent(event, coincidenceConditions)+"\n" #f"{event['evtinfo.runid']},{event['evtinfo.subrunid']},{event['evtinfo.eventid']},{event['is_coincidence']},{event['PE_condition']},{event['layer_condition']},{event['angle_condition']},{event[f'{ut.coincsBranchName}.nLayers']},{event[f'{ut.coincsBranchName}.angle']},{event[f'{ut.coincsBranchName}.sectorType']},{event[f'{ut.coincsBranchName}.pos.fCoordinates.fX']},{event[f'{ut.coincsBranchName}.pos.fCoordinates.fY']},{event[f'{ut.coincsBranchName}.pos.fCoordinates.fZ']},{event[f'{ut.coincsBranchName}.timeStart']},{event[f'{ut.coincsBranchName}.timeEnd']},{event[f'{ut.coincsBranchName}.time']},{event[f'{ut.coincsBranchName}.PEs']},{event[f'{ut.coincsBranchName}.nHits']},{event[f'{ut.coincsBranchName}mc.valid']},{event[f'{ut.coincsBranchName}mc.pdgId']}\n"
+                )
 
     return
 
-def WriteResultsToFile(data_, successes_, failures_, foutTag, reproc):
+def WriteResultsToFile(data_, successes_, failures_, doutTag, foutTag, reproc):
 
-    foutName = f"../Txt/{reproc}/results_{foutTag}.csv"
+    foutName = f"../Txt/{reproc}/results/{doutTag}/results_{foutTag}.csv"
     print(f"\n---> Writing results to {foutName}")
     tot = len(data_)
     efficiency = len(successes_) / tot * 100
@@ -353,7 +456,7 @@ def WriteResultsToFile(data_, successes_, failures_, foutTag, reproc):
 #                       Run
 # ------------------------------------------------
 
-def Run(finName, particle, reproc, coincidenceConditions, coincidenceFilter, sanityPlots):
+def Run(finName, particle, coincidenceConditions, reproc, coincidenceFilter, sanityPlots, verbose):
 
     # Get data as a set of awkward arrays
     data_ = ut.TTreeToAwkwardArray(finName, "TrkAnaExt/trkana", ut.branchNamesTrkAna_)
@@ -361,8 +464,9 @@ def Run(finName, particle, reproc, coincidenceConditions, coincidenceFilter, san
     # Remove empty events
     data_ = RemoveEmptyEvents(data_)
 
-    # Output file tag 
-    foutTag = particle + "_" + coincidenceConditions + "_" + coincidenceFilter + "_" +finName.split('.')[-2] 
+    # Output dir/file tag 
+    doutTag = finName.split('.')[-2] 
+    foutTag = particle + "_" + coincidenceConditions + "_" + coincidenceFilter # + "_" +finName.split('.')[-2] 
 
     # Sanity plots 
     if (sanityPlots): SanityPlots(data_, reproc, foutTag)
@@ -373,7 +477,8 @@ def Run(finName, particle, reproc, coincidenceConditions, coincidenceFilter, san
     # Find coincidences
     data_ = FindCoincidences(data_, coincidenceConditions)
 
-    PrintNEvents(data_, 100, coincidenceConditions)
+    # Useful debugging tool
+    # PrintNEvents(data_, 100, coincidenceConditions)
 
     # Filter dataset 
     data_ = FilterCoincidences(data_, coincidenceFilter)
@@ -386,10 +491,11 @@ def Run(finName, particle, reproc, coincidenceConditions, coincidenceFilter, san
     failures_ = SuccessfulTriggers(data_, success=False)
 
     # Write failures to file
-    WriteFailuresToFile(failures_, foutTag, reproc, coincidenceConditions)
+    WriteFailuresToFile(failures_, doutTag, foutTag, reproc, coincidenceConditions) # write ntuple to table
+    WriteFailureInfoToFile(failures_, doutTag, foutTag, reproc, coincidenceConditions, verbose) #  
 
     # Write results to file
-    WriteResultsToFile(data_, successes_, failures_, foutTag, reproc) 
+    WriteResultsToFile(data_, successes_, failures_, doutTag, foutTag, reproc) 
 
     return
 
@@ -402,19 +508,21 @@ def main():
     # Take command-line arguments
     finName = sys.argv[1] if len(sys.argv) > 1 else "/pnfs/mu2e/scratch/users/sgrant/workflow/CosmicCRYExtractedTrk.MDC2020z2_best_v1_1/outstage/67605881/00/00000/nts.sgrant.CosmicCRYExtractedCatDigiTrk.MDC2020z2_best_v1_1.001205_00000000.root" # "/pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/82/e8/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00000000.tka"
     particle = sys.argv[2] if len(sys.argv) > 2 else "all"
-    reproc = sys.argv[3] if len(sys.argv) > 3 else "reprocessed" # "original"
-    coincidenceConditions = sys.argv[4] if len(sys.argv) > 4 else "ana1" # "ana1" # "default"
+    coincidenceConditions = sys.argv[3] if len(sys.argv) > 3 else "10PEs2Layers" # "ana1" # "default"
+    reproc = sys.argv[4] if len(sys.argv) > 4 else "reprocessed" # "original"
     coincidenceFilter = sys.argv[5] if len(sys.argv) > 5 else "one_coincidence_per_trigger_sector"
     sanityPlots = bool(sys.argv[6]) if len(sys.argv) > 6 else False
+    verbose = bool(sys.argv[7]) if len(sys.argv) > 7 else False
 
     print("\n--->Running with inputs:\n")
     print("\tfinName:", finName)
     print("\tparticle:", particle)
     print("\tcoincidenceConditions:", particle)
     print("\tcoincidenceFilter:", coincidenceFilter)
-    print("\tsanityPlots:", sanityPlots, "\n")
+    print("\tsanityPlots:", sanityPlots)
+    print("\tverbose:", verbose, "\n")
 
-    Run(finName=finName, particle=particle, reproc=reproc, coincidenceConditions=coincidenceConditions, coincidenceFilter=coincidenceFilter, sanityPlots=sanityPlots) 
+    Run(finName=finName, particle=particle, coincidenceConditions=coincidenceConditions, reproc=reproc, coincidenceFilter=coincidenceFilter, sanityPlots=sanityPlots, verbose=verbose) 
 
     return
 

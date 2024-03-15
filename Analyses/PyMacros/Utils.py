@@ -21,6 +21,52 @@ colours = [
     (0.7372549019607844, 0.7411764705882353, 0.13333333333333333)   # Yellow
 ]
     
+# ------------------------------------------------
+# Calculations, value formatting, array operations
+# ------------------------------------------------
+
+import math
+import numpy as np
+from scipy import stats
+
+def Round(value, sf):
+
+    if value == 0.00:
+        return "0"
+    elif math.isnan(value):
+        return "NaN"
+    else:
+
+        # Determine the order of magnitude
+        magnitude = math.floor(math.log10(abs(value))) + 1
+
+        # Calculate the scale factor
+        scale_factor = sf - magnitude
+
+        # Truncate the float to the desired number of significant figures
+        truncated_value = math.trunc(value * 10 ** scale_factor) / 10 ** scale_factor
+
+        # Convert the truncated value to a string
+        truncated_str = str(truncated_value).rstrip('0').rstrip('.')
+
+        return truncated_str
+
+# Stats for histograms tends to assume a normal distribution
+# ROOT does the same thing with TH1
+def GetBasicStats(data, xmin, xmax):
+
+    filtered_data = data[(data >= xmin) & (data <= xmax)]  # Filter data within range
+
+    N = len(filtered_data)                      
+    mean = np.mean(filtered_data)  
+    meanErr = stats.sem(filtered_data) # Mean error (standard error of the mean from scipy)
+    stdDev = np.std(filtered_data) # Standard deviation
+    stdDevErr = np.sqrt(stdDev**2 / (2*N)) # Standard deviation error assuming normal distribution
+    underflows = len(data[data < xmin]) # Number of underflows
+    overflows = len(data[data > xmax])
+
+    return N, mean, meanErr, stdDev, stdDevErr, underflows, overflows
+
 # ---------------
 # TTree wrangling 
 # ---------------
@@ -66,7 +112,6 @@ branchNamesTrkAna_ = [
 
 import uproot
 import awkward as ak
-import numpy as np
 
 # Awkward arrays are more suited to the nested tree structure of TrkAna
 def TTreeToAwkwardArray(finName, treeName, branchNames):
@@ -117,6 +162,43 @@ particle_dict = {
 
 import matplotlib.pyplot as plt
 
+def PlotGraph(x, y, title=None, xlabel=None, ylabel=None, fout="scatter.png", NDPI=300):
+
+    # Create a scatter plot with error bars using NumPy arrays 
+
+    # Create figure and axes
+    fig, ax = plt.subplots()
+
+    # Fine graphs for CRV visualisation
+    ax.scatter(x, y, color='black', s=16, edgecolor='black', marker='o', linestyle='None')
+
+    # Set title, xlabel, and ylabel
+    ax.set_title(title, fontsize=16, pad=10)
+    ax.set_xlabel(xlabel, fontsize=14, labelpad=10) 
+    ax.set_ylabel(ylabel, fontsize=14, labelpad=10) 
+
+    # Set font size of tick labels on x and y axes
+    ax.tick_params(axis='x', labelsize=14)  # Set x-axis tick label font size
+    ax.tick_params(axis='y', labelsize=14)  # Set y-axis tick label font size
+
+    # Check if x or y values exceed 9999 for scientific notation
+    if max(x) > 999:
+        ax.xaxis.set_major_formatter(ScalarFormatter(useMathText=True))
+        ax.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
+        ax.xaxis.offsetText.set_fontsize(14)
+    if max(y) > 999:
+        ax.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
+        ax.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+        ax.yaxis.offsetText.set_fontsize(14)
+
+    # Save the figure
+    plt.savefig(fout, dpi=NDPI, bbox_inches="tight")
+    print("---> Written", fout)
+
+    # Clear memory
+    plt.close()
+
+
 # graph_ a list of xy pairs of lists, graphs_ [ (x0_, y0_), (x1_, y1_)]
 def PlotGraphOverlay(graphs_, title=None, xlabel=None, ylabel=None, labels_=[], fout="scatter.png", NDPI=300):
     
@@ -148,6 +230,109 @@ def PlotGraphOverlay(graphs_, title=None, xlabel=None, ylabel=None, labels_=[], 
         ax.yaxis.offsetText.set_fontsize(14)
 
     ax.legend(loc="best", frameon=False, fontsize=14, markerscale=5)
+
+    # Save the figure
+    plt.savefig(fout, dpi=NDPI, bbox_inches="tight")
+    print("---> Written", fout)
+
+    # Clear memory
+    plt.close()
+
+# graphs_ = { "label" : [ x_, xerr_, y_, yerr] }
+def PlotGraphOverlay2(graphs_, title=None, xlabel=None, ylabel=None, labels_=[], fout="scatter.png", log=False, NDPI=300):
+    
+    # Create figure and axes
+    fig, ax = plt.subplots()
+
+    # Iterate over each pair of xy lists
+    for i, (label, data_) in enumerate(graphs_.items()):
+
+        x = data_[0] 
+        xerr = data_[1]
+        y = data_[2] 
+        yerr = data_[3]
+
+         # Plot scatter with error bars
+        if len(xerr)==0: xerr = [0] * len(x) # Sometimes we only use yerr
+        if len(yerr)==0: yerr = [0] * len(y) # Sometimes we only use yerr
+        # Scatter plot each pair
+        ax.scatter(x, y, s=16, color=colours[i+1], edgecolor=colours[i+1], marker='o', linestyle='None', label=label)
+        # ax.errorbar(x, y, xerr=xerr, yerr=yerr, fmt='o', color=colours[i+1], markersize=4, ecolor=colours[i+1], capsize=2, elinewidth=1, linestyle='None',label=label)
+        # ax.errorbar(x, y, xerr=xerr, yerr=yerr, fmt='o', color=colours[i+1], markersize=4, ecolor=colours[i+1], capsize=0, elinewidth=0, linestyle='None',label=label)
+
+    if log: 
+        # ax.set_xscale("log")
+        ax.set_yscale("log")
+
+    # Set title, xlabel, and ylabel
+    ax.set_title(title, fontsize=15, pad=10)
+    ax.set_xlabel(xlabel, fontsize=13, labelpad=10)
+    ax.set_ylabel(ylabel, fontsize=13, labelpad=10)
+
+    # Set font size of tick labels on x and y axes
+    ax.tick_params(axis='x', labelsize=13)  
+    ax.tick_params(axis='y', labelsize=13)  
+
+    # Check if x or y values exceed 9999 for scientific notation
+    if any(max(data_[0]) > 999 for _, data_ in graphs_.items()) or any(max(data_[0]) < 9.99e-3 for _, data_ in graphs_.items()):
+        ax.xaxis.set_major_formatter(ScalarFormatter(useMathText=True))
+        ax.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
+        ax.xaxis.offsetText.set_fontsize(13)
+    if any(max(data_[2]) > 999 for _, data_ in graphs_.items()) or any(max(data_[2]) < 9.99e-3 for _, data_ in graphs_.items()):
+        ax.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
+        ax.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+        ax.yaxis.offsetText.set_fontsize(13)
+
+    ax.legend(loc="best", frameon=False, fontsize=13) # , markerscale=5)
+
+    # Save the figure
+    plt.savefig(fout, dpi=NDPI, bbox_inches="tight")
+    print("---> Written", fout)
+
+    # Clear memory
+    plt.close()
+
+def Plot1D(data, nbins=100, xmin=-1.0, xmax=1.0, title=None, xlabel=None, ylabel=None, fout="hist.png", legPos="best", stats=True, underOver=False, errors=False, NDPI=300):
+    
+    # Create figure and axes
+    fig, ax = plt.subplots()
+
+    # Plot the histogram with outline
+    counts, bin_edges, _ = ax.hist(data, bins=nbins, range=(xmin, xmax), histtype='step', edgecolor='black', linewidth=1.0, fill=False, density=False)
+
+    # Set x-axis limits
+    ax.set_xlim(xmin, xmax)
+
+    # # Calculate statistics
+    N, mean, meanErr, stdDev, stdDevErr, underflows, overflows = GetBasicStats(data, xmin, xmax)
+    # N, mean, meanErr, stdDev, stdDevErr = str(N), Round(mean, 3), Round(meanErr, 1), Round(stdDev, 3), Round(stdDevErr, 1) 
+
+    # Create legend text
+    legend_text = f"Entries: {N}\nMean: {Round(mean, 3)}\nStd Dev: {Round(stdDev, 3)}"
+    # if errors: legend_text = f"Entries: {N}\nMean: {Round(mean, 3)}$\pm${Round(meanErr, 1)}\nStd Dev: {Round(stdDev, 3)}$\pm${Round(stdDevErr, 1)}"
+    # if underOver: legend_text += f"\nUnderflows: {underflows}\nOverflows: {overflows}"
+
+    # # legend_text = f"Entries: {N}\nMean: {Round(mean, 3)}$\pm${Round(meanErr, 1)}\nStd Dev: {Round(stdDev, 3)}$\pm${Round(stdDev, 1)}"
+
+    # Add legend to the plot
+    if stats: ax.legend([legend_text], loc=legPos, frameon=False, fontsize=13)
+
+    ax.set_title(title, fontsize=15, pad=10)
+    ax.set_xlabel(xlabel, fontsize=13, labelpad=10) 
+    ax.set_ylabel(ylabel, fontsize=13, labelpad=10) 
+
+    # Set font size of tick labels on x and y axes
+    ax.tick_params(axis='x', labelsize=13)  # Set x-axis tick label font size
+    ax.tick_params(axis='y', labelsize=13)  # Set y-axis tick label font size
+
+    if (ax.get_xlim()[1] > 9.999e3) or (ax.get_xlim()[1] < 9.999e-3) :
+        ax.xaxis.set_major_formatter(ScalarFormatter(useMathText=True))
+        ax.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+        ax.xaxis.offsetText.set_fontsize(13)
+    if (ax.get_ylim()[1] > 9.999e3) or (ax.get_ylim()[1] < 9.999e-3) :
+        ax.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
+        ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+        ax.yaxis.offsetText.set_fontsize(13)
 
     # Save the figure
     plt.savefig(fout, dpi=NDPI, bbox_inches="tight")
@@ -360,3 +545,5 @@ def BarChartOverlay(data_, label_dict, title=None, xlabel=None, ylabel=None, lab
 
     # Clear memory
     plt.close()
+
+

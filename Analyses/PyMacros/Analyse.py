@@ -386,12 +386,6 @@ def WriteFailuresToFile(failures_, doutTag, foutTag, reproc, coincidenceConditio
             data = "\t".join(str(event[name]) for name in ut.branchNamesTrkAna_) + "\n"
             fout.write(data)
 
-        # # Write the events
-        # for event in failures_:
-        #     fout.write(
-        #         f"{event['evtinfo.runid']}, {event['evtinfo.subrunid']}, {event['evtinfo.eventid']}\n"
-        #     )
-
     return
 
 def WriteFailureInfoToFile(failures_, doutTag, foutTag, reproc, coincidenceConditions, verbose):

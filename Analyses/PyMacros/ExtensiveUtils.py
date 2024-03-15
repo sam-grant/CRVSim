@@ -410,7 +410,6 @@ def PlotGraph(x, y, title=None, xlabel=None, ylabel=None, fout="scatter.png", ND
     print("---> Written", fout)
 
     # Clear memory
-    plt.clf()
     plt.close()
 
 # graph_ a list of xy pairs of lists, graphs_ [ (x0_, y0_), (x1_, y1_)]

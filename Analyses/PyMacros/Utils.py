@@ -198,6 +198,48 @@ def PlotGraph(x, y, title=None, xlabel=None, ylabel=None, fout="scatter.png", ND
     # Clear memory
     plt.close()
 
+def PlotGraphErrors(x, xerr, y, yerr, title=None, xlabel=None, ylabel=None, fout="scatter.png", NDPI=300):
+
+   # Create a scatter plot with error bars using NumPy arrays 
+
+    # Create figure and axes
+    fig, ax = plt.subplots()
+
+    # Plot scatter with error bars
+    if len(xerr)==0: xerr = [0] * len(x) # Sometimes we only use yerr
+    if len(yerr)==0: yerr = [0] * len(y) # Sometimes we only use yerr
+
+    if len(x) != len(y): print("Warning: x has length", len(x),", while y has length", len(y))
+
+    ax.errorbar(x, y, xerr=xerr, yerr=yerr, fmt='o', color='black', markersize=4, ecolor='black', capsize=2, elinewidth=1, linestyle='None')
+
+    # Set title, xlabel, and ylabel
+    ax.set_title(title, fontsize=15, pad=10)
+    ax.set_xlabel(xlabel, fontsize=13, labelpad=10) 
+    ax.set_ylabel(ylabel, fontsize=13, labelpad=10) 
+
+    # Set font size of tick labels on x and y axes
+    ax.tick_params(axis='x', labelsize=13)  # Set x-axis tick label font size
+    ax.tick_params(axis='y', labelsize=13)  # Set y-axis tick label font size
+
+    if (ax.get_xlim()[1] > 9.999e3) or (ax.get_xlim()[1] < 9.999e-3) :
+        ax.xaxis.set_major_formatter(ScalarFormatter(useMathText=True))
+        ax.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+        ax.xaxis.offsetText.set_fontsize(13)
+    if (ax.get_ylim()[1] > 9.999e3) or (ax.get_ylim()[1] < 9.999e-3) :
+        ax.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
+        ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+        ax.yaxis.offsetText.set_fontsize(13)
+
+
+    # Save the figure
+    plt.savefig(fout, dpi=NDPI, bbox_inches="tight")
+    print("---> Written", fout)
+
+    # Clear memory
+    plt.clf()
+    plt.close()
+
 
 # graph_ a list of xy pairs of lists, graphs_ [ (x0_, y0_), (x1_, y1_)]
 def PlotGraphOverlay(graphs_, title=None, xlabel=None, ylabel=None, labels_=[], fout="scatter.png", NDPI=300):
@@ -256,9 +298,9 @@ def PlotGraphOverlay2(graphs_, title=None, xlabel=None, ylabel=None, labels_=[],
         if len(xerr)==0: xerr = [0] * len(x) # Sometimes we only use yerr
         if len(yerr)==0: yerr = [0] * len(y) # Sometimes we only use yerr
         # Scatter plot each pair
-        ax.scatter(x, y, s=16, color=colours[i+1], edgecolor=colours[i+1], marker='o', linestyle='None', label=label)
+        # ax.scatter(x, y, s=16, color=colours[i+1], edgecolor=colours[i+1], marker='o', linestyle='None', label=label)
         # ax.errorbar(x, y, xerr=xerr, yerr=yerr, fmt='o', color=colours[i+1], markersize=4, ecolor=colours[i+1], capsize=2, elinewidth=1, linestyle='None',label=label)
-        # ax.errorbar(x, y, xerr=xerr, yerr=yerr, fmt='o', color=colours[i+1], markersize=4, ecolor=colours[i+1], capsize=0, elinewidth=0, linestyle='None',label=label)
+        ax.errorbar(x, y, xerr=xerr, yerr=yerr, fmt='o', color=colours[i+1], markersize=4, ecolor=colours[i+1], capsize=0, elinewidth=0, linestyle='None',label=label)
 
     if log: 
         # ax.set_xscale("log")

@@ -328,6 +328,12 @@ def FilterCoincidences(data_, coincidenceFilter):
 
     print("...Done!")
 
+# Events at the end of the digitisation window get messed up
+def CutOnStartTime(data_): 
+    print(f"\n---> Cutting on start time")
+    startTimeCondition = ak.all(data_[ut.coincsBranchName+".timeStart"] <= 99500, axis=1)
+    return data_[startTimeCondition]
+
 # ------------------------------------------------
 #                     Trigger 
 # ------------------------------------------------   
@@ -468,8 +474,15 @@ def Run(finName, particle, coincidenceConditions, reproc, coincidenceFilter, san
     # Filter particles
     data_ = FilterParticles(data_, particle)
 
+    # Apply start time cut
+    data_ = CutOnStartTime(data_)
+
     # Find coincidences
     data_ = FindCoincidences(data_, coincidenceConditions)
+
+    # PrintNEvents(data_, 100, coincidenceConditions)
+
+    # return
 
     # Useful debugging tool
     # PrintNEvents(data_, 100, coincidenceConditions)

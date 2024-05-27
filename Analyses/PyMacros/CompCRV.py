@@ -4,476 +4,384 @@
 import sys
 import awkward as ak
 import uproot
-import math
 
 import Utils as ut
 
-coincsBranchName = "crvcoincs"
 
-branchNames_ = [ 
-
-    # ---> evtinfo
-    "evtinfo.runid" # run ID 
-    , "evtinfo.subrunid" # sub-run ID 
-    , "evtinfo.eventid" # event ID 
-
-    # ---> crvhit (reco)
-    , "crvcoincs.sectorType" # CRV sector hit
-    , "crvcoincs.pos.fCoordinates.fX" # Reconstructed position of the cluster in X 
-    , "crvcoincs.pos.fCoordinates.fY" # Reconstructed position of the cluster in Y
-    , "crvcoincs.pos.fCoordinates.fZ" # Reconstructed position of the cluster in Z
-    , "crvcoincs.timeStart" # Earliest time recorded at either end of all bars in the hit
-    , "crvcoincs.timeEnd" # Latest time recorded at either end of all bars in the hit
-    , "crvcoincs.time" # average reconstructed hit time of the cluster.
-    , "crvcoincs.PEs" # total number of photoelectrons in this cluser
-    , "crvcoincs.nHits" # Number of individual bar hits combined in this hit
-    , "crvcoincs.nLayers" # Number of CRV layers that are part of this cluster
-    , "crvcoincs.PEsPerLayer[4]"
-    , "crvcoincs.angle" # slope (in the plane perpendicular to the bar axis of a sector) of the track assumed to be responsible for the cluster (=change in the "layer direction" / change in the "thickness direction")
-
-    # ---> crvhitmc (truth)
-    , "crvcoincsmc.valid" # Records if there is a valid MC match to this CRV reco hit
-    , "crvcoincsmc.pdgId" # PDG ID of the track mostly likely responsible for this cluster
-
-    # ----> kl (tracks)
-    , "kl.status"
-
-]
-
-branchNamesTrkAna_ = [
-
-    # ---> evtinfo
-    "evtinfo.runid" # run ID 
-    ,"evtinfo.subrunid" # sub-run ID 
-    ,"evtinfo.eventid" # event ID 
-
-    # ---> crvsummary
-    ,"crvsummary.nHitCounters"
-    
-    # ---> crvhit (reco)
-    , "crvcoincs.sectorType" # CRV sector hit
-    , "crvcoincs.pos.fCoordinates.fX" # Reconstructed position of the cluster in X 
-    , "crvcoincs.pos.fCoordinates.fY" # Reconstructed position of the cluster in Y
-    , "crvcoincs.pos.fCoordinates.fZ" # Reconstructed position of the cluster in Z
-    , "crvcoincs.timeStart" # Earliest time recorded at either end of all bars in the hit
-    , "crvcoincs.timeEnd" # Latest time recorded at either end of all bars in the hit
-    , "crvcoincs.time" # average reconstructed hit time of the cluster.
-    , "crvcoincs.PEs" # total number of photoelectrons in this cluser
-    , "crvcoincs.nHits" # Number of individual bar hits combined in this hit
-    , "crvcoincs.nLayers" # Number of CRV layers that are part of this cluster
-    , "crvcoincs.PEsPerLayer[4]"
-    , "crvcoincs.angle" # slope (in the plane perpendicular to the bar axis of a sector) of the track assumed to be responsible for the cluster (=change in the "layer direction" / change in the "thickness direction")
-
-    # ---> crvhitmc (truth)
-    , "crvcoincsmc.valid" # Records if there is a valid MC match to this CRV reco hit
-    , "crvcoincsmc.pdgId" # PDG ID of the track mostly likely responsible for this cluster
-    # , "crvcoincsmc.pdgId"
-    # , "crvhitmc.primaryPdgId" # PDG ID of the primary particle of the track mostly likely responsible for this cluster
-    # , "crvhitmc.primaryE" # energy of the primary particle of the track mostly likely responsible for this cluster
-    # , "crvhitmc.primary.pos.fCoordinates.fX" # start position of the primary particle of the track mostly likely responsible for this cluster
-    # , "crvhitmc.parentPdgId" # PDG ID of the parent particle of the track mostly likely responsible for this cluster
-    # , "crvhitmc.parentE" # start energy of the parent particle of the track mostly likely responsible for this cluster
-    # , "crvhitmc.parent.fCoordinates.fX" # X start position of the parent particle of the track mostly likely responsible for this cluster
-    # , "crvhitmc.parent.fCoordinates.fY" # Y
-    # , "crvhitmc.parent.fCoordinates.fZ" # Z
-    # , "crvhitmc.gparentPdgId" # grandparent info..
-    # , "crvhitmc.gparentE" # "
-    # , "crvhitmc.gparent" # "
-    # , "crvhitmc.depositedEnergy" # total deposited energy of the cluster based on the CrvSteps
-
-    # ----> kl (tracks)
-    , "kl.status"
-    , "kl.nactive"
-    , "kl.nhits"
-    , "kl.nplanes"
-    , "kl.nnullambig"
-    , "kl.ndof"
-    , "kl.fitcon"
-    # # arrays of structs, handled slightly differently 
-    , "klfit" 
-    , "klkl"
-    # , "kl.fitcon"
-    # , "klfit.sid"
-    # , "klfit.sindex"
-    # , "klfit.pos.X"
-    # , "klfit.pos.Y"
-    # , "klfit.pos.Z"
-    # , "klfit.time"
-    # , "klkl.z0err"
-    # , "klkl.d0err"
-    # , "klkl.thetaerr"
-    # , "klkl.phi0err"
-]
-
-
-def EventStr(event):
+def EventStr(event, showCutMasks):
     
     eventStr = (
-        f"evtinfo.runid: {event['evtinfo.runid']}\n"
-        f"evtinfo.subrunid: {event['evtinfo.subrunid']}\n"
-        f"evtinfo.eventid: {event['evtinfo.eventid']}\n"
-        f"crvsummary.nHitCounters: {event['crvsummary.nHitCounters']}\n"
-        f"crvcoincs.nLayers {event[f'crvcoincs.nLayers']}\n"
-        f"crvcoincs.angle: {event[f'crvcoincs.angle']}\n"
-        f"crvcoincs.sectorType: {event[f'crvcoincs.sectorType']}\n"
-        f"crvcoincs.pos.fCoordinates: ({event[f'crvcoincs.pos.fCoordinates.fX']}, {event[f'crvcoincs.pos.fCoordinates.fY']}, {event[f'crvcoincs.pos.fCoordinates.fZ']})\n"
-        f"crvcoincs.timeStart: {event[f'crvcoincs.timeStart']}\n"
-        f"crvcoincs.timeEnd: {event[f'crvcoincs.timeEnd']}\n"
-        f"crvcoincs.time: {event[f'crvcoincs.time']}\n"
-        f"crvcoincs.PEs: {event[f'crvcoincs.PEs']}\n"
-        f"crvcoincs.nHits: {event[f'crvcoincs.nHits']}\n"
-        f"crvcoincsmc.valid: {event[f'crvcoincsmc.valid']}\n"
-        f"crvcoincsmc.pdgId: {event[f'crvcoincsmc.pdgId']}\n"
-        f"kl.status: {event[f'kl.status']}\n"
-        f"kl.nactive: {event[f'kl.nactive']}\n"
-        f"kl.nhits: {event[f'kl.nhits']}\n"
-        f"kl.nplanes: {event[f'kl.nplanes']}\n"
-        f"kl.nnullambig: {event[f'kl.nnullambig']}\n"
-        f"kl.ndof: {event[f'kl.ndof']}\n"
-        f"kl.fitcon: {event[f'kl.fitcon']}\n"
-        # f"klfit: {event[f'klfit']}\n"
-        # f"klfit.sid: {event[f'klfit.sid']}\n"
-        # f"klfit.sindex: {event[f'klfit.sindex']}\n"
+        f"evtinfo.runid: {event[f'evtinfo.'][f'evtinfo.runid']}\n"
+        f"evtinfo.subrunid: {event[f'evtinfo.'][f'evtinfo.subrunid']}\n"
+        f"evtinfo.eventid: {event[f'evtinfo.'][f'evtinfo.eventid']}\n"
+        # f"crvsummary.nHitCounters: {event[f'crvsummary.'][f'crvsummary.nHitCounters']}\n"
+        f"crvcoincs.nLayers {event[f'crvcoincs'][f'crvcoincs.nLayers']}\n"
+        f"crvcoincs.angle: {event[f'crvcoincs'][f'crvcoincs.angle']}\n"
+        f"crvcoincs.sectorType: {event[f'crvcoincs'][f'crvcoincs.sectorType']}\n"
+        f"crvcoincs.pos.fCoordinates: ({event[f'crvcoincs'][f'crvcoincs.pos.fCoordinates.fX']}, {event[f'crvcoincs'][f'crvcoincs.pos.fCoordinates.fY']}, {event[f'crvcoincs'][f'crvcoincs.pos.fCoordinates.fZ']})\n"
+        f"crvcoincs.timeStart: {event[f'crvcoincs'][f'crvcoincs.timeStart']}\n"
+        f"crvcoincs.timeEnd: {event[f'crvcoincs'][f'crvcoincs.timeEnd']}\n"
+        f"crvcoincs.time: {event[f'crvcoincs'][f'crvcoincs.time']}\n"
+        f"crvcoincs.PEs: {event[f'crvcoincs'][f'crvcoincs.PEs']}\n"
+        f"crvcoincs.nHits: {event[f'crvcoincs'][f'crvcoincs.nHits']}\n"
+        # f"crvcoincsmc.valid: {event[f'crvcoincsmc'][f'crvcoincsmc.valid']}\n"
+        # f"crvcoincsmc.pdgId: {event[f'crvcoincsmc'][f'crvcoincsmc.pdgId']}\n"
+        f"kl.status: {event[f'kl'][f'kl.status']}\n"
+        f"kl.nactive: {event[f'kl'][f'kl.nactive']}\n"
+        f"kl.nhits: {event[f'kl'][f'kl.nhits']}\n"
+        f"kl.nplanes: {event[f'kl'][f'kl.nplanes']}\n"
+        f"kl.nnullambig: {event[f'kl'][f'kl.nnullambig']}\n"
+        f"kl.ndof: {event[f'kl'][f'kl.ndof']}\n"
+        f"kl.fitcon: {event[f'kl'][f'kl.fitcon']}\n"
         f"klfit.sid: {event[f'klfit']['sid']}\n"
         f"klfit.sindex: {event[f'klfit']['sindex']}\n"
         f"klfit.pos.X() {event[f'klfit']['pos']['fCoordinates']['fX']}\n"
+        f"klfit.pos.Y() {event[f'klfit']['pos']['fCoordinates']['fY']}\n"
         f"klfit.pos.Z() {event[f'klfit']['pos']['fCoordinates']['fZ']}\n"
-        f"klkl.z0err: {event['klkl']['z0err']}\n"
-        f"goodTrk: {event[f'goodTrk']}\n"
-        f"CRV1: {event[f'CRV1']}\n"
-        f"KLCRV1: {event[f'KLCRV1']}\n"
-        f"goodCRV: {event[f'goodCRV']}\n"
-        f"noCRV: {event[f'noCRV']}\n"
-        f"bestFit1: {event[f'bestFit1']}\n"
-        f"bestFit2: {event[f'bestFit2']}\n"
-        f"L1Fiducial: {event[f'L1Fiducial']}\n"
+        f"klkl.z0err: {event[f'klkl']['z0err']}\n"
+        f"klkl.d0err: {event[f'klkl']['d0err']}\n"
+        f"klkl.thetaerr: {event[f'klkl']['thetaerr']}\n"
+        f"klkl.phi0err: {event[f'klkl']['phi0err']}\n"
     )
 
-    # # bestFit needs to be seperated by kl and klkl 
-    # data_["bestFit1"] = ( (data_["kl.ndof"] >= 10)
-    #                     & (data_["kl.fitcon"] > 0.1)
-    #                     & ((data_["kl.nactive"]/data_["kl.nhits"]) > 0.99)
-    #                     & (data_["kl.nplanes"] >= 4)
-    #                     & ((data_["kl.nnullambig"]/data_["kl.nhits"]) < 0.2) )
 
-    # data_["bestFit2"] =  ( (data_["klkl"]["z0err"] < 1) 
-    #                     & (data_["klkl"]["d0err"] < 1) 
-    #                     & (data_["klkl"]["thetaerr"] < 0.004)
-    #                     & (data_["klkl"]["phi0err"] < 0.001) )
+    if showCutMasks:
+
+        eventStr += (  
+            f"goodTrk: {event[f'goodTrk']}\n"
+            f"goodCRV: {event[f'goodCRV']}\n"
+            f"noCRV: {event[f'noCRV']}\n"
+            f"CRV1: {event[f'CRV1']}\n"
+            f"KLCRV1: {event[f'KLCRV1']}\n"
+            f"kl.bestFit: {event[f'kl.bestFit']}\n"
+            f"klkl.bestFit: {event[f'klkl.bestFit']}\n"
+            f"L1Fiducial: {event[f'L1Fiducial']}\n"
+        )
+
     return eventStr
 
-def PrintNEvents(data_, nEvents=10): 
+def PrintNEvents(data_, nEvents=5, showCutMasks=False): 
     # Iterate event-by-event
     for i, event in enumerate(data_):
         if event is None: continue
-        print(EventStr(event)) 
+        # event[f'evtinfo.'][f'evtinfo.runid']
+        print(EventStr(event, showCutMasks)) 
         if i >= nEvents - 1: return
 
-def TTreeToAwkwardArray(finName, treeName, branchNames):
 
-    print("\n---> Converting TTree to awkward array")
+def MarkCuts(arrays): 
 
-    # Open the ROOT file and access the TTree
-    file = uproot.open(finName)
-    tree = file[treeName]
+    arrays["goodTrk"] = ak.any(arrays["kl"]["kl.status"], axis=1, keepdims=False) > 0
+                        
+    arrays["goodCRV"] = ak.any(arrays["crvcoincs"]["crvcoincs.nHits"], axis=1, keepdims=False) > 0
+    arrays["noCRV"] = ~arrays["goodCRV"]
 
-    # Read the data into Awkward Arrays, if you exclude branchNames it reads all of them 
-    arrays = tree.arrays(branchNames, library="ak")
+    # CRV1: are there CRV hits in sector 1? 
+    # arrays["CRV1"] = ak.any(arrays["crvcoincs"]["crvcoincs.sectorType"], axis=-1, keepdims=True) == 1
+    arrays["CRV1"] = arrays["crvcoincs"]["crvcoincs.sectorType"] == 1 
 
-    # Open the ROOT file and access the TTree
-    with uproot.open(finName) as file:
-        tree = file[treeName]
-        # Read the data into Awkward Arrays
-        arrays = tree.arrays(branchNames, library="ak")
-        
-    print("Done!")
+    # KLCRV1: are there tracks intersecting the CRV?
+    arrays["KLCRV1"] = ( (arrays["klfit"]["sid"] == 200) 
+                        & (arrays["klfit"]["sindex"] == 1) )
 
-    return arrays
+    # bestFit: best possible track fit
+    # needs to be seperated by kl and klkl 
+    arrays["kl.bestFit"] = ( (arrays["kl"]["kl.ndof"] >= 10)
+                            & (arrays["kl"]["kl.fitcon"] > 0.1)
+                            & ((arrays["kl"]["kl.nactive"]/arrays["kl"]["kl.nhits"]) > 0.99)
+                            & (arrays["kl"]["kl.nplanes"] >= 4)
+                            & ((arrays["kl"]["kl.nnullambig"]/arrays["kl"]["kl.nhits"]) < 0.2) )
 
-# def MarkTrackerCuts(data_): 
+    arrays["klkl.bestFit"] = ( (arrays["klkl"]["z0err"] < 1) 
+                            & (arrays["klkl"]["d0err"] < 1) 
+                            & (arrays["klkl"]["thetaerr"] < 0.004)
+                            & (arrays["klkl"]["phi0err"] < 0.001) )
 
-#     data_["goodCRV"] = data_["crvsummary.nHitCounters"] > 0 # ak.num(data_["crvcoincs.nHits"]) > 0
-
-#     # data_["noCRV"] = data_["crvsummary.nHitCounters"] == 0 
-    
-#     data_["goodTrk"] = data_["kl.status"] >= 0
-
-#     data_["CRV1"] = (ak.num(data_["crvcoincs.sectorType"]) > 0) & (ak.any(data_["crvcoincs.sectorType"] == 1)) # data_["crvcoincs.sectorType"] == 1 if ak.num(data_["crvcoincs.sectorType"], axis=1) > 0 else False
-
-#     # data_["KLCRV1"] =   ( (data_["klfit"]["sid"] == 200) 
-#     #                     & (data_["klfit"]["sindex"] == 1) )
-
-#     data_["KLCRV1"] =   ( (data_["klfit.sid"] == 200) 
-#                         & (data_["klfit.sindex"] == 1) )
-
-#     data_["bestFit1"] =  ( (data_["klkl"]["z0err"] < 1) 
-#                         & (data_["klkl"]["d0err"] < 1) 
-#                         & (data_["klkl"]["thetaerr"] < 0.004)
-#                         & (data_["klkl"]["phi0err"] < 0.001) )
-
-#     data_["bestFit2"] = ( (data_["kl.ndof"] >= 10)
-#                         & (data_["kl.fitcon"] > 0.1)
-#                         & ((data_["kl.nactive"]/data_["kl.nhits"]) > 0.99)
-#                         & (data_["kl.nplanes"] >= 4)
-#                         & ((data_["kl.nnullambig"]/data_["kl.nhits"]) < 0.2) )
-
-
-
-#     data_["L1Fiducial"] = ( (abs(data_["klfit"]["pos"]["fCoordinates"]["fX"]) < 2500)
-#                           & (abs(data_["klfit"]["pos"]["fCoordinates"]["fZ"] + 500) < 1500) ) 
-
-#     return 
-
-def MarkTrackerCuts(data_): 
-
-    # Tracks?
-    data_["goodTrk"] = data_["kl.status"] >= 0
-
-    # CRV hits?
-    data_["goodCRV"] = ak.num(data_["crvcoincs.nHits"], axis=1) > 0
-    data_["noCRV"] = ~data_["goodCRV"] # "goodCRV"]ak.num(data_["crvcoincs.nHits"], axis=1) > 0
-
-    # CRV hits in sector 1? 
-    data_["CRV1"] = data_["crvcoincs.sectorType"] == 1
-
-    # Tracks intersecting the CRV?
-    data_["KLCRV1"] =   ( (data_["klfit"]["sid"] == 200) 
-                        & (data_["klfit"]["sindex"] == 1) )
-
-    # Best fit? 
-    # bestFit needs to be seperated by kl and klkl 
-    data_["bestFit1"] = ( (data_["kl.ndof"] >= 10)
-                        & (data_["kl.fitcon"] > 0.1)
-                        & ((data_["kl.nactive"]/data_["kl.nhits"]) > 0.99)
-                        & (data_["kl.nplanes"] >= 4)
-                        & ((data_["kl.nnullambig"]/data_["kl.nhits"]) < 0.2) )
-
-    data_["bestFit2"] =  ( (data_["klkl"]["z0err"] < 1) 
-                        & (data_["klkl"]["d0err"] < 1) 
-                        & (data_["klkl"]["thetaerr"] < 0.004)
-                        & (data_["klkl"]["phi0err"] < 0.001) )
-
-    data_["L1Fiducial"] = ( (abs(data_["klfit"]["pos"]["fCoordinates"]["fX"]) < 2500)
-                          & (abs(data_["klfit"]["pos"]["fCoordinates"]["fZ"] + 500) < 1500) ) 
+    # Hits within L1 fidicuial area
+    arrays["L1Fiducial"] = ( (abs(arrays["klfit"]["pos"]["fCoordinates"]["fX"]) < 2500)
+                          & (abs(arrays["klfit"]["pos"]["fCoordinates"]["fZ"] + 500) < 1500) ) 
 
     return 
 
-# Maybe a reasonable solution? Still ugly though. 
-# Apply cuts sequentially according to if statements
-def ApplyTrackerCuts(data_, cuts_): 
+def ApplyCuts(arraysMain, cuts): 
 
-    # Check if MarkTrackerCutsTest has been applied here
+    # Make a deep copy of main array(no shared memory)
+    arrays = ak.copy(arraysMain)
 
-    # Make a deep copy (no shared memory)
-    dataCopy_ = ak.copy(data_)
+    # Does the order matter? I don't think so? 
+    if "goodTrk" in cuts:
+        mask = arrays["goodTrk"] 
+        arrays = arrays[mask] # Event level
+    if "goodCRV" in cuts:
+        mask = arrays["goodCRV"] 
+        arrays = arrays[mask] # Event level
+    if "noCRV" in cuts:
+        mask = arrays["noCRV"] 
+        arrays = arrays[mask]  # Event level
+    if "CRV1" in cuts: 
+        mask = arrays["CRV1"] #  Global level
+        arrays["crvcoincs"] = arrays["crvcoincs"][mask] # This works. 
+    if "KLCRV1" in cuts:
+        mask = arrays["KLCRV1"] 
+        # arrays["klfit"] = ak.mask(arrays["klfit"], mask) # This actually does work. 
+        arrays["klfit"] = arrays["klfit"][mask] # Local track level
+    if "L1Fiducial" in cuts:
+        mask = arrays["L1Fiducial"]
+        arrays["klfit"] = arrays["klfit"][mask] # Local track level
+    if "bestFit" in cuts: 
+        mask1 = arrays["kl.bestFit"] # Be cognizant! This will wipe out the entries in kl if the fit is no good, even if it's a "goodTrk".
+        mask2 = arrays["klkl.bestFit"]
+        arrays["kl"] = arrays["kl"][mask1] # Global track level
+        arrays["klkl"] = arrays["klkl"][mask2] # Local track level
+        
+    # if "kl.bestFit" in cuts: 
+    #     mask = arrays["kl.bestFit"]
+    #     arrays["kl"] = arrays["kl"][mask] # Local track level
+    # if "klkl.bestFit" in cuts: # Doesn't seem to work?
+    #     mask = arrays["klkl.bestFit"]
+    #     arrays["klkl"] = arrays["klkl"][mask] # Local track level
 
-    if "goodCRV" in cuts_:
-        mask = dataCopy_["goodCRV"] # Outer array mask
-        # dataCopy_ = ak.mask(dataCopy_, mask) 
-        dataCopy_ = dataCopy_[mask] # Filter everything 
-    if "noCRV" in cuts_:
-        mask = dataCopy_["noCRV"] # Outer array mask
-        # dataCopy_ = ak.mask(dataCopy_, mask) 
-        dataCopy_ = dataCopy_[mask] # Filter everything 
-    if "goodTrk" in cuts_: 
-        mask = ak.any(dataCopy_["goodTrk"], axis=1) # Inner array mask
-        dataCopy_ = ak.mask(dataCopy_, mask) # Mark non-matching elements as None
-    if "CRV1" in cuts_: 
-        mask = ak.any(dataCopy_["CRV1"], axis=1) # Inner array mask
-        dataCopy_ = ak.mask(dataCopy_, mask)
-    if "KLCRV1" in cuts_:
-        mask = dataCopy_["KLCRV1"] # Outer array mask for klfit only
-        dataCopy_["klfit"] = ak.mask(dataCopy_["klfit"], mask) 
-    if "bestFit" in cuts_:
-        mask = ak.any(dataCopy_["bestFit1"], axis=1) # Inner array mask 
-        dataCopy_ = ak.mask(dataCopy_, mask)
-        mask = dataCopy_["bestFit2"] # Outer array mask for klkl
-        # dataCopy_ = ak.mask(dataCopy_["klkl"], mask)
-        dataCopy_["klkl"] = dataCopy_["klkl"][mask]
-        # dataCopy_ = data_[ak.any(dataCopy_["bestFit1"], axis=1)]
-        # dataCopy_["klkl"] = ak.mask(dataCopy_["klkl"], dataCopy_["bestFit2"]) 
-    if "L1Fiducial" in cuts_:
-        mask = ak.any(dataCopy_["L1Fiducial"], axis=1) # Inner array mask 
-        dataCopy_ = ak.mask(dataCopy_, mask)
-    
-    return dataCopy_
+    return arrays
 
+def Plot1(arrays):
 
-def Run(finName):
-    # Load data
-    data_ = TTreeToAwkwardArray(finName, "TrkAnaExt/trkana", branchNamesTrkAna_)
+    # TH2D* tcrvpg = new TH2D("tcrvpg","KKInter TCRV Layer 1 Position, Has CRVCoincidence;KKInter Z (mm);KKInter X (mm)",100,-8000,8000,100,-8000,8000);
+    # TH2D* tcrvpb = new TH2D("tcrvpb","KKInter TCRV Layer 1 Position,  No CRVCoincidence;KKInter Z (mm);KKInter X (mm)",100,-8000,8000,100,-8000,8000);
 
-    # Mark the tracker cuts 
-    MarkTrackerCuts(data_)
+    # ta->Project("tcrvpg","klfit.pos.X():klfit.pos.Z()",goodtrk+KLCRV1+CRV1+bestfit+goodCRV);
+    # ta->Project("tcrvpb","klfit.pos.X():klfit.pos.Z()",goodtrk+KLCRV1+bestfit+noCRV);
 
-    # Apply cuts 
-    # goodtrk+KLCRV1+CRV1+bestfit+goodCRV
-    tcrvpg_ = ApplyTrackerCuts(data_, ["goodCRV", "CRV1", "goodTrk", "bestFit", "KLCRV1"]) 
-    # goodtrk+KLCRV1+bestfit+noCRV
-    tcrvpb_ = ApplyTrackerCuts(data_, ["noCRV", "goodTrk", "bestFit", "KLCRV1"])
-
-    # Flatten
-    # See https://awkward-array.org/doc/main/user-guide/how-to-restructure-flatten.html
-    x_hasCoin = ak.flatten(tcrvpg_["klfit"]["pos"]["fCoordinates"]["fX"], axis=None)
-    z_hasCoin = ak.flatten(tcrvpg_["klfit"]["pos"]["fCoordinates"]["fZ"], axis=None)
-
-    x_noCoin = ak.flatten(tcrvpb_["klfit"]["pos"]["fCoordinates"]["fX"], axis=None)
-    z_noCoin = ak.flatten(tcrvpb_["klfit"]["pos"]["fCoordinates"]["fZ"], axis=None)
+    tcrvpg = ApplyCuts(arrays, ["goodCRV", "goodTrk", "CRV1", "KLCRV1", "bestFit"])
+    tcrvpb = ApplyCuts(arrays, ["noCRV", "goodTrk", "CRV1", "KLCRV1", "bestFit"])
 
     # Plot
-    ut.Plot2D(x=z_hasCoin, y=x_hasCoin, nbinsX=100, xmin=-8000, xmax=8000, nbinsY=100, ymin=-8000, ymax=8000, xlabel="KKInter Z [mm]", ylabel="KKInter X [mm]", fout="../Images/CompCRV/h2_zx_hasCoin.png")
-    ut.Plot2D(x=z_noCoin, y=x_noCoin, nbinsX=100, xmin=-8000, xmax=8000, nbinsY=100, ymin=-8000, ymax=8000, xlabel="KKInter Z [mm]", ylabel="KKInter X [mm]", fout="../Images/CompCRV/h2_zx_noCoin.png")
+    ut.Plot2D(x=ak.flatten(tcrvpg["klfit"]["pos"]["fCoordinates"]["fZ"], axis=None), y=ak.flatten(tcrvpg["klfit"]["pos"]["fCoordinates"]["fX"], axis=None)
+            , nbinsX=100, xmin=-8000, xmax=8000, nbinsY=100, ymin=-8000, ymax=8000
+            , title="Has coincidence", xlabel="KKInter Z [mm]", ylabel="KKInter X [mm]", fout="../Images/CompCRV/h2_zx_hasCoin.png")
 
-    return
+    ut.Plot2D(x=ak.flatten(tcrvpb["klfit"]["pos"]["fCoordinates"]["fZ"], axis=None), y=ak.flatten(tcrvpb["klfit"]["pos"]["fCoordinates"]["fX"], axis=None)
+            , nbinsX=100, xmin=-8000, xmax=8000, nbinsY=100, ymin=-8000, ymax=8000
+            , title="No coincidence", xlabel="KKInter Z [mm]", ylabel="KKInter X [mm]", fout="../Images/CompCRV/h2_zx_noCoin.png")
 
-    # # Cut 1 
-    # goodTrk = ak.any(data_["goodTrk"], axis=1) 
-    # CRV1 = data_["CRV1"] 
-    # bestFit2 = ak.any(data_["bestFit2"], axis=1)
-    # # Apply regular masks 
-    # tcrvpg_ = data_[goodTrk & CRV1 & bestFit2]
+    # tcrvpg = ApplyCuts(arrays, ["goodCRV", "goodTrk", "CRV1", "KLCRV1", "bestFit"])
 
-    # # Now klkl cuts, this is unbelievably awkward!
-    # tcrvpg_["klkl"] = ak.mask(tcrvpg_["klkl"], tcrvpg_["bestFit1"]) 
-    # # And klfit cuts
-    # tcrvpg_["klfit"] = ak.mask(tcrvpg_["klfit"], tcrvpg_["KLCRV1"])  
+    #######################################
 
-    # # PrintNEvents(tcrvpg_, 50)
+    # This works! 
+    # tcrvpg = ApplyCuts(arrays, ["goodCRV", "goodTrk", "KLCRV1", "CRV1"])
 
-    # # See https://awkward-array.org/doc/main/user-guide/how-to-restructure-flatten.html
-    # x = ak.flatten(tcrvpg_["klfit"]["pos"]["fCoordinates"]["fX"], axis=None)
-    # z = ak.flatten(tcrvpg_["klfit"]["pos"]["fCoordinates"]["fZ"], axis=None)
-
-    # ut.Plot2D(z, x, nbinsX=100, xmin=-8000, xmax=8000, nbinsY=100, ymin=-8000, ymax=8000, title="KKInter TCRV Layer 1 Position, Has CRVCoincidence", xlabel="KKInter Z [mm]", ylabel="KKInter X [mm]", fout="../Images/CompCRV/h2_zx_hasCoin.png")
-
-    # # TH2D* tcrvpb = new TH2D("tcrvpb","KKInter TCRV Layer 1 Position,  No CRVCoincidence;KKInter Z (mm);KKInter X (mm)",100,-8000,8000,100,-8000,8000);
-    # # ta->Project("tcrvpb","klfit.pos.X():klfit.pos.Z()",goodTrk+KLCRV1+bestFit+noCRV);
-    # noCRV = data_["noCRV"]
-    # tcrvpb_ = data_[goodTrk & noCRV & bestFit2]
-    # tcrvpb_["klkl"] = ak.mask(tcrvpb_["klkl"], tcrvpb_["bestFit1"]) 
-    # tcrvpb_["klfit"] = ak.mask(tcrvpb_["klfit"], tcrvpb_["KLCRV1"]) 
-
-    # x = ak.flatten(tcrvpb_["klfit"]["pos"]["fCoordinates"]["fX"], axis=None)
-    # z = ak.flatten(tcrvpb_["klfit"]["pos"]["fCoordinates"]["fZ"], axis=None)
-
-    # ut.Plot2D(z, x, nbinsX=100, xmin=-8000, xmax=8000, nbinsY=100, ymin=-8000, ymax=8000, title="KKInter TCRV Layer 1 Position, No CRVCoincidence", xlabel="KKInter Z [mm]", ylabel="KKInter X [mm]", fout="../Images/CompCRV/h2_zx_noCoin.png")
-
-    # return
-
-    # print(data_)
-
-    # return
-
-    # data_["klfit.sindex"] = data_["klfit"]["sindex"]
-    # data_["klfit.sid"] = data_["klfit"]["sid"]
-
-    # data_ = data_[[column for column in data_.fields if column != "klfit"]]
-    # data_ = data_[[column for column in data_.fields if column != "kl"]]
-    # PrintNEvents(data_, 1)
-
-    # This is extremely awkward!
-    # klfit and klkl masks must be apply directly to the fields 
-    # data_["klfit"] = ak.mask(data_["klfit"], data_["KLCRV1"]) 
-
-    # mask1 = ak.mask(data_["klfit"], data_["KLCRV1"])#  & data_["CRV1"] 
-    # # mask2 = data_["CRV1"] # ak.any(data_["KLCRV1"], axis=2)
-
-    # PrintNEvents(data_[mask1], 1)
-
-    # Apply the mask to specific fields
-    # mask1 = ak.mask(array["kl"], data_["KLCRV1"])
-
-    # # Combine field1 with the masked field2 using zip
-    # data_ = ak.zip({"field1": array["field1"], "field2": masked_field2})
-
-    # return
-
-    # 
-    # mask = data_["KLCRV1"]
-    # # masked_data = data_[mask]
-
-    # flat_mask = ak.flatten(mask)
-    # masked_data = ak.flatten(data_)[flat_mask]
+    # This doesn't. 
+    # tcrvpg = ApplyCuts(arrays, ["goodCRV", "goodTrk", "KLCRV1", "CRV1", "bestFit"])
+    # We get output like this 
 
     # evtinfo.runid: 1205
     # evtinfo.subrunid: 0
-    # evtinfo.eventid: 2582
-    # crvcoincs.nLayers [4]
-    # crvcoincs.angle: [-0.39]
+    # evtinfo.eventid: 31673
+    # crvcoincs.nLayers [3]
+    # crvcoincs.angle: [0.327]
     # crvcoincs.sectorType: [1]
-    # crvcoincs.pos.fCoordinates: ([2.74e+03], [4.76e+03], [-1.4e+03])
-    # crvcoincstimeStart: [6.01e+04]
-    # crvcoincs.timeEnd: [6.02e+04]
-    # crvcoincs.time: [6.01e+04]
-    # crvcoincs.PEs: [372]
-    # crvcoincs.nHits: [16]
-    # crvcoincsmc.valid: [True]
-    # crvcoincsmc.pdgId: [11]
+    # crvcoincs.pos.fCoordinates: ([1.82e+03], [4.76e+03], [12])
+    # crvcoincs.timeStart: [9.08e+04]
+    # crvcoincs.timeEnd: [9.1e+04]
+    # crvcoincs.time: [9.08e+04]
+    # crvcoincs.PEs: [162]
+    # crvcoincs.nHits: [13]
+    # kl.status: []
+    # kl.nactive: []
+    # kl.nhits: []
+    # kl.nplanes: []
+    # kl.nnullambig: []
+    # kl.ndof: []
+    # kl.fitcon: []
+    # klfit.sid: [[200]]
+    # klfit.sindex: [[1]]
+    # klfit.pos.X() [[-1.56e+03]]
+    # klfit.pos.Y() [[4.78e+03]]
+    # klfit.pos.Z() [[-588]]
+    # klkl.z0err: [[]]
+    # goodTrk: True
+    # goodCRV: True
+    # noCRV: False
+    # CRV1: [True, False]
+    # KLCRV1: [[False, False, False, True, False]]
+    # kl.bestFit: [False]
+    # klkl.bestFit: [[False, False, False, False, False]]
+    # L1Fiducial: [[True, True, True, True, True]]
+
+    # Which doesn't make sense, since 
+    # PrintNEvents(arrays[arrays["evtinfo."]["evtinfo.eventid"] == 31673], nEvents=1, showCutMasks=False)
+    # evtinfo.runid: 1205
+    # evtinfo.subrunid: 0
+    # evtinfo.eventid: 31673
+    # crvcoincs.nLayers [3, 4]
+    # crvcoincs.angle: [0.327, 0.326]
+    # crvcoincs.sectorType: [1, 3]
+    # crvcoincs.pos.fCoordinates: ([1.82e+03, 1.41e+03], [4.76e+03, 4.92e+03], [12, 17])
+    # crvcoincs.timeStart: [9.08e+04, 9.08e+04]
+    # crvcoincs.timeEnd: [9.1e+04, 9.09e+04]
+    # crvcoincs.time: [9.08e+04, 9.08e+04]
+    # crvcoincs.PEs: [162, 368]
+    # crvcoincs.nHits: [13, 16]
     # kl.status: [1]
-    # kl.nactive: [24]
-    # kl.nhits: [24]
-    # kl.nplanes: [6]
-    # kl.nnullambig: [4]
-    # kl.ndof: [49]
-    # kl.fitcon: [0.996]
-    # klfit.sid: [[0, 2, 4, 4, 200, 200, 200]]
-    # klfit.sindex: [[0, 0, 0, 0, 0, 1, 2]]
+    # kl.nactive: [11]
+    # kl.nhits: [17]
+    # kl.nplanes: [1]
+    # kl.nnullambig: [9]
+    # kl.ndof: [23]
+    # kl.fitcon: [0.768]
+    # klfit.sid: [[4, 4, 200, 200, 200]]
+    # klfit.sindex: [[0, 0, 0, 1, 2]]
+    # klfit.pos.X() [[390, 835, -1.49e+03, -1.56e+03, -1.63e+03]]
+    # klfit.pos.Y() [[755, -162, 4.62e+03, 4.78e+03, 4.92e+03]]
+    # klfit.pos.Z() [[-418, -379, -582, -588, -595]]
+    # klkl.z0err: [[1.29, 1.29, 1.31, 1.31, 1.31]]
+
+    #######################################
+
+    # # What about this
+    # tcrvpg = ApplyCuts(arrays, ["goodCRV", "goodTrk", "KLCRV1", "CRV1", "kl.bestFit"])
+    # PrintNEvents(tcrvpg, nEvents=25, showCutMasks=True)
+
+    # # I don't think so? 
+    # # Maybe because kl is actually a global parameter?  
+    # evtinfo.runid: 1205
+    # evtinfo.subrunid: 0
+    # evtinfo.eventid: 891
+    # crvcoincs.nLayers [4]
+    # crvcoincs.angle: [0.354]
+    # crvcoincs.sectorType: [1]
+    # crvcoincs.pos.fCoordinates: ([1.61e+03], [4.77e+03], [380])
+    # crvcoincs.timeStart: [2.88e+04]
+    # crvcoincs.timeEnd: [2.89e+04]
+    # crvcoincs.time: [2.88e+04]
+    # crvcoincs.PEs: [252]
+    # crvcoincs.nHits: [16]
+    # kl.status: []
+    # kl.nactive: []
+    # kl.nhits: []
+    # kl.nplanes: []
+    # kl.nnullambig: []
+    # kl.ndof: []
+    # kl.fitcon: []
+    # klfit.sid: [[200]]
+    # klfit.sindex: [[1]]
+    # klfit.pos.X() [[1.41e+03]]
+    # klfit.pos.Y() [[4.78e+03]]
+    # klfit.pos.Z() [[362]]
+    # klkl.z0err: [[0.175, 0.166, 0.166, 0.175, 0.166, 0.166, 0.166]]
+    # goodTrk: True
+    # goodCRV: True
+    # noCRV: False
+    # CRV1: [True]
     # KLCRV1: [[False, False, False, False, False, True, False]]
+    # kl.bestFit: [False]
+    # klkl.bestFit: [[False, False, False, False, False, False, False]]
+    # L1Fiducial: [[True, False, True, True, True, True, True]]
 
-    # I think that klfit and klkl cuts can't be treated on an event level. They only apply to parameters on their level. 
-    # We want the 200, 1 fit within this event. If it contains at least one of these then we keep the event. 
-    # Isn't it just ak.any(axis=2) then? I'm confused. 
+    # # What about this
+    # tcrvpg = ApplyCuts(arrays, ["goodCRV", "goodTrk", "KLCRV1", "CRV1", "klkl.bestFit"])
+    # PrintNEvents(tcrvpg, nEvents=25, showCutMasks=True)
 
-    # MarkTrackerCuts(data_)
+    # evtinfo.runid: 1205
+    # evtinfo.subrunid: 0
+    # evtinfo.eventid: 31673
+    # crvcoincs.nLayers [3]
+    # crvcoincs.angle: [0.327]
+    # crvcoincs.sectorType: [1]
+    # crvcoincs.pos.fCoordinates: ([1.82e+03], [4.76e+03], [12])
+    # crvcoincs.timeStart: [9.08e+04]
+    # crvcoincs.timeEnd: [9.1e+04]
+    # crvcoincs.time: [9.08e+04]
+    # crvcoincs.PEs: [162]
+    # crvcoincs.nHits: [13]
+    # kl.status: [1]
+    # kl.nactive: [11]
+    # kl.nhits: [17]
+    # kl.nplanes: [1]
+    # kl.nnullambig: [9]
+    # kl.ndof: [23]
+    # kl.fitcon: [0.768]
+    # klfit.sid: [[200]]
+    # klfit.sindex: [[1]]
+    # klfit.pos.X() [[-1.56e+03]]
+    # klfit.pos.Y() [[4.78e+03]]
+    # klfit.pos.Z() [[-588]]
+    # klkl.z0err: [[]]
+    # klkl.d0err: [[]]
+    # klkl.thetaerr: [[]]
+    # klkl.phi0err: [[]]
+    # goodTrk: True
+    # goodCRV: True
+    # noCRV: False
+    # CRV1: [True, False]
+    # KLCRV1: [[False, False, False, True, False]]
+    # kl.bestFit: [False]
+    # klkl.bestFit: [[False, False, False, False, False]]
+    # L1Fiducial: [[True, True, True, True, True]]
 
-    # PrintNEvents(data_, 1)
-
-    # mask1 = (
-    #     ak.any(data_["klfit"]["sid"] == 200, axis=1)
-    #     & ak.any(data_["klfit"]["sindex"] == 1, axis=1)
-    # )
-
-    # print(data_) 
-
-    # print(data_.fields)
-
-    # ta->Project("tcrvpg","klfit.pos.X():klfit.pos.Z()",goodTrk+KLCRV1+CRV1+bestFit+goodCRV);
-    # ta->Project("tcrvpb","klfit.pos.X():klfit.pos.Z()",goodTrk+KLCRV1+bestFit+noCRV);
-    # ta->Project("tcrvy","klfit.pos.Y()-crvcoincs.pos.Y()",goodTrk+KLCRV1+CRV1+bestFit+goodCRV);
-    # ta->Project("tcrvts","klfit.time-crvcoincs.time",goodTrk+KLCRV1+CRV1+bestFit+goodCRV);
-    # ta->Project("dtvz","klfit.time-crvcoincs.time:klfit.pos.Z()",goodTrk+KLCRV1+CRV1+bestFit+goodCRV);
-    # ta->Project("dtvx","klfit.time-crvcoincs.time:klfit.pos.X()",goodTrk+KLCRV1+CRV1+bestFit+goodCRV);
-    # ta->Project("xvx","crvcoincs.pos.X():klfit.pos.X()",goodTrk+KLCRV1+CRV1+bestFit+goodCRV);
-    # ta->Project("zvz","crvcoincs.pos.Z():klfit.pos.Z()",goodTrk+KLCRV1+CRV1+bestFit+goodCRV);
-
-    # axis = 0 is the outer array structure, axis = 1 is the inner array structure, axis = 2 is the inner-inner array structure
-    # mask1 = ak.any(data_["goodTrk"], axis=1) # & ak.any(data_["KLCRV1"], axis=1) & data_["CRV1"] & ak.any(data_["bestFit"], axis=1) & data_["goodCRV"]
-    # mask1 = data_["KLCRV1"] # ak.any(data_["KLCRV1"], axis=2)
-    # print("data_['KLCRV1']\n", data_["KLCRV1"])
-    # mask1 = ak.any(data_["goodTrk"], axis=1
-    # print("mask\n", mask1)
-    # fuckyou = data_[mask1]
-    # PrintNEvents(data_, 1)
-    # print(data_["KLCRV1"])
-    # mask1 = data_["KLCRV1"]
-    # masked_data = data_[mask1]
-    # PrintNEvents(data_, 1)
+    # I think I understand now. 
+    # The cuts are working fine. 
+    # It's just that the kl.bestFit wipes out the entries in kl, leaving the event intact. 
+    # So, if you were to flatten everything you would get some odd results if you didn't know what you were doing.  
     
+    #######################################
+
+    return
+
+def Run(finName):
+
+
+    # TrkAna tutorial:
+    # https://github.com/Mu2e/TrkAna/blob/main/tutorial
+
+    # We have event level, global coincidence level, global track level, and local track level
+    # Trying to mask the entire array based on, for example, a local track level mask, is tricky. 
+    # One approach is to split the array into the different levels/trees and mask the appropirate tree
+    arrays = ak.Array([])
+    with uproot.open(finName+":TrkAnaExt/trkana") as tree: 
+        arrays = tree.arrays(["evtinfo.", "crvcoincs", "kl", "klfit", "klkl"]) 
+
+    # # Convert awkward array to nested list
+    # nested_list = ak.to_list(arrays[:10])
+
+    # print(nested_list)
+
+    # # return
+    # # Define a function to convert nested list to a string
+    # def nested_list_to_string(nested_list):
+    #     lines = []
+    #     for sublist in nested_list:
+    #         line = " ".join(map(str, sublist))
+    #         lines.append(line)
+    #     return "\n".join(lines)
+
+    # # Convert nested list to a string
+    # output_string = nested_list_to_string(nested_list)
+
+    # # Write the string to a text file
+    # with open("output.txt", "w") as file:
+    #     file.write(output_string)
+
     # return
 
-    # data_["goodTrk"]]
-    # print(data_["goodTrk"])
-    # data_ = data_[data_["goodTrk"]]
+    # print(arrays.fields)
+    # PrintNEvents(arrays)
 
-    # ut.Plot2D(data_[mask1]["klfit"]["pos"]["fCoordinates"]["fX"], data_[mask1]["klfit"]["pos"]["fCoordinates"]["fZ"], nbinsX=100,xmin=-8000,xmax=8000,nBinsY=100,ymin=-8000,ymax=8000)
-    # TH2D* tcrvpg = new TH2D("tcrvpg","KKInter TCRV Layer 1 Position, Has CRVCoincidence;KKInter Z (mm);KKInter X (mm)",100,-8000,8000,100,-8000,8000);
-    # ta->Project("tcrvpg","klfit.pos.X():klfit.pos.Z()",goodTrk+KLCRV1+CRV1+bestFit+goodCRV);
+    # print(arrays["crvcoincs"])
+    # print(arrays["klfit"])
 
-    # print(data_["L1Fiducial"])
+    # return
 
-    # Test cut
+    # Mark cuts 
+    MarkCuts(arrays)
 
-    # return 
+    # PrintNEvents(arrays, showCutMasks=True)
+   
+    # First plot 
+    Plot1(arrays)
+
+    return
+
 
 
 def main():
@@ -481,13 +389,10 @@ def main():
     # Take command-line arguments
     finName = sys.argv[1] if len(sys.argv) > 1 else "/pnfs/mu2e/tape/usr-nts/nts/sgrant/CosmicCRYExtractedCatDigiTrk/MDC2020z2_best_v1_1/root/40/73/nts.sgrant.CosmicCRYExtractedCatDigiTrk.MDC2020z2_best_v1_1.001205_00000000.root" # /pnfs/mu2e/scratch/users/sgrant/workflow/CosmicCRYExtractedTrk.MDC2020z2_best_v1_1/outstage/67605881/00/00000/nts.sgrant.CosmicCRYExtractedCatDigiTrk.MDC2020z2_best_v1_1.001205_00000000.root" # "/pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/82/e8/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00000000.tka"
 
-    print("\n--->Running with inputs:\n")
+    print("\n---> Running with inputs:\n")
     print("\tfinName:", finName)
 
     Run(finName=finName) 
-
-    # print(data_)
-    # print(data_["klfit"]['mom']['fCoordinates']["fY"])
 
     return
 

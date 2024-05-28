@@ -110,6 +110,65 @@ branchNamesTrkAna_ = [
     
 ]
 
+extendedBranchNamesTrkAna_ = [
+
+    # ---> evtinfo
+    "evtinfo.runid" # run ID 
+    ,"evtinfo.subrunid" # sub-run ID 
+    ,"evtinfo.eventid" # event ID 
+    
+    # ---> crvhit (reco)
+    , coincsBranchName+".sectorType" # CRV sector hit
+    , coincsBranchName+".pos.fCoordinates.fX" # Reconstructed position of the cluster in X 
+    , coincsBranchName+".pos.fCoordinates.fY" # Reconstructed position of the cluster in Y
+    , coincsBranchName+".pos.fCoordinates.fZ" # Reconstructed position of the cluster in Z
+    , coincsBranchName+".timeStart" # Earliest time recorded at either end of all bars in the hit
+    , coincsBranchName+".timeEnd" # Latest time recorded at either end of all bars in the hit
+    , coincsBranchName+".time" # average reconstructed hit time of the cluster.
+    , coincsBranchName+".PEs" # total number of photoelectrons in this cluser
+    , coincsBranchName+".nHits" # Number of individual bar hits combined in this hit
+    , coincsBranchName+".nLayers" # Number of CRV layers that are part of this cluster
+    , coincsBranchName+".PEsPerLayer[4]"
+    , coincsBranchName+".angle" # slope (in the plane perpendicular to the bar axis of a sector) of the track assumed to be responsible for the cluster (=change in the "layer direction" / change in the "thickness direction")
+
+    # ---> crvhitmc (truth)
+    , coincsBranchName+"mc.valid" # Records if there is a valid MC match to this CRV reco hit
+    , coincsBranchName+"mc.pdgId" # PDG ID of the track mostly likely responsible for this cluster
+    # , "crvhitmc.primaryPdgId" # PDG ID of the primary particle of the track mostly likely responsible for this cluster
+    # , "crvhitmc.primaryE" # energy of the primary particle of the track mostly likely responsible for this cluster
+    # , "crvhitmc.primary.pos.fCoordinates.fX" # start position of the primary particle of the track mostly likely responsible for this cluster
+    # , "crvhitmc.parentPdgId" # PDG ID of the parent particle of the track mostly likely responsible for this cluster
+    # , "crvhitmc.parentE" # start energy of the parent particle of the track mostly likely responsible for this cluster
+    # , "crvhitmc.parent.fCoordinates.fX" # X start position of the parent particle of the track mostly likely responsible for this cluster
+    # , "crvhitmc.parent.fCoordinates.fY" # Y
+    # , "crvhitmc.parent.fCoordinates.fZ" # Z
+    # , "crvhitmc.gparentPdgId" # grandparent info...
+    # , "crvhitmc.gparentE" # "
+    # , "crvhitmc.gparent" # "
+    # , "crvhitmc.depositedEnergy" # total deposited energy of the cluster based on the CrvSteps
+
+    # ----> kl (tracks)
+    , "kl.status"
+    , "kl.nactive"
+    , "kl.nhits"
+    , "kl.nplanes"
+    , "kl.nnullambig"
+    , "kl.ndof"
+    # , "klfit" # arrays of structs
+    # , "klkl" # arrays of structs
+    # , "kl.fitcon"
+    # , "klfit.sid"
+    # , "klfit.sindex"
+    # , "klfit.pos.X"
+    # , "klfit.pos.Y"
+    # , "klfit.pos.Z"
+    # , "klfit.time"
+    # , "klkl.z0err"
+    # , "klkl.d0err"
+    # , "klkl.thetaerr"
+    # , "klkl.phi0err"
+]
+
 import uproot
 import awkward as ak
 
@@ -128,7 +187,6 @@ def TTreeToAwkwardArray(finName, treeName, branchNames):
     # Open the ROOT file and access the TTree
     with uproot.open(finName) as file:
         tree = file[treeName]
-
         # Read the data into Awkward Arrays
         arrays = tree.arrays(branchNames, library="ak")
         
@@ -136,11 +194,13 @@ def TTreeToAwkwardArray(finName, treeName, branchNames):
 
     return arrays
 
+
+
 # ---------------------------------
 # PDGid wrangling
 # ---------------------------------
 
-particle_dict = {
+particleDict = {
     2212: 'proton',
     211: 'pi+',
     -211: 'pi-',
@@ -155,6 +215,35 @@ particle_dict = {
     310: "kaon0S"
     # Add more particle entries as needed
     }
+
+def GetLatexParticleName(particle):
+
+    if particle == "proton": return "$p$"
+    elif particle == "pi+-": return "$\pi^{\pm}$"
+    elif particle == "pi+": return "$\pi^{+}$"
+    elif particle == "pi-": return "$\pi^{-}$"
+    elif particle == "mu+-": return "$\mu^{\pm}$"
+    elif particle == "mu+": return "$\mu^{+}$"
+    elif particle == "mu-": return "$\mu^{-}$"
+    elif particle == "e+": return "$e^{+}$"
+    elif particle == "e-": return "$e^{-}$"
+    # elif particle == "e+ >10 MeV": return "$e^{+} > 10$ MeV"
+    # elif particle == "e- >10 MeV": return "$e^{-} > 10$ MeV"
+    elif particle == "kaon+": return "$K^{+}$"
+    elif particle == "kaon-": return "$K^{-}$"
+    elif particle == "kaon0": return "$K^{0}$"
+    elif particle == "kaon0L": return "$K^{0}_{L}$"
+    elif particle == "kaon0S": return "$K^{0}_{S}$"
+    # elif particle == "no_proton": return "No protons"
+    # elif particle == "pi-_and_mu-": return "$\pi^{-}$ & $\mu^{-}$"
+    # elif particle == "pi+_and_mu+": return "$\pi^{+}$ & $\mu^{+}$"
+    # Add more as required
+    else: return "other"
+
+# get the latex names of the particles in the particle dictionary 
+latexParticleDict = {}
+for key, value in  particleDict.items():
+    latexParticleDict[key] = GetLatexParticleName(value)
 
 # --------
 # Plotting
@@ -305,6 +394,9 @@ def PlotGraphOverlay2(graphs_, title=None, xlabel=None, ylabel=None, labels_=[],
     if log: 
         # ax.set_xscale("log")
         ax.set_yscale("log")
+        # ax.xaxis.set_major_formatter(ScalarFormatter())
+        # ax.yaxis.set_major_formatter(ScalarFormatter())
+        # ax.ticklabel_format(axis='y', style='plain')
 
     # Set title, xlabel, and ylabel
     ax.set_title(title, fontsize=15, pad=10)
@@ -315,15 +407,18 @@ def PlotGraphOverlay2(graphs_, title=None, xlabel=None, ylabel=None, labels_=[],
     ax.tick_params(axis='x', labelsize=13)  
     ax.tick_params(axis='y', labelsize=13)  
 
+    # Disable scientific notation
+    # ax.ticklabel_format(useOffset=False)
+
     # Check if x or y values exceed 9999 for scientific notation
-    if any(max(data_[0]) > 999 for _, data_ in graphs_.items()) or any(max(data_[0]) < 9.99e-3 for _, data_ in graphs_.items()):
-        ax.xaxis.set_major_formatter(ScalarFormatter(useMathText=True))
-        ax.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
-        ax.xaxis.offsetText.set_fontsize(13)
-    if any(max(data_[2]) > 999 for _, data_ in graphs_.items()) or any(max(data_[2]) < 9.99e-3 for _, data_ in graphs_.items()):
-        ax.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
-        ax.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
-        ax.yaxis.offsetText.set_fontsize(13)
+    # if any(max(data_[0]) > 9999 for _, data_ in graphs_.items()) or any(max(data_[0]) < 9.99e-4 for _, data_ in graphs_.items()):
+    #     ax.xaxis.set_major_formatter(ScalarFormatter(useMathText=True))
+    #     ax.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
+    #     ax.xaxis.offsetText.set_fontsize(13)
+    # if any(max(data_[2]) > 9999 for _, data_ in graphs_.items()) or any(max(data_[2]) < 9.99e-4 for _, data_ in graphs_.items()):
+    #     ax.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
+    #     ax.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+    #     ax.yaxis.offsetText.set_fontsize(13)
 
     ax.legend(loc="best", frameon=False, fontsize=13) # , markerscale=5)
 
@@ -336,6 +431,9 @@ def PlotGraphOverlay2(graphs_, title=None, xlabel=None, ylabel=None, labels_=[],
 
 def Plot1D(data, nbins=100, xmin=-1.0, xmax=1.0, title=None, xlabel=None, ylabel=None, fout="hist.png", legPos="best", stats=True, underOver=False, errors=False, NDPI=300):
     
+    data = np.array(data)
+    # data = np.flatten(data)
+
     # Create figure and axes
     fig, ax = plt.subplots()
 
@@ -345,11 +443,11 @@ def Plot1D(data, nbins=100, xmin=-1.0, xmax=1.0, title=None, xlabel=None, ylabel
     # Set x-axis limits
     ax.set_xlim(xmin, xmax)
 
-    # # Calculate statistics
+    # # # Calculate statistics
     N, mean, meanErr, stdDev, stdDevErr, underflows, overflows = GetBasicStats(data, xmin, xmax)
-    # N, mean, meanErr, stdDev, stdDevErr = str(N), Round(mean, 3), Round(meanErr, 1), Round(stdDev, 3), Round(stdDevErr, 1) 
+    # # N, mean, meanErr, stdDev, stdDevErr = str(N), Round(mean, 3), Round(meanErr, 1), Round(stdDev, 3), Round(stdDevErr, 1) 
 
-    # Create legend text
+    # # Create legend text
     legend_text = f"Entries: {N}\nMean: {Round(mean, 3)}\nStd Dev: {Round(stdDev, 3)}"
     # if errors: legend_text = f"Entries: {N}\nMean: {Round(mean, 3)}$\pm${Round(meanErr, 1)}\nStd Dev: {Round(stdDev, 3)}$\pm${Round(stdDevErr, 1)}"
     # if underOver: legend_text += f"\nUnderflows: {underflows}\nOverflows: {overflows}"
@@ -367,11 +465,11 @@ def Plot1D(data, nbins=100, xmin=-1.0, xmax=1.0, title=None, xlabel=None, ylabel
     ax.tick_params(axis='x', labelsize=13)  # Set x-axis tick label font size
     ax.tick_params(axis='y', labelsize=13)  # Set y-axis tick label font size
 
-    if (ax.get_xlim()[1] > 9.999e3) or (ax.get_xlim()[1] < 9.999e-3) :
+    if (ax.get_xlim()[1] > 9.999e3) or (ax.get_xlim()[1] < 9.999e-3):
         ax.xaxis.set_major_formatter(ScalarFormatter(useMathText=True))
         ax.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
         ax.xaxis.offsetText.set_fontsize(13)
-    if (ax.get_ylim()[1] > 9.999e3) or (ax.get_ylim()[1] < 9.999e-3) :
+    if (ax.get_ylim()[1] > 9.999e3) or (ax.get_ylim()[1] < 9.999e-3):
         ax.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
         ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
         ax.yaxis.offsetText.set_fontsize(13)
@@ -379,6 +477,137 @@ def Plot1D(data, nbins=100, xmin=-1.0, xmax=1.0, title=None, xlabel=None, ylabel
     # Save the figure
     plt.savefig(fout, dpi=NDPI, bbox_inches="tight")
     print("---> Written", fout)
+
+    # Clear memory
+    plt.close()
+
+from scipy.optimize import curve_fit
+
+# --------------------
+# Fit function
+# --------------------
+
+# The Gaussian function
+def gaussian(x, norm, mu, sigma):
+    return norm * np.exp(-((x - mu) / (2 * sigma)) ** 2)
+
+# Under development!
+def Plot1DWithGaussFit(data, nbins=100, xmin=-1.0, xmax=1.0, norm=1.0, mu=0.0, sigma=1.0, fitMin=-1.0, fitMax=1.0, title=None, xlabel=None, ylabel=None, fout="hist.png", legPos="best", stats=True, peak=False, underOver=False, errors=False, NDPI=300):
+    
+    data = np.array(data)
+    
+    # Create figure and axes
+    fig, ax = plt.subplots()
+
+    # Plot the histogram with outline
+    counts, bin_edges, _ = ax.hist(data, bins=nbins, range=(xmin, xmax), histtype='step', edgecolor='black', linewidth=1.0, fill=False, density=False)
+
+    # Set x-axis limits
+    ax.set_xlim(xmin, xmax)
+
+    # Fit gaussian
+
+    # Calculate bin centers
+    bin_centres = (bin_edges[:-1] + bin_edges[1:]) / 2
+    # Fit the Gaussian function to the histogram data
+    params, covariance = curve_fit(gaussian, bin_centres[(bin_centres >= fitMin) & (bin_centres <= fitMax)], counts, p0=[norm, mu, sigma])
+    # Extract parameters from the fitting
+    norm, mu, sigma = params
+    # Plot the Gaussian curve
+    ax.plot(bin_centres, gaussian(bin_centres, norm, mu, sigma), color="red", label=f"Norm: {norm}\n$\mu$: {mu}\n$sigma {sigma}")
+
+    # Calculate statistics
+    N, mean, meanErr, stdDev, stdDevErr, underflows, overflows = GetBasicStats(data, xmin, xmax)
+
+    # Create legend text
+    legend_text = f"Entries: {N}\nMean: {Round(mean, 3)}\nStd Dev: {Round(stdDev, 3)}"
+    # if errors: legend_text = f"Entries: {N}\nMean: {Round(mean, 3)}$\pm${Round(meanErr, 1)}\nStd Dev: {Round(stdDev, 3)}$\pm${Round(stdDevErr, 1)}"
+    # if errors: legend_text = f"Entries: {N}\nMean: {Round(mean, 4)}$\pm${Round(meanErr, 1)}\nStd Dev: {Round(stdDev, 4)}$\pm${Round(stdDevErr, 1)}"
+    # # if peak: legend_text += f"\nPeak: {Round(peak, 4)}$\pm${Round(peakErr, 1)}"
+    # if underOver: legend_text += f"\nUnderflows: {underflows}\nOverflows: {overflows}"
+
+    # legend_text = f"Entries: {N}\nMean: {Round(mean, 3)}$\pm${Round(meanErr, 1)}\nStd Dev: {Round(stdDev, 3)}$\pm${Round(stdDev, 1)}"
+
+    # Add legend to the plot
+    if stats: ax.legend([legend_text], loc=legPos, frameon=False, fontsize=13)
+
+    ax.set_title(title, fontsize=15, pad=10)
+    ax.set_xlabel(xlabel, fontsize=13, labelpad=10) 
+    ax.set_ylabel(ylabel, fontsize=13, labelpad=10) 
+
+    # Set font size of tick labels on x and y axes
+    ax.tick_params(axis='x', labelsize=13)  # Set x-axis tick label font size
+    ax.tick_params(axis='y', labelsize=13)  # Set y-axis tick label font size
+
+    if (ax.get_xlim()[1] > 9.999e3) or (ax.get_xlim()[1] < 9.999e-3):
+        ax.xaxis.set_major_formatter(ScalarFormatter(useMathText=True))
+        ax.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+        ax.xaxis.offsetText.set_fontsize(13)
+    if (ax.get_ylim()[1] > 9.999e3) or (ax.get_ylim()[1] < 9.999e-3):
+        ax.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
+        ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+        ax.yaxis.offsetText.set_fontsize(13)
+
+    # Save the figure
+    plt.savefig(fout, dpi=NDPI, bbox_inches="tight")
+    print("---> Written", fout)
+
+    # Clear memory
+    plt.clf()
+    plt.close()
+
+
+import matplotlib.colors as colors
+
+def Plot2D(x, y, nbinsX=100, xmin=-1.0, xmax=1.0, nbinsY=100, ymin=-1.0, ymax=1.0, title=None, xlabel=None, ylabel=None, fout="hist.png", log=False, cb=True, NDPI=300):
+
+    # Filter out empty entries from x and y
+    valid_indices = [i for i in range(len(x)) if np.any(x[i]) and np.any(y[i])]
+
+    # Extract valid data points based on the indices
+    x = [x[i] for i in valid_indices]
+    y = [y[i] for i in valid_indices]
+
+    # Check if the input arrays are not empty and have the same length
+    if len(x) == 0 or len(y) == 0:
+        print("Input arrays are empty.")
+        return
+    if len(x) != len(y):
+        print("Input arrays x and y have different lengths.")
+        return
+
+    # Create 2D histogram
+    hist, x_edges, y_edges = np.histogram2d(x, y, bins=[nbinsX, nbinsY], range=[[xmin, xmax], [ymin, ymax]])
+
+    # Set up the plot
+    fig, ax = plt.subplots()
+
+    norm = colors.Normalize(vmin=0, vmax=np.max(hist))  
+    if log: norm = colors.LogNorm(vmin=1, vmax=np.max(hist)) 
+
+    # Plot the 2D histogram
+    im = ax.imshow(hist.T, cmap='inferno', extent=[xmin, xmax, ymin, ymax], aspect='auto', origin='lower', norm=norm)  # , vmax=np.max(hist), norm=colors.LogNorm())
+    # im = ax.imshow(hist.T, extent=[xmin, xmax, ymin, ymax], aspect='auto', origin='lower', vmax=np.max(hist))
+
+    # Add colourbar
+    if cb: plt.colorbar(im)
+
+    plt.title(title, fontsize=16, pad=10)
+    plt.xlabel(xlabel, fontsize=14, labelpad=10)
+    plt.ylabel(ylabel, fontsize=14, labelpad=10)
+
+    # Scientific notation
+    if (ax.get_xlim()[1] > 9.999e3) or (ax.get_xlim()[1] < 9.999e-3):
+        ax.xaxis.set_major_formatter(ScalarFormatter(useMathText=True))
+        ax.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+        ax.xaxis.offsetText.set_fontsize(14)
+    if (ax.get_ylim()[1] > 9.999e3) or (ax.get_ylim()[1] < 9.999e-3):
+        ax.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
+        ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+        ax.yaxis.offsetText.set_fontsize(14)
+
+    plt.savefig(fout, dpi=NDPI, bbox_inches="tight")
+    print("\n---> Written:\n\t", fout)
 
     # Clear memory
     plt.close()

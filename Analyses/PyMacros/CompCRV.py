@@ -210,10 +210,15 @@ def Plot1(arrays):
 def Plot2(arrays):
 
     # TH1D* tcrvts = new TH1D("tcrvts","KKInter Time - CRV Time, Layer 1 #Delta T;T_{KKInter} - T_{CRV} (ns)",250,-30,30);
+    # TH2D* dtvx = new TH2D("dtvx","KKInter TCRV Layer 1 #Delta T vs X;KKInter X (mm);T_{KKInter}-T_{CRV} (ns)",50,-3400,3400,100,-15,15);
+    # TH2D* xvx = new TH2D("xvx","CRV Layer1 X vs KKInter X;KKInter X (mm);CRV X (mm)",50,-3400,3400,50,-3400,3400);
+    # TH2D* zvz = new TH2D("zvz","CRV Layer1 Z vs KKInter Z;KKInter Z (mm);CRV Z (mm)",50,-2500,1500,50,-2500,1500);
     # ta->Project("tcrvts","klfit.time-crvcoincs.time",goodtrk+KLCRV1+CRV1+bestfit+goodCRV);
+    # ta->Project("dtvx","klfit.time-crvcoincs.time:klfit.pos.X()",goodtrk+KLCRV1+CRV1+bestfit+goodCRV);
+    # ta->Project("xvx","crvcoincs.pos.X():klfit.pos.X()",goodtrk+KLCRV1+CRV1+bestfit+goodCRV);
+    # ta->Project("zvz","crvcoincs.pos.Z():klfit.pos.Z()",goodtrk+KLCRV1+CRV1+bestfit+goodCRV);
 
     tcrvts = ApplyCuts(arrays, ["goodCRV", "CRV1", "goodTrk", "KLCRV1", "bestFit", "singleCRV1"]) # , "singleKL"]) # , "singleTrack"]) 
-
 
     # y_klfit = ak.flatten(tcrvy["klfit"]["pos"]["fCoordinates"]["fY"], axis=None)
     # y_crvcoincs = ak.flatten(tcrvy["crvcoincs"]["crvcoincs.pos.fCoordinates.fY"], axis=None)
@@ -257,11 +262,33 @@ def Plot2(arrays):
     #         , nbins=250, xmin=-30, xmax=30
     #         , title="$\Delta T$", xlabel="$T_{KKInter} - T_{CRV}$ [ns]", ylabel="Counts", fout="../Images/CompCRV/h1_deltaT.png")
         
-    ut.Plot1D(data=ak.flatten(tcrvts["klfit"]["time"], axis=None) - ak.flatten(tcrvts["crvcoincs"]["crvcoincs.time"], axis=None)
-            , nbins=250, xmin=-30, xmax=30
-            , title="$\Delta T$", xlabel="$T_{KKInter} - T_{CRV}$ [ns]", ylabel="Counts", fout="../Images/CompCRV/h1_deltaT.png")
+    # ut.Plot1D(data=ak.flatten(tcrvts["klfit"]["time"], axis=None) - ak.flatten(tcrvts["crvcoincs"]["crvcoincs.time"], axis=None)
+    #         , nbins=250, xmin=-30, xmax=30
+    #         , title="$\Delta T$", xlabel="$T_{KKInter} - T_{CRV}$ [ns]", ylabel="Counts", fout="../Images/CompCRV/h1_deltaT.png")
         
-    
+    ut.Plot1DWithGaussFit(data=ak.flatten(tcrvts["klfit"]["time"], axis=None) - ak.flatten(tcrvts["crvcoincs"]["crvcoincs.time"], axis=None)
+            , nbins=250, xmin=-30, xmax=30
+            , norm=10.0, mu=15.3, sigma=8.97, fitMin=-30.0, fitMax=30.0 
+            , title="", xlabel="$T_{KKInter} - T_{CRV}$ [ns]", ylabel="Counts", fout="../Images/CompCRV/h1_deltaT.png")
+        
+
+    # TH2D* dtvx = new TH2D("dtvx","KKInter TCRV Layer 1 #Delta T vs X;KKInter X (mm);T_{KKInter}-T_{CRV} (ns)",50,-3400,3400,100,-15,15);
+    # TH2D* xvx = new TH2D("xvx","CRV Layer1 X vs KKInter X;KKInter X (mm);CRV X (mm)",50,-3400,3400,50,-3400,3400);
+    # TH2D* zvz = new TH2D("zvz","CRV Layer1 Z vs KKInter Z;KKInter Z (mm);CRV Z (mm)",50,-2500,1500,50,-2500,1500);
+
+    ut.Plot2D(x=ak.flatten(tcrvts["klfit"]["pos"]["fCoordinates"]["fX"], axis=None), y=(ak.flatten(tcrvts["klfit"]["time"], axis=None) - ak.flatten(tcrvts["crvcoincs"]["crvcoincs.time"], axis=None))
+            , nbinsX=50, xmin=-3400, xmax=3400, nbinsY=100, ymin=-15, ymax=15
+            , title="", xlabel="KKInter X [mm]", ylabel="$T_{KKInter}-T_{CRV}$ [ns]", fout="../Images/CompCRV/h2_deltaT_vs_x.png")
+
+    ut.Plot2D(x=ak.flatten(tcrvts["crvcoincs"]["crvcoincs.pos.fCoordinates.fX"], axis=None), y=ak.flatten(tcrvts["klfit"]["pos"]["fCoordinates"]["fX"], axis=None)
+            , nbinsX=50, xmin=-3400, xmax=3400, nbinsY=50, ymin=-3400, ymax=3400
+            , title="", xlabel="KKInter X [mm]", ylabel="CRV X [mm]", fout="../Images/CompCRV/h2_trackX_vs_CRVX.png")
+
+    ut.Plot2D(x=ak.flatten(tcrvts["crvcoincs"]["crvcoincs.pos.fCoordinates.fZ"], axis=None), y=ak.flatten(tcrvts["klfit"]["pos"]["fCoordinates"]["fZ"], axis=None)
+            , nbinsX=50, xmin=-2500, xmax=1500, nbinsY=50, ymin=-2500, ymax=1500
+            , title="", xlabel="KKInter Z [mm]", ylabel="CRV Z [mm]", fout="../Images/CompCRV/h2_trackZ_vs_CRVZ.png")
+
+
     # With 1000 events there is one discrenpancy 
     # One klfit less that coincidences.   
     # 231
@@ -350,7 +377,7 @@ def Run(finName):
     
     # Plot 
     # Plot1(arrays) # KKInter TCRV Layer 1 Position, with/without coincidence
-    Plot2(arrays) # KKInter Time - CRV Time Layer 1 
+    Plot2(arrays) # KKInter Time - CRV Time Layer 1 & Delta T vs KKInterX
 
     return
 

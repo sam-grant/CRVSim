@@ -107,11 +107,6 @@ def MarkCuts(arrays, cuts=[]):
         arrays["KLCRV1"] = ( (arrays["klfit"]["sid"] == 200) 
                             & (arrays["klfit"]["sindex"] == 1) )
 
-        # For some reason this just doesn't work properly 
-        # I think klfit resets the array axis indexing, so it's axis=1 not 2 
-        # arrays["KLCRV1"] = ( (ak.any(arrays["klfit"]["sid"], axis=1, keepdims=True) == 200) 
-        #                     & (ak.any(arrays["klfit"]["sindex"], axis=1, keepdims=True) == 1) )
-
     if "bestFit" in cuts: # Good quality track fit 
         # needs to be seperated by kl and klkl in this scheme
         arrays["kl.bestFit"] = ( (arrays["kl"]["kl.ndof"] >= 10)
@@ -184,6 +179,99 @@ def ApplyCuts(arraysMain, cuts):
         arrays = ApplyCuts(arrays, ["goodTrk"])
 
     return arrays
+
+def Plot(arrays):
+
+    # TH2D* tcrvpg = new TH2D("tcrvpg","KKInter TCRV Layer 1 Position, Has CRVCoincidence;KKInter Z (mm);KKInter X (mm)",100,-8000,8000,100,-8000,8000);
+    # TH2D* tcrvpb = new TH2D("tcrvpb","KKInter TCRV Layer 1 Position,  No CRVCoincidence;KKInter Z (mm);KKInter X (mm)",100,-8000,8000,100,-8000,8000);
+
+    # ta->Project("tcrvpg","klfit.pos.X():klfit.pos.Z()",goodtrk+KLCRV1+CRV1+bestfit+goodCRV);
+    # ta->Project("tcrvpb","klfit.pos.X():klfit.pos.Z()",goodtrk+KLCRV1+bestfit+noCRV);
+
+    tcrvpg = ApplyCuts(arrays, ["goodCRV", "goodTrk", "CRV1", "KLCRV1", "bestFit"])
+    tcrvpb = ApplyCuts(arrays, ["noCRV", "goodTrk", "CRV1", "KLCRV1", "bestFit"])
+
+    # Plot
+    ut.Plot2D(x=ak.flatten(tcrvpg["klfit"]["pos"]["fCoordinates"]["fZ"], axis=None), y=ak.flatten(tcrvpg["klfit"]["pos"]["fCoordinates"]["fX"], axis=None)
+            , nbinsX=100, xmin=-8000, xmax=8000, nbinsY=100, ymin=-8000, ymax=8000
+            , title="Has coincidence", xlabel="KKInter Z [mm]", ylabel="KKInter X [mm]", fout="../Images/CompCRV/h2_zx_hasCoin.png")
+
+    ut.Plot2D(x=ak.flatten(tcrvpb["klfit"]["pos"]["fCoordinates"]["fZ"], axis=None), y=ak.flatten(tcrvpb["klfit"]["pos"]["fCoordinates"]["fX"], axis=None)
+            , nbinsX=100, xmin=-8000, xmax=8000, nbinsY=100, ymin=-8000, ymax=8000
+            , title="No coincidence", xlabel="KKInter Z [mm]", ylabel="KKInter X [mm]", fout="../Images/CompCRV/h2_zx_noCoin.png")
+
+    # TH1D* tcrvts = new TH1D("tcrvts","KKInter Time - CRV Time, Layer 1 #Delta T;T_{KKInter} - T_{CRV} (ns)",250,-30,30);
+    # ta->Project("tcrvts","klfit.time-crvcoincs.time",goodtrk+KLCRV1+CRV1+bestfit+goodCRV);
+
+    tcrvts = ApplyCuts(arrays, ["goodCRV", "CRV1", "goodTrk", "KLCRV1", "bestFit", "singleCRV1"])
+
+    ut.Plot1DWithGaussFit(data=ak.flatten(tcrvts["klfit"]["time"], axis=None) - ak.flatten(tcrvts["crvcoincs"]["crvcoincs.time"], axis=None)
+            , nbins=250, xmin=-30, xmax=30
+            , norm=10.0, mu=15.3, sigma=8.97, fitMin=-30.0, fitMax=30.0 
+            , title="", xlabel="$T_{KKInter} - T_{CRV}$ [ns]", ylabel="Counts", fout="../Images/CompCRV/h1_deltaT.png")
+
+    # TH2D* dtvx = new TH2D("dtvx","KKInter TCRV Layer 1 #Delta T vs X;KKInter X (mm);T_{KKInter}-T_{CRV} (ns)",50,-3400,3400,100,-15,15);
+    # TH2D* xvx = new TH2D("xvx","CRV Layer1 X vs KKInter X;KKInter X (mm);CRV X (mm)",50,-3400,3400,50,-3400,3400);
+    # TH2D* zvz = new TH2D("zvz","CRV Layer1 Z vs KKInter Z;KKInter Z (mm);CRV Z (mm)",50,-2500,1500,50,-2500,1500);
+    # ta->Project("dtvx","klfit.time-crvcoincs.time:klfit.pos.X()",goodtrk+KLCRV1+CRV1+bestfit+goodCRV);
+    # ta->Project("xvx","crvcoincs.pos.X():klfit.pos.X()",goodtrk+KLCRV1+CRV1+bestfit+goodCRV);
+    # ta->Project("zvz","crvcoincs.pos.Z():klfit.pos.Z()",goodtrk+KLCRV1+CRV1+bestfit+goodCRV);
+
+    ut.Plot2D(x=ak.flatten(tcrvts["klfit"]["pos"]["fCoordinates"]["fX"], axis=None), y=(ak.flatten(tcrvts["klfit"]["time"], axis=None) - ak.flatten(tcrvts["crvcoincs"]["crvcoincs.time"], axis=None))
+            , nbinsX=50, xmin=-3400, xmax=3400, nbinsY=100, ymin=-15, ymax=15
+            , title="", xlabel="KKInter X [mm]", ylabel="$T_{KKInter}-T_{CRV}$ [ns]", fout="../Images/CompCRV/h2_deltaT_vs_x.png")
+
+    ut.Plot2D(x=ak.flatten(tcrvts["crvcoincs"]["crvcoincs.pos.fCoordinates.fX"], axis=None), y=ak.flatten(tcrvts["klfit"]["pos"]["fCoordinates"]["fX"], axis=None)
+            , nbinsX=50, xmin=-3400, xmax=3400, nbinsY=50, ymin=-3400, ymax=3400
+            , title="", xlabel="KKInter X [mm]", ylabel="CRV X [mm]", fout="../Images/CompCRV/h2_trackX_vs_CRVX.png")
+
+    ut.Plot2D(x=ak.flatten(tcrvts["crvcoincs"]["crvcoincs.pos.fCoordinates.fZ"], axis=None), y=ak.flatten(tcrvts["klfit"]["pos"]["fCoordinates"]["fZ"], axis=None)
+            , nbinsX=50, xmin=-2500, xmax=1500, nbinsY=50, ymin=-2500, ymax=1500
+            , title="", xlabel="KKInter Z [mm]", ylabel="CRV Z [mm]", fout="../Images/CompCRV/h2_trackZ_vs_CRVZ.png")
+    
+    return
+
+def Run(finName):
+
+    # TrkAna tutorial:
+    # https://github.com/Mu2e/TrkAna/blob/main/tutorial
+
+    # We have event level, global coincidence level, global track level, and local track level
+    # Trying to mask the entire array based on, for example, a local track level mask, is tricky. 
+    # One approach is to split the array into the different levels/trees and mask the appropirate tree
+    arrays = ak.Array([])
+    with uproot.open(finName+":TrkAnaExt/trkana") as tree: 
+        arrays = tree.arrays(["evtinfo.", "crvcoincs", "crvcoincsmc", "kl", "klfit", "klkl"]) 
+
+    # arrays = arrays[:2500]
+    
+    # Mark cuts 
+    MarkCuts(arrays)
+    # PrintNEvents(arrays, nEvents=20, showCutMasks=True)
+
+    # Plot 
+    Plot(arrays)
+
+    return
+
+
+
+def main():
+
+    # Take command-line arguments
+    finName = sys.argv[1] if len(sys.argv) > 1 else "/pnfs/mu2e/tape/usr-nts/nts/sgrant/CosmicCRYExtractedCatDigiTrk/MDC2020z2_best_v1_1/root/40/73/nts.sgrant.CosmicCRYExtractedCatDigiTrk.MDC2020z2_best_v1_1.001205_00000000.root" # /pnfs/mu2e/scratch/users/sgrant/workflow/CosmicCRYExtractedTrk.MDC2020z2_best_v1_1/outstage/67605881/00/00000/nts.sgrant.CosmicCRYExtractedCatDigiTrk.MDC2020z2_best_v1_1.001205_00000000.root" # "/pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/82/e8/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00000000.tka"
+
+    print("\n---> Running with inputs:\n")
+    print("\tfinName:", finName)
+
+    Run(finName=finName) 
+
+    return
+
+if __name__ == "__main__":
+    main()
+
+# Below is just for posterity...
 
 def Plot1(arrays):
 
@@ -337,8 +425,6 @@ def Plot2(arrays):
 
     # tcrvy["klfit"]["pos"]["fCoordinates"]["fY"] 
 
-
-
     # # Plot
     # ut.Plot2D(x=ak.flatten(tcrvpg["klfit"]["pos"]["fCoordinates"]["fZ"], axis=None), y=ak.flatten(tcrvpg["klfit"]["pos"]["fCoordinates"]["fX"], axis=None)
     #         , nbinsX=100, xmin=-8000, xmax=8000, nbinsY=100, ymin=-8000, ymax=8000
@@ -347,53 +433,3 @@ def Plot2(arrays):
     # ut.Plot2D(x=ak.flatten(tcrvpb["klfit"]["pos"]["fCoordinates"]["fZ"], axis=None), y=ak.flatten(tcrvpb["klfit"]["pos"]["fCoordinates"]["fX"], axis=None)
     #         , nbinsX=100, xmin=-8000, xmax=8000, nbinsY=100, ymin=-8000, ymax=8000
     #         , title="No coincidence", xlabel="KKInter Z [mm]", ylabel="KKInter X [mm]", fout="../Images/CompCRV/h2_zx_noCoin.png")
-
-def Run(finName):
-
-    # TrkAna tutorial:
-    # https://github.com/Mu2e/TrkAna/blob/main/tutorial
-
-    # We have event level, global coincidence level, global track level, and local track level
-    # Trying to mask the entire array based on, for example, a local track level mask, is tricky. 
-    # One approach is to split the array into the different levels/trees and mask the appropirate tree
-    arrays = ak.Array([])
-    with uproot.open(finName+":TrkAnaExt/trkana") as tree: 
-        arrays = tree.arrays(["evtinfo.", "crvcoincs", "crvcoincsmc", "kl", "klfit", "klkl"]) 
-
-    # arrays = arrays[:2500]
-
-    # Mark cuts 
-    MarkCuts(arrays)
-
-    # arrays = ApplyCuts(arrays, ["goodTrk", "goodCRV", "CRV1", "KLCRV1"] ) # , "CRV1"]) # , "KLCRV1", "bestFit"])
-
-    # PrintNEvents(arrays, nEvents=20, showCutMasks=True)
-
-    # return
-
-    # return
-
-    # PrintNEvents(arrays, showCutMasks=True)
-    
-    # Plot 
-    # Plot1(arrays) # KKInter TCRV Layer 1 Position, with/without coincidence
-    Plot2(arrays) # KKInter Time - CRV Time Layer 1 & Delta T vs KKInterX
-
-    return
-
-
-
-def main():
-
-    # Take command-line arguments
-    finName = sys.argv[1] if len(sys.argv) > 1 else "/pnfs/mu2e/tape/usr-nts/nts/sgrant/CosmicCRYExtractedCatDigiTrk/MDC2020z2_best_v1_1/root/40/73/nts.sgrant.CosmicCRYExtractedCatDigiTrk.MDC2020z2_best_v1_1.001205_00000000.root" # /pnfs/mu2e/scratch/users/sgrant/workflow/CosmicCRYExtractedTrk.MDC2020z2_best_v1_1/outstage/67605881/00/00000/nts.sgrant.CosmicCRYExtractedCatDigiTrk.MDC2020z2_best_v1_1.001205_00000000.root" # "/pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/82/e8/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00000000.tka"
-
-    print("\n---> Running with inputs:\n")
-    print("\tfinName:", finName)
-
-    Run(finName=finName) 
-
-    return
-
-if __name__ == "__main__":
-    main()

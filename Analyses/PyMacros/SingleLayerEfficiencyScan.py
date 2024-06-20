@@ -1,7 +1,11 @@
 '''
 Samuel Grant 2024
 Scan PE thresholds get the module and single layer efficiency for the test module
+
+This should be in a standalone directory along with the write script. 
+
 '''
+
 import sys
 import numpy as np
 import h5py

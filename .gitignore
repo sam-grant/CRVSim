@@ -5,9 +5,11 @@
 *.txt
 *.csv
 *.fcl
+*.out
 
 /Offline
 Analyses/PyMacros/Attic/*
+Analyses/CMacros/*out 
 Analyses/Images/*
 Analyses/Txt/*
 Analyses/Attic/*

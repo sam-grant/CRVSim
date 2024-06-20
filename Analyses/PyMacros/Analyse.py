@@ -44,8 +44,8 @@ def SanityPlots(data_, reproc, foutTag):
     nLayers_ = ak.flatten(data_[ut.coincsBranchName+".nLayers"]) 
     slopes_ = ak.flatten(data_[ut.coincsBranchName+".angle"])
 
-    ut.PlotGraphOverlay(graphs_=[(x_[sectors_ == 3], y_[sectors_ == 3]), (x_[sectors_ == 1], y_[sectors_ == 1]), (x_[sectors_ == 2], y_[sectors_ == 2]) ], labels_=["Top", "Middle", "Bottom"], xlabel="x-position [m]", ylabel="y-position [m]", fout=f"../Images/{reproc}/Sanity/gr_XY_{foutTag}.png")
-    ut.PlotGraphOverlay(graphs_=[(z_[sectors_ == 3], y_[sectors_ == 3]), (z_[sectors_ == 1], y_[sectors_ == 1]), (z_[sectors_ == 2], y_[sectors_ == 2]) ], labels_=["Top", "Middle", "Bottom"], xlabel="z-position [m]", ylabel="y-position [m]", fout=f"../Images/{reproc}/Sanity/gr_ZY_{foutTag}.png")
+    ut.PlotGraphOverlay(graphs_=[(x_[sectors_ == 3], y_[sectors_ == 3]), (x_[sectors_ == 1], y_[sectors_ == 1]), (x_[sectors_ == 2], y_[sectors_ == 2])], labels_=["Top", "Middle", "Bottom"], xlabel="x-position [m]", ylabel="y-position [m]", fout=f"../Images/{reproc}/Sanity/gr_XY_{foutTag}.png")
+    ut.PlotGraphOverlay(graphs_=[(z_[sectors_ == 3], y_[sectors_ == 3]), (z_[sectors_ == 1], y_[sectors_ == 1]), (z_[sectors_ == 2], y_[sectors_ == 2])], labels_=["Top", "Middle", "Bottom"], xlabel="z-position [m]", ylabel="y-position [m]", fout=f"../Images/{reproc}/Sanity/gr_ZY_{foutTag}.png")
     ut.Plot1DOverlay(hists_=[t_[sectors_ == 3], t_[sectors_ == 1], t_[sectors_ == 2]], nbins=1000, xmin = np.min(t_), xmax = np.max(t_), xlabel="Average hit time [ns]", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout=f"../Images/{reproc}/Sanity/h1_times_{foutTag}.png") 
     ut.Plot1DOverlay(hists_=[nHits_[sectors_ == 3], nHits_[sectors_ == 1], nHits_[sectors_ == 2]], nbins=41, xmin = -0.5, xmax = 40.5, xlabel="Number of hits", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout=f"../Images/{reproc}/Sanity/h1_nHits_{foutTag}.png") 
     ut.Plot1DOverlay(hists_=[nLayers_[sectors_ == 3], nLayers_[sectors_ == 1], nLayers_[sectors_ == 2]], nbins=5, xmin = -0.5, xmax = 4.5, xlabel="Number of layers hit", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout=f"../Images/{reproc}/Sanity/h1_nLayers_{foutTag}.png") 
@@ -480,10 +480,6 @@ def Run(finName, particle, coincidenceConditions, reproc, coincidenceFilter, san
     # Find coincidences
     data_ = FindCoincidences(data_, coincidenceConditions)
 
-    # PrintNEvents(data_, 100, coincidenceConditions)
-
-    # return
-
     # Useful debugging tool
     # PrintNEvents(data_, 100, coincidenceConditions)
 
@@ -496,6 +492,10 @@ def Run(finName, particle, coincidenceConditions, reproc, coincidenceFilter, san
     # Successful and unsuccessful triggers
     successes_ = SuccessfulTriggers(data_, success=True)
     failures_ = SuccessfulTriggers(data_, success=False)
+
+    PrintNEvents(successes_, 10, coincidenceConditions)
+
+    #return 
 
     # Write failures to file
     WriteFailuresToFile(failures_, doutTag, foutTag, reproc, coincidenceConditions) # write ntuple to table
@@ -516,10 +516,10 @@ def main():
     finName = sys.argv[1] if len(sys.argv) > 1 else "/pnfs/mu2e/tape/usr-nts/nts/sgrant/CosmicCRYExtractedCatDigiTrk/MDC2020z2_best_v1_1/root/40/73/nts.sgrant.CosmicCRYExtractedCatDigiTrk.MDC2020z2_best_v1_1.001205_00000000.root" # /pnfs/mu2e/scratch/users/sgrant/workflow/CosmicCRYExtractedTrk.MDC2020z2_best_v1_1/outstage/67605881/00/00000/nts.sgrant.CosmicCRYExtractedCatDigiTrk.MDC2020z2_best_v1_1.001205_00000000.root" # "/pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/82/e8/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00000000.tka"
     particle = sys.argv[2] if len(sys.argv) > 2 else "all"
     coincidenceConditions = sys.argv[3] if len(sys.argv) > 3 else "10PEs2Layers" # "ana1" # "default"
-    reproc = sys.argv[4] if len(sys.argv) > 4 else "reprocessed" # "original"
+    reproc = sys.argv[4] if len(sys.argv) > 4 else "MDC2020z2" # "original"
     coincidenceFilter = sys.argv[5] if len(sys.argv) > 5 else "one_coincidence_per_trigger_sector"
     sanityPlots = bool(sys.argv[6]) if len(sys.argv) > 6 else False
-    verbose = bool(sys.argv[7]) if len(sys.argv) > 7 else False
+    verbose = bool(sys.argv[7]) if len(sys.argv) > 7 else True # False
 
     print("\n--->Running with inputs:\n")
     print("\tfinName:", finName)

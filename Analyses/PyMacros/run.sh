@@ -1,8 +1,9 @@
 FILE=$1
 PARTICLE=$2
-PE=$3 
+LAYERS=$3
+PE=$4 
 
-COINC="${PE}PEs2Layers"
+COINC="${PE}PEs${LAYERS}Layers"
 
 # FILENAME=$(basename "$FILE" ".root") 
 
@@ -29,6 +30,10 @@ fi
 
 echo "Log: ${LOGFILE}"
 python Analyse.py $FILE $PARTICLE $COINC >> $LOGFILE 
+
+# done
+
+
 
 # if [ -f $LOGFILE ]; then
 #     # rm $LOGFILE && touch $LOGFILE

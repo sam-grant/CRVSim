@@ -14,3 +14,6 @@ Analyses/Images/*
 Analyses/Txt/*
 Analyses/Attic/*
 Analyses/Logs/*
+Analyses/Jupyter/*.png
+Analyses/Jupyter/*.txt
+Analyses/Jupyter/Images

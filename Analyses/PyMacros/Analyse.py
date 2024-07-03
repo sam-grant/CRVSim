@@ -92,9 +92,9 @@ def PrintEvent(event, coincidenceConditions):
     coincidenceConditions_ = cc.coincidenceConditions_[coincidenceConditions]
     
     eventStr = (
-        f"evtinfo.runid: {event['evtinfo.runid']}\n" 
-        f"evtinfo.subrunid: {event['evtinfo.subrunid']}\n" 
-        f"evtinfo.eventid: {event['evtinfo.eventid']}\n"
+        f"evtinfo.run: {event['evtinfo.run']}\n" 
+        f"evtinfo.subrun: {event['evtinfo.subrun']}\n" 
+        f"evtinfo.eventid: {event['evtinfo.event']}\n"
         f"coincidenceConditions_['PEthreshold']: {coincidenceConditions_['PEthreshold']}\n"
         f"coincidenceConditions_['nLayers']: {coincidenceConditions_['nLayers']}\n"
         f"coincidenceConditions_['minSlope']: {coincidenceConditions_['minSlope']}\n"
@@ -156,9 +156,9 @@ def PrintEvent(event, coincidenceConditions):
 def PrintRawEvent(event):
     
     eventStr = (
-        f"evtinfo.runid: {event['evtinfo.runid']}\n"
-        f"evtinfo.subrunid: {event['evtinfo.subrunid']}\n"
-        f"evtinfo.eventid: {event['evtinfo.eventid']}\n"
+        f"evtinfo.runid: {event['evtinfo.run']}\n"
+        f"evtinfo.subrunid: {event['evtinfo.subrun']}\n"
+        f"evtinfo.event: {event['evtinfo.event']}\n"
         f"{ut.coincsBranchName}.nLayers {event[f'{ut.coincsBranchName}.nLayers']}\n"
         f"{ut.coincsBranchName}.angle: {event[f'{ut.coincsBranchName}.angle']}\n"
         f"{ut.coincsBranchName}.sectorType: {event[f'{ut.coincsBranchName}.sectorType']}\n"
@@ -406,11 +406,11 @@ def WriteFailureInfoToFile(failures_, doutTag, foutTag, reproc, coincidenceCondi
     # Concise form
     with open(foutNameConcise, "w") as fout:
         # Write the header
-        fout.write("evtinfo.runid, evtinfo.subrunid, evtinfo.eventid\n")
+        fout.write("evtinfo.run, evtinfo.subrun, evtinfo.event\n")
         # Write the events
         for event in failures_:
             fout.write(
-                f"{event['evtinfo.runid']}, {event['evtinfo.subrunid']}, {event['evtinfo.eventid']}\n"
+                f"{event['evtinfo.run']}, {event['evtinfo.subrun']}, {event['evtinfo.event']}\n"
             )
 
     # Verbose form
@@ -493,7 +493,7 @@ def Run(finName, particle, coincidenceConditions, reproc, coincidenceFilter, san
     successes_ = SuccessfulTriggers(data_, success=True)
     failures_ = SuccessfulTriggers(data_, success=False)
 
-    PrintNEvents(successes_, 10, coincidenceConditions)
+    # PrintNEvents(successes_, 10, coincidenceConditions)
 
     #return 
 
@@ -513,15 +513,15 @@ def Run(finName, particle, coincidenceConditions, reproc, coincidenceFilter, san
 def main():
 
     # Take command-line arguments
-    finName = sys.argv[1] if len(sys.argv) > 1 else "/pnfs/mu2e/tape/usr-nts/nts/sgrant/CosmicCRYExtractedCatDigiTrk/MDC2020z2_best_v1_1/root/40/73/nts.sgrant.CosmicCRYExtractedCatDigiTrk.MDC2020z2_best_v1_1.001205_00000000.root" # /pnfs/mu2e/scratch/users/sgrant/workflow/CosmicCRYExtractedTrk.MDC2020z2_best_v1_1/outstage/67605881/00/00000/nts.sgrant.CosmicCRYExtractedCatDigiTrk.MDC2020z2_best_v1_1.001205_00000000.root" # "/pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/82/e8/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00000000.tka"
+    finName = sys.argv[1] if len(sys.argv) > 1 else "/pnfs/mu2e/tape/usr-nts/nts/sgrant/CosmicCRYExtractedCatTriggered/MDC2020ae_best_v1_3/root/c4/15/nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000231.root" # "/pnfs/mu2e/tape/usr-nts/nts/sgrant/CosmicCRYExtractedCatDigiTrk/MDC2020z2_best_v1_1/root/40/73/nts.sgrant.CosmicCRYExtractedCatDigiTrk.MDC2020z2_best_v1_1.001205_00000000.root" # /pnfs/mu2e/scratch/users/sgrant/workflow/CosmicCRYExtractedTrk.MDC2020z2_best_v1_1/outstage/67605881/00/00000/nts.sgrant.CosmicCRYExtractedCatDigiTrk.MDC2020z2_best_v1_1.001205_00000000.root" # "/pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/82/e8/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00000000.tka"
     particle = sys.argv[2] if len(sys.argv) > 2 else "all"
     coincidenceConditions = sys.argv[3] if len(sys.argv) > 3 else "10PEs2Layers" # "ana1" # "default"
-    reproc = sys.argv[4] if len(sys.argv) > 4 else "MDC2020z2" # "original"
+    reproc = sys.argv[4] if len(sys.argv) > 4 else "MDC2020ae" # "original"
     coincidenceFilter = sys.argv[5] if len(sys.argv) > 5 else "one_coincidence_per_trigger_sector"
     sanityPlots = bool(sys.argv[6]) if len(sys.argv) > 6 else False
     verbose = bool(sys.argv[7]) if len(sys.argv) > 7 else True # False
 
-    print("\n--->Running with inputs:\n")
+    print("\n---> Running with inputs:\n")
     print("\tfinName:", finName)
     print("\tparticle:", particle)
     print("\tcoincidenceConditions:", particle)

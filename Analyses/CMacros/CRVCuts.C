@@ -7,6 +7,7 @@
 // TCut L1Fiducial("abs(trkfit.pos.X())<2500 && fabs(trkfit.pos.Z()+500)<1500");
 
 TCut goodtrk("kl.status>0");
+TCut notrk("kl.status<=0");
 TCut CRV1("crvcoincs.sectorType==1");
 TCut KLCRV1("klfit.sid==200&&klfit.sindex==1");
 TCut bestfit("klkl.z0err<1&&klkl.d0err<1&&klkl.thetaerr<0.0004&&klkl.phi0err<0.001&&kl.ndof>=10&&kl.fitcon>0.1&&kl.nactive/kl.nhits>0.99&&kl.nplanes>=4&&kl.nnullambig/kl.nhits<0.2");

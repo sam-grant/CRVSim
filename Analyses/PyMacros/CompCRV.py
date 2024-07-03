@@ -7,7 +7,6 @@ import uproot
 
 import Utils as ut
 
-
 def EventStr(event, showCutMasks):
     
     eventStr = (
@@ -70,7 +69,6 @@ def PrintNEvents(data_, nEvents=5, showCutMasks=False):
         # event[f'evtinfo.'][f'evtinfo.runid']
         print(EventStr(event, showCutMasks)) 
         if i >= nEvents - 1: return
-
 
 def MarkCuts(arrays, cuts=[]): 
 
@@ -203,6 +201,7 @@ def Plot(arrays):
     # TH1D* tcrvts = new TH1D("tcrvts","KKInter Time - CRV Time, Layer 1 #Delta T;T_{KKInter} - T_{CRV} (ns)",250,-30,30);
     # ta->Project("tcrvts","klfit.time-crvcoincs.time",goodtrk+KLCRV1+CRV1+bestfit+goodCRV);
 
+    
     tcrvts = ApplyCuts(arrays, ["goodCRV", "CRV1", "goodTrk", "KLCRV1", "bestFit", "singleCRV1"])
 
     ut.Plot1DWithGaussFit(data=ak.flatten(tcrvts["klfit"]["time"], axis=None) - ak.flatten(tcrvts["crvcoincs"]["crvcoincs.time"], axis=None)
@@ -257,7 +256,7 @@ def Run(finName):
 def main():
 
     # Take command-line arguments
-    finName = sys.argv[1] if len(sys.argv) > 1 else "/pnfs/mu2e/scratch/users/sgrant/workflow/default/outstage/CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.000/11946817/00/00033/nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000080.root" # "/pnfs/mu2e/tape/usr-nts/nts/sgrant/CosmicCRYExtractedCatDigiTrk/MDC2020z2_best_v1_1/root/40/73/nts.sgrant.CosmicCRYExtractedCatDigiTrk.MDC2020z2_best_v1_1.001205_00000000.root" # /pnfs/mu2e/scratch/users/sgrant/workflow/CosmicCRYExtractedTrk.MDC2020z2_best_v1_1/outstage/67605881/00/00000/nts.sgrant.CosmicCRYExtractedCatDigiTrk.MDC2020z2_best_v1_1.001205_00000000.root" # "/pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/82/e8/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00000000.tka"
+    finName = sys.argv[1] if len(sys.argv) > 1 else "/exp/mu2e/data/users/sgrant/CRVSim/CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.000/11946817/00/00033/nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000080.root" # "/pnfs/mu2e/tape/usr-nts/nts/sgrant/CosmicCRYExtractedCatDigiTrk/MDC2020z2_best_v1_1/root/40/73/nts.sgrant.CosmicCRYExtractedCatDigiTrk.MDC2020z2_best_v1_1.001205_00000000.root" # "/pnfs/mu2e/scratch/users/sgrant/workflow/default/outstage/CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.000/11946817/00/00033/nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000080.root" # "/pnfs/mu2e/tape/usr-nts/nts/sgrant/CosmicCRYExtractedCatDigiTrk/MDC2020z2_best_v1_1/root/40/73/nts.sgrant.CosmicCRYExtractedCatDigiTrk.MDC2020z2_best_v1_1.001205_00000000.root" # /pnfs/mu2e/scratch/users/sgrant/workflow/CosmicCRYExtractedTrk.MDC2020z2_best_v1_1/outstage/67605881/00/00000/nts.sgrant.CosmicCRYExtractedCatDigiTrk.MDC2020z2_best_v1_1.001205_00000000.root" # "/pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/82/e8/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00000000.tka"
 
     print("\n---> Running with inputs:\n")
     print("\tfinName:", finName)

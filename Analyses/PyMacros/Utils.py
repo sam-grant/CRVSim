@@ -74,9 +74,9 @@ def GetBasicStats(data, xmin, xmax):
 branchNamesTrkAna_ = [
 
     # ---> evtinfo
-    "evtinfo.runid" # run ID 
-    ,"evtinfo.subrunid" # sub-run ID 
-    ,"evtinfo.eventid" # event ID 
+    "evtinfo.run" # run ID 
+    ,"evtinfo.subrun" # sub-run ID 
+    ,"evtinfo.event" # event ID 
     
     # ---> crvhit (reco)
     , coincsBranchName+".sectorType" # CRV sector hit
@@ -113,9 +113,9 @@ branchNamesTrkAna_ = [
 extendedBranchNamesTrkAna_ = [
 
     # ---> evtinfo
-    "evtinfo.runid" # run ID 
-    ,"evtinfo.subrunid" # sub-run ID 
-    ,"evtinfo.eventid" # event ID 
+    "evtinfo.run" # run ID 
+    ,"evtinfo.subrun" # sub-run ID 
+    ,"evtinfo.event" # event ID 
     
     # ---> crvhit (reco)
     , coincsBranchName+".sectorType" # CRV sector hit
@@ -553,7 +553,6 @@ def Plot1DWithGaussFit(data, nbins=100, xmin=-1.0, xmax=1.0, norm=1.0, mu=0.0, s
     print("---> Written", fout)
 
     # Clear memory
-    plt.clf()
     plt.close()
 
 

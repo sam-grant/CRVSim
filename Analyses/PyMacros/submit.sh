@@ -8,15 +8,14 @@
 #     sleep 1
 # done
 
-NCORES=4
-for FILE in $(cat ../Txt/Lists/ReprocessedFiles.txt); do 
+NCORES=3
+# for FILE in $(cat ../Txt/Lists/ReprocessedFiles.txt); do 
+for FILE in $(cat ../Txt/Lists/MDC2020ae.txt); do 
     # for PARTICLE in "all"; do 
-    for PARTICLE in "all" "muons" "non_muons"; do
+    for PARTICLE in "all"; do # "muons" "non_muons"; do
         # for LAYERS in 2; do
         for LAYERS in 2 3; do
-            # for PE in 10 12 14 16 18 20; do
-            # for PE in 10; do 
-            for PE in 10 12 14 16 18 20 22 24 26 28 30 32; do
+            for PE in 10; do #  12 14 16 18 20 22 24 26 28 30 32; do
                 echo $FILE $PARTICLE $LAYERS $PE 
                 # break 4 # UNCOMMENT FOR TESTING
             done 

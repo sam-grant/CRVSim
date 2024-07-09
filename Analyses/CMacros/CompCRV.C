@@ -116,85 +116,9 @@ void CompCRV(TTree* ta, const char* savesuffix="") {
 
     return;
 
-    // // Debugging/sanity checks! 
-    // Int_t crvhits[3] = {0, 0, 0}; 
-    // ta->SetBranchAddress("crvcoincs.nHits", &crvhits);
-    // // Counters
-    // int n_crvhits = 0;
-    // // Loop over all entries and count the number of values in each event
-    // for (Long64_t i(0); i<10; i++) { //ta->GetEntries(); i++) {
-    //     ta->GetEntry(i);
-    //     cout<<"["<<crvhits[0]<<", "<<crvhits[1]<<", "<<crvhits[2]<<"]"<<endl;
-    //     for (int j(0); j<3; j++) {
-    //         if (crvhits[j] > 0){
-    //             n_crvhits++;
-    //         }
-    //         cout<<n_crvhits<<endl;
-    //     }
-    //     cout<<endl;
-    // }
-
-    // Debugging/sanity checks! 
-    // // TBits klstatus; 
-    // Int_t klstatus[3] = {0, 0, 0}; 
-    // ta->SetBranchAddress("kl.status", &klstatus);
-    // // Loop over all entries and count the number of values in each event
-    // for (Long64_t i(0); i<5; i++) { //ta->GetEntries(); i++) {
-    //     ta->GetEntry(i);
-    //     // cout<<klstatus<<endl;
-    //     cout<<"["<<klstatus[0]<<", "<<klstatus[1]<<", "<<klstatus[2]<<"]"<<endl;
-    //     // for (int j(0); j<3; j++) {
-    //     //     if (crvhits[j] > 0){
-    //     //         n_crvhits++;
-    //     //     }
-    //     //     cout<<n_crvhits<<endl;
-    //     // }
-    //     cout<<endl;
-    // }
-
-    // return;
-    // cout<<"n_crvhits = "<<n_crvhits<<endl;
-
-    // delete ta;
-
-    // return;
-
-    // sanity checks! 
-
-    // TH1D* crvhits = new TH1D("crvhits","crvhits;nhits;",100,0,100);
-    // ta->Project("crvhits","crvcoincs.nHits");
-    // TCanvas* c1 = new TCanvas("c1","c1",800,600);
-    // crvhits->Draw();
-    // c1->SaveAs("crvhits.png");
-
-    // TH1D* klhits = new TH1D("klhits","klhits;nhits;",100,0,100);
-    // ta->Project("klhits","kl.nhits");
-    // TCanvas* c2 = new TCanvas("c2","c2",800,600);
-    // klhits->Draw();
-    // c2->SaveAs("klhits.png");
-
-    // TH1D* klfittime = new TH1D("klfittime","klfittime;time;",100,0,5e4);
-    // ta->Project("klfittime","klfit.time");
-    // TCanvas* c3 = new TCanvas("c3","c3",800,600);
-    // klfittime->Draw();
-    // c3->SaveAs("klfittime.png");
-
-    // TH1D* klklz0err = new TH1D("klklz0err","klklz0err;z0err;",100,0,1);
-    // ta->Project("klklz0err","klkl.z0err");
-    // TCanvas* c4 = new TCanvas("c4","c4",800,600);
-    // klklz0err->Draw();
-    // c4->SaveAs("klklz0err.png");
-
-    // // Now with cuts
-    // ta->Project("tcrvy","klfit.pos.Y()-crvcoincs.pos.Y()",goodtrk+KLCRV1+CRV1+bestfit+goodCRV);
-
     SanityPlots(ta, false);
-    // SanityPlots(ta, true);
 
     return;
-
-    //TH2D* tcrvpb = new TH2D("tcrvpb","KKInter TCRV Layer 1 Position,  No CRVCoincidence;KKInter Z (mm);KKInter X (mm)",100,-8000,8000,100,-8000,8000);
-    
 
     TH2D* tcrvpg = new TH2D("tcrvpg","KKInter TCRV Layer 1 Position, Has CRVCoincidence;KKInter Z (mm);KKInter X (mm)",100,-8000,8000,100,-8000,8000);
     TH2D* tcrvpb = new TH2D("tcrvpb","KKInter TCRV Layer 1 Position,  No CRVCoincidence;KKInter Z (mm);KKInter X (mm)",100,-8000,8000,100,-8000,8000);

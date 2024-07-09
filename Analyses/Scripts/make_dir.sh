@@ -7,9 +7,10 @@ for FILE in $(cat ../Txt/Lists/MDC2020ae.txt); do
     #mkdir failures_concise/$ID
     #mkdir failures_verbose/$ID
     # mkdir ../Txt/reprocessed/PEsPerLayer/$ID
-    mkdir -p ../Txt/MDC2020ae/results/$ID
-    mkdir -p ../Txt/MDC2020ae/failures_concise/$ID
-    mkdir -p ../Txt/MDC2020ae/failures_verbose/$ID
-    mkdir -p ../Txt/MDC2020ae/failures_ntuple/$ID
+    #mkdir -p ../Txt/MDC2020ae/results/$ID
+    #mkdir -p ../Txt/MDC2020ae/failures_concise/$ID
+    #mkdir -p ../Txt/MDC2020ae/failures_verbose/$ID
+    #mkdir -p ../Txt/MDC2020ae/failures_ntuple/$ID
+    mkdir -p  ../Txt/MDC2020ae/PEsPerLayer/$ID
 
 done

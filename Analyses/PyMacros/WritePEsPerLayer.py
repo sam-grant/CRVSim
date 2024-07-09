@@ -19,6 +19,7 @@ Procedure:
 
 import sys
 import numpy as np
+import uproot
 import awkward as ak
 
 import Utils as ut
@@ -92,9 +93,9 @@ def PrintEvent(event):
     # coincidenceConditions_ = cc.coincidenceConditions_[coincidenceConditions]
     
     eventStr = (
-        f"evtinfo.runid: {event['evtinfo.runid']}\n" 
-        f"evtinfo.subrunid: {event['evtinfo.subrunid']}\n" 
-        f"evtinfo.eventid: {event['evtinfo.eventid']}\n"
+        f"evtinfo.run: {event['evtinfo.run']}\n" 
+        f"evtinfo.subrun: {event['evtinfo.subrun']}\n" 
+        f"evtinfo.event: {event['evtinfo.event']}\n"
         f"{ut.coincsBranchName}.nLayers {event[f'{ut.coincsBranchName}.nLayers']}\n"
         f"{ut.coincsBranchName}.angle: {event[f'{ut.coincsBranchName}.angle']}\n"
         f"{ut.coincsBranchName}.sectorType: {event[f'{ut.coincsBranchName}.sectorType']}\n"
@@ -422,22 +423,71 @@ def WritePEsPerLayerToFile(data_, doutTag, foutTag, reproc):
 def Run(finName, particle, reproc): 
 
     # Get data as a set of awkward arrays
-    data_ = ut.TTreeToAwkwardArray(finName, "TrkAnaExt/trkana", ut.branchNamesTrkAna_)
+    # data_ = ut.TTreeToAwkwardArray(finName, "TrkAnaExt/trkana", ["crvcoincs"])
 
+    data_ = ak.Array([])
+    with uproot.open(finName+":TrkAnaExt/trkana") as tree: 
+        data_ = tree.arrays(["crvcoincs.sectorType", "crvcoincs.PEsPerLayer[4]"]) 
+
+    print(data_["crvcoincs.PEsPerLayer[4]"])
+
+    emptyEventCondition = ak.num(data_["crvcoincs.sectorType"], axis=1) == 0
+    data_ = data_[~emptyEventCondition]
+
+    print(data_["crvcoincs.PEsPerLayer[4]"])
+    print(data_["crvcoincs.PEsPerLayer[4]"]==0)
+
+    zeroPECondition = ak.any(data_["crvcoincs.PEsPerLayer[4]"], axis=2) == 0
+    data_ = data_[~zeroPECondition]
+    # print(data_)
+
+    # return
     # Remove empty events
-    data_ = RemoveEmptyEvents(data_)
+    # data_ = RemoveEmptyEvents(data_)
 
+    # print(data_["crvcoincs.PEsPerLayer[4]"]==0)
+    # print(len(data_["crvcoincs.PEsPerLayer[4]"]==0))
+    
+    # return
+
+
+    # return
+
+    # # Suppress zeros
+    # nonZeroCondition = ak.any(data_["crvcoincs.PEsPerLayer[4]"],axis=2,keepdims=True) > 0
+    # # Use ak.mask to preserve the dimensions
+    # data_= data_["crvcoincs.PEsPerLayer[4]"][data_["crvcoincs.PEsPerLayer[4]"] > 0]
+    # # data_ 
+    # print(len(data_["crvcoincs.PEsPerLayer[4]"]==0))
+    # return
+
+    # Remove zero
+    # zeroCondition = ak.any(data_[ut.coincsBranchName+".PEs"], axis=1, keepdims=False) == 0
+    # data_ = data_[~zeroCondition] # ak.mask(data_, ~zeroCondition)
+    # # return
+
+    # print(data_["crvcoincs.PEs"])
+    # return
     # Output dir/file tag 
     doutTag = finName.split('.')[-2] 
     foutTag = particle 
 
     # Filter particles
-    data_ = FilterParticles(data_, particle)
+    # data_ = FilterParticles(data_, particle)
 
     # Format data
+    # Zero suppresion 
+    # nonZero = ak.all(data_["crvcoincs.PEsPerLayer[4]"], axis=2, keepdims=True) > 0# data_["crvcoincs.PEsPerLayer[4]"] == 0 # ak.any(data_["crvcoincs.PEsPerLayer[4]"] > 0, axis=1)
+    # data_ = data_[nonZero] # ak.mask(data_, nonZero)
+    #print(ak.fldata_["crvcoincs.PEsPerLayer[4]"])
+    #return
+    # 
+
     # TODO wrap this in a function 
-    sectors_ = ak.flatten(data_[ut.coincsBranchName+".sectorType"]) 
-    PEsPerLayer_ = ak.flatten(data_[ut.coincsBranchName+".PEsPerLayer[4]"])
+    sectors_ = ak.flatten(data_["crvcoincs.sectorType"]) 
+    PEsPerLayer_ = ak.flatten(data_["crvcoincs.PEsPerLayer[4]"])
+    # Zero suppression
+    # PEsPerLayer_ = PEsPerLayer_[PEsPerLayer_ > 0]
 
     results = { 
         "Sector1" : PEsPerLayer_[sectors_ == 1] 
@@ -471,10 +521,10 @@ def Run(finName, particle, reproc):
 
 def main():
 
-    # Take command-line arguments
-    finName = sys.argv[1] if len(sys.argv) > 1 else "/pnfs/mu2e/tape/usr-nts/nts/sgrant/CosmicCRYExtractedCatDigiTrk/MDC2020z2_best_v1_1/root/40/73/nts.sgrant.CosmicCRYExtractedCatDigiTrk.MDC2020z2_best_v1_1.001205_00000000.root" 
+    # Take command-line arguments finName="/exp/mu2e/data/users/sgrant/CRVSim/CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.000/11946817/00/00033/nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000080.root"
+    finName = sys.argv[1] if len(sys.argv) > 1 else "/pnfs/mu2e/tape/usr-nts/nts/sgrant/CosmicCRYExtractedCatTriggered/MDC2020ae_best_v1_3/root/c4/15/nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000231.root" # "/pnfs/mu2e/tape/usr-nts/nts/sgrant/CosmicCRYExtractedCatDigiTrk/MDC2020z2_best_v1_1/root/40/73/nts.sgrant.CosmicCRYExtractedCatDigiTrk.MDC2020z2_best_v1_1.001205_00000000.root" 
     particle = sys.argv[2] if len(sys.argv) > 2 else "all"
-    reproc = sys.argv[3] if len(sys.argv) > 3 else "reprocessed" 
+    reproc = sys.argv[3] if len(sys.argv) > 3 else "MDC2020ae" 
 
     print("\n--->Running with inputs:\n")
     print("\tfinName:", finName)

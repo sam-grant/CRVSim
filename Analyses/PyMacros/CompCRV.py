@@ -90,7 +90,7 @@ def MarkCuts(arrays, cuts=[]):
 
     if "singleCRV1" in cuts: # Single coincidences in CRV sector 1
         # arrays["CRV1"] = ak.any(arrays["crvcoincs"]["crvcoincs.sectorType"], axis=1, keepdims=True) == 1
-        arrays["singleCRV1"] = ak.sum(arrays["crvcoincs"]["crvcoincs.sectorType"] == 1, axis=1, keepdims=False) == 1
+        arrays["singleCRV1"] = ak.sum(arrays["crvcoincs"]["crvcoincs.sectorType"], axis=1, keepdims=False) == 1
 
     # if "singleCRV1" in cuts: # Single coincidences in CRV sector 1
     #     # arrays["CRV1"] = ak.any(arrays["crvcoincs"]["crvcoincs.sectorType"], axis=1, keepdims=True) == 1

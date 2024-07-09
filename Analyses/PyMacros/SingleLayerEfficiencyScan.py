@@ -27,9 +27,11 @@ def MakeListsPerLayerDict():
 
 def Run(particle, reproc, module):
 
-    tag = "001205_00000000" # loop through these 
+    tag = "001205_00000231" # "001205_00000000" # loop through these 
 
     finName = f"../Txt/{reproc}/PEsPerLayer/{tag}/PEsPerLayer_{particle}.h5"
+
+    print(finName)
 
     data_ = {}
 
@@ -47,17 +49,38 @@ def Run(particle, reproc, module):
     # Filter module 
     data_ = data_["Sector1"]
 
+    # # Zero suppresion
+    # data_["PEsPerLayer"] = data_["PEsPerLayer"][data_["PEsPerLayer"] > 0]
+
+    # print(data_["PEsPerLayer"])
+    # print(data_)
+    # return
+
     # Vertically slice the array by layer
     data_ = [data_['PEsPerLayer'][:, i] for i in range(4)]
 
+    # Set up labels
     labels_ = [] 
     [labels_.append(f"Layer {layer}") for layer in range(4)]
 
+    # Suppress zeros in each sublist
+    # data_ = [[value for value in sublist if value > 0] for sublist in data_]
+
+    # print(data_[0])
+
+
+    # Remove zeros 
+    # Struggling to do this with the base array for some reason...
+    for layer, data in enumerate(data_):
+        data_[layer] = data[data>0]
+
+    # return
+
     # Now plot 
-    # ut.Plot1DOverlay(hists_ = data_ , nbins=125, xmin=0, xmax=125, title=f"Middle module, {particle}", xlabel="PEs per layer", ylabel="Hits", label_ = labels_, fout=f"../Images/{reproc}/ThresholdScan/h1_overlay_PEsPerLayer_module{module}_{particle}.png") 
+    ut.Plot1DOverlay(hists_ = data_, nbins=250, xmin=0, xmax=250, title=f"Middle module, {particle}", xlabel="PEs per layer", ylabel="Hits", label_ = labels_, fout=f"../Images/{reproc}/ThresholdScan/h1_overlay_PEsPerLayer_module{module}_{particle}.png") 
 
     # Scan threshold can get the single layer efficiency 
-    thresholds_ = np.arange(10, 126, 2)
+    thresholds_ = np.arange(10, 256, 5)
 
     # Sanity histograms
     # scanData_ = MakeListsPerLayerDict()
@@ -69,13 +92,21 @@ def Run(particle, reproc, module):
     effErr_ = MakeListsPerLayerDict()
 
     for layer, data in enumerate(data_):
+
+        # print()
+
         total = len(data)
 
         effList = []
         effErrList = []
         
         for threshold in thresholds_:
+
+            # print(data)
+            # print("Running threshold", threshold)
             data = data[data >= threshold]
+
+            # return
             above = len(data)
             below = total - above # inefficiency! 
             eff = (below / total) # * 100
@@ -124,7 +155,7 @@ def main():
     # Take command-line arguments
     # finName = sys.argv[1] if len(sys.argv) > 1 else "../Txt/reprocessed/PEsPerLayer/001205_00000000/PEsPerLayer_all.h5" 
     particle = sys.argv[1] if len(sys.argv) > 1 else "all"
-    reproc = sys.argv[2] if len(sys.argv) > 2 else "reprocessed" 
+    reproc = sys.argv[2] if len(sys.argv) > 2 else "MDC2020ae" 
     module = sys.argv[3] if len(sys.argv) > 3 else 1
 
     print("\n--->Running with inputs:\n")

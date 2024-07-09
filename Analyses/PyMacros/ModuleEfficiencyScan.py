@@ -18,8 +18,9 @@ import CoincidenceConditions as cc
 
 def Run(): 
 
-    PEs_ = [10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32]
-    layers_ = [2] # 3] # , 3]
+    dataset = "MDC2020ae"
+    PEs_ = [10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30 , 32]
+    layers_ = [2, 3] # , 3]
 
 
     # Create new dictionaries with independent keys and values
@@ -28,39 +29,44 @@ def Run():
     for layer in layers_: 
 
         ineff_ = { 
-            "All" : [ PEs_, [], [], [] ]
-            ,"Muons" : [ PEs_, [], [], [] ] 
-            ,"Non-muons" : [ PEs_, [], [], [] ]     
+            # What's the deal with this structure? 
+            # x, xerr, y, yerr
+            "All" : [ PEs_, [], [], [] ] 
+            # ,"Muons" : [ PEs_, [], [], [] ] 
+            # ,"Non-muons" : [ PEs_, [], [], [] ]     
         }
 
         nfailures_ = { 
             "All" : [ PEs_, [], [], [] ]
-            ,"Muons" : [ PEs_, [], [], [] ] 
-            ,"Non-muons" : [ PEs_, [], [], [] ]     
+            # ,"Muons" : [ PEs_, [], [], [] ] 
+            # ,"Non-muons" : [ PEs_, [], [], [] ]     
         }
 
 
         for PE in PEs_:
 
-            finNameAll = f"../Txt/reprocessed/concatenated/results_all_{PE}PEs{layer}Layers_one_coincidence_per_trigger_sector.csv"
-            finNameMuons = f"../Txt/reprocessed/concatenated/results_muons_{PE}PEs{layer}Layers_one_coincidence_per_trigger_sector.csv"
-            finNameNonMuons = f"../Txt/reprocessed/concatenated/results_non_muons_{PE}PEs{layer}Layers_one_coincidence_per_trigger_sector.csv"
+            finNameAll = f"../Txt/{dataset}/concatenated/results_all_{PE}PEs{layer}Layers_one_coincidence_per_trigger_sector.csv"
+            # finNameMuons = f"../Txt/{dataset}/concatenated/results_muons_{PE}PEs{layer}Layers_one_coincidence_per_trigger_sector.csv"
+            # finNameNonMuons = f"../Txt/{dataset}/concatenated/results_non_muons_{PE}PEs{layer}Layers_one_coincidence_per_trigger_sector.csv"
 
             # eff_["All"][1].append(pd.read_csv(finNameAll)[" Efficiency [%]"].mean())
             # eff_["Muons"][1].append(pd.read_csv(finNameMuons)[" Efficiency [%]"].mean())
             # eff_["Non-muons"][1].append(pd.read_csv(finNameNonMuons)[" Efficiency [%]"].mean())
             
             dataAll = pd.read_csv(finNameAll) 
-            dataMuons = pd.read_csv(finNameMuons) 
-            dataNonMuons = pd.read_csv(finNameNonMuons) 
+            # dataMuons = pd.read_csv(finNameMuons) 
+            # dataNonMuons = pd.read_csv(finNameNonMuons) 
 
-            ineff_["All"][2].append(np.mean(dataAll[" Inefficiency [%]"])/100)
-            ineff_["Muons"][2].append(np.mean(dataMuons[" Inefficiency [%]"])/100)
-            ineff_["Non-muons"][2].append(np.mean(dataNonMuons[" Inefficiency [%]"])/100)
+
+            # total = 
+
+            ineff_["All"][2].append(np.sum(dataAll[" Failures"])/np.sum(dataAll[" Total"]))
+            # ineff_["Muons"][2].append(np.mean(dataMuons[" Inefficiency [%]"])/100)
+            # ineff_["Non-muons"][2].append(np.mean(dataNonMuons[" Inefficiency [%]"])/100)
 
             nfailures_["All"][2].append(np.sum(dataAll[" Failures"]))
-            nfailures_["Muons"][2].append(np.sum(dataMuons[" Failures"]))
-            nfailures_["Non-muons"][2].append(np.sum(dataNonMuons[" Failures"]))
+            # nfailures_["Muons"][2].append(np.sum(dataMuons[" Failures"]))
+            # nfailures_["Non-muons"][2].append(np.sum(dataNonMuons[" Failures"]))
 
 
             # print(dataAll)
@@ -75,10 +81,10 @@ def Run():
         # print(ineff_)
         # ineff_ = {}
         # ut.PlotGraph(nfailures_["Non-muons"][0], nfailures_["Non-muons"][2], title="Non-muons", xlabel="PEs per layer threshold", ylabel="Failures", fout=f"../Images/reprocessed/ThresholdScan/gr_overlay_nfailures_non_muons_{layer}layers.png")
-        ut.PlotGraphOverlay2(nfailures_, title=f"{layer}/4 layers", xlabel="PEs per layer threshold", ylabel="Failures", fout=f"../Images/reprocessed/ThresholdScan/gr_log_overlay_nfailures_{layer}layers.png", log=True)
-        ut.PlotGraphOverlay2(ineff_, title=f"{layer}/4 layers", xlabel="PEs per layer threshold", ylabel="Inefficiency", fout=f"../Images/reprocessed/ThresholdScan/gr_log_overlay_ineff_{layer}layers.png", log=True)
-        ut.PlotGraphOverlay2(nfailures_, title=f"{layer}/4 layers", xlabel="PEs per layer threshold", ylabel="Failures", fout=f"../Images/reprocessed/ThresholdScan/gr_overlay_nfailures_{layer}layers.png", log=False)
-        ut.PlotGraphOverlay2(ineff_, title=f"{layer}/4 layers", xlabel="PEs per layer threshold", ylabel="Inefficiency", fout=f"../Images/reprocessed/ThresholdScan/gr_overlay_ineff_{layer}layers.png", log=False)
+        ut.PlotGraphOverlay2(nfailures_, title=f"{layer}/4 layers", xlabel="PEs per layer threshold", ylabel="Failures", fout=f"../Images/{dataset}/ThresholdScan/gr_log_overlay_nfailures_{layer}layers.png", log=True)
+        ut.PlotGraphOverlay2(ineff_, title=f"{layer}/4 layers", xlabel="PEs per layer threshold", ylabel="Inefficiency", fout=f"../Images/{dataset}/ThresholdScan/gr_log_overlay_ineff_{layer}layers.png", log=True)
+        ut.PlotGraphOverlay2(nfailures_, title=f"{layer}/4 layers", xlabel="PEs per layer threshold", ylabel="Failures", fout=f"../Images/{dataset}/ThresholdScan/gr_overlay_nfailures_{layer}layers.png", log=False)
+        ut.PlotGraphOverlay2(ineff_, title=f"{layer}/4 layers", xlabel="PEs per layer threshold", ylabel="Inefficiency", fout=f"../Images/{dataset}/ThresholdScan/gr_overlay_ineff_{layer}layers.png", log=False)
 
     # ../Txt/reprocessed/concatenated/failures_concise_non_muons_20PEs3Layers_one_coincidence_per_trigger_sector.csv
 

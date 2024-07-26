@@ -1,8 +1,7 @@
 '''
 Samuel Grant 2024
-Make plot for failures
 
-This script is an absolute mess. 
+Failure modes. 
 
 ''' 
 
@@ -99,7 +98,7 @@ def FlattenColumn(col):
 #                Analysis functions 
 # ------------------------------------------------
 
-def MakeStartTimePlot():
+def MakeStartTimePlot(dataset):
 
     data1_ = pd.read_csv("../Txt/reprocessed/concatenated/noStartTimeCut/failures_ntuple_all_10PEs2Layers_one_coincidence_per_trigger_sector.csv", sep="\t")
     data2_ = pd.read_csv("../Txt/reprocessed/concatenated/failures_ntuple_all_10PEs2Layers_one_coincidence_per_trigger_sector.csv", sep="\t")
@@ -111,12 +110,12 @@ def MakeStartTimePlot():
 
     return
 
-def MakePDGIDPlot(): 
+def MakePDGIDPlot(dataset): 
 
     # Plot particle IDs of failures
     layers_ = [2,3]
     # df_ = pd.read_csv("../Txt/reprocessed/concatenated/failures_ntuple_all_10PEs2Layers_one_coincidence_per_trigger_sector.csv", sep="\t")
-    ak_ = [TextToAwkward(f"../Txt/reprocessed/concatenated/failures_ntuple_all_10PEs{layer}Layers_one_coincidence_per_trigger_sector.csv") for layer in layers_]
+    ak_ = [TextToAwkward(f"../Txt/{dataset}/concatenated/failures_ntuple_all_10PEs{layer}Layers_one_coincidence_per_trigger_sector.csv") for layer in layers_]
         # TextToAwkward("../Txt/reprocessed/concatenated/failures_ntuple_all_10PEs2Layers_one_coincidence_per_trigger_sector.csv") 
         # TextToAwkward("../Txt/reprocessed/concatenated/failures_ntuple_all_10PEs2Layers_one_coincidence_per_trigger_sector.csv") 
 
@@ -137,21 +136,22 @@ def MakePDGIDPlot():
         PDGIDs_ = [particle for sublist in PDGIDs_ for particle in sublist]
 
         # PDGIDs_ = [array for subarray in RecastArray(ak_["crvcoincsmc.pdgId"])
-        ut.BarChart(data_=PDGIDs_, label_dict=ut.latexParticleDict, title=f"{layer}/4 layers", ylabel="Unique particles / failure", fout=f"../Images/reprocessed/Failures/bar_all_failures_uniquePDGid_{layer}layers.png")
+        ut.BarChart(data_=PDGIDs_, label_dict=ut.latexParticleDict, title=f"{layer}/4 layers", ylabel="Unique particles / failure", fout=f"../Images/{dataset}/Failures/bar_all_failures_uniquePDGid_{layer}layers.png")
         # ut.BarChart(data_dict=PDGIDs_[PDGIDs_ != ], title="Failures coincidences", ylabel="Failures / sector", fout="../Images/reprocessed/Failures/bar_all_PDDIDs.png")
 
         # ut.BarChartOverlay(data_=[pdgid_[sectors_ == 3], pdgid_[sectors_ == 1], pdgid_[sectors_ == 2]], label_dict=label_dict, ylabel="Coincidences [%]", fout=f"../Images/{reproc}/Sanity/bar_overlay_pdgid_{foutTag}.png", percentage=True, label_= ["Top", "Middle", "Bottom"])
 
         PDGIDsPerLayer_.append(PDGIDs_)
 
-    ut.BarChartOverlay(data_=[PDGIDsPerLayer_[0], PDGIDsPerLayer_[1]], label_dict=ut.latexParticleDict, ylabel="Unique particle species / failure", fout=f"../Images/reprocessed/Failures/bar_overlay_all_failures_uniquePDGid.png", percentage=False, label_= ["2/3 layers", "3/4 layers"])
+    ut.BarChartOverlay(data_=[PDGIDsPerLayer_[0], PDGIDsPerLayer_[1]], label_dict=ut.latexParticleDict, ymax=20., ylabel="Unique particle species / failure", fout=f"../Images/{dataset}/Failures/bar_overlay_all_failures_uniquePDGid.png", percentage=False, label_= ["2/4 layers", "3/4 layers"])
 
 
     return
 
-def MakeAngularDistributionPlot():
+def MakeAngularDistributionPlot(dataset):
 
-    data_ = pd.read_csv("../Txt/reprocessed/concatenated/failures_ntuple_all_10PEs2Layers_one_coincidence_per_trigger_sector.csv", sep="\t")
+    # dataset = "MDC2020ae"
+    data_ = pd.read_csv(f"../Txt/{dataset}/concatenated/failures_ntuple_all_10PEs2Layers_one_coincidence_per_trigger_sector.csv", sep="\t")
 
     slope_ = FlattenColumn(data_["crvcoincs.angle"]) 
     slope_ = np.array(slope_)
@@ -161,7 +161,7 @@ def MakeAngularDistributionPlot():
 
     print(slope_)
 
-    ut.Plot1D(slope_, nbins=1000, xmin=np.min(slope_), xmax=np.max(slope_), fout=f"../Images/reprocessed/Failures/h1_failures_slope.png")
+    ut.Plot1D(slope_, nbins=1000, xmin=np.min(slope_), xmax=np.max(slope_), fout=f"../Images/{dataset}/Failures/h1_failures_slope.png")
 
     return
 
@@ -172,9 +172,8 @@ def MakeAngularDistributionPlot():
 def Run(): 
 
     # MakeStartTimePlot()
-    # MakePDGIDPlot()
-    MakeAngularDistributionPlot()
-
+    MakePDGIDPlot("MDC2020ae")
+    # MakeAngularDistributionPlot()
 
     return
 

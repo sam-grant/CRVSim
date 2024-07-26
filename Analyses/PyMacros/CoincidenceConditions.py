@@ -23,7 +23,7 @@
 coincidenceConditions_ = {}
 
 layers_ = [2, 3]
-PEs_ = list(range(10, 101, 2))
+PEs_ = list(range(10, 151, 2))
 
 for layer in layers_:
     for PE in PEs_:

@@ -1,5 +1,5 @@
 # Submit concatenation jobs
-NCORES=3
+NCORES=4
 DATASET="MDC2020ae"
 PARTICLE_=("all" "muons" "non_muons")
 FILTER="one_coincidence_per_trigger_sector"

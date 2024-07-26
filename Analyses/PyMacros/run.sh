@@ -29,12 +29,16 @@ else
 fi
 
 echo "Log: ${LOGFILE}"
-python Analyse.py $FILE $PARTICLE $COINC >> $LOGFILE 
+
+# Check if we have already done this one
+if [ -f "../Txt/MDC2020ae/results/${ID}/results_${PARTICLE}_${PE}PEs${LAYERS}Layers_one_coincidence_per_trigger_sector.csv" ]; then
+    echo "Already completed ${FILE} ${PARTICLE} ${COINC}... skipping"
+else 
+    echo "Running ${FILE} ${PARTICLE} ${COINC}"
+    python Analyse.py $FILE $PARTICLE $COINC >> $LOGFILE 
+fi
 
 # done
-
-
-
 # if [ -f $LOGFILE ]; then
 #     # rm $LOGFILE && touch $LOGFILE
 #     echo "Skipping" 

@@ -3,8 +3,9 @@
 
 reproc="MDC2020ae" # "original"
 particle_=("all" "muons" "non_muons")
-# coincidenceConditions="ana1"
 coincidenceFilter="one_coincidence_per_trigger_sector"
+
+PEs_=($(seq 10 2 150))
 
 # for particle in "${particle_[@]}"; do
 #     for layer in 2 3; do 
@@ -15,7 +16,7 @@ coincidenceFilter="one_coincidence_per_trigger_sector"
 for particle in "all"; do # "muons" "non_muons"; do
     # for LAYERS in 2; do
     for layer in 2 3; do
-        for PE in 10; do #  12 14 16 18 20 22 24 26 28 30 32; do
+        for PE in ${PEs_[@]}; do 
 
             coincidenceConditions="${PE}PEs${layer}Layers"
 

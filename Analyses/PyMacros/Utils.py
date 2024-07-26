@@ -370,7 +370,7 @@ def PlotGraphOverlay(graphs_, title=None, xlabel=None, ylabel=None, labels_=[], 
     plt.close()
 
 # graphs_ = { "label" : [ x_, xerr_, y_, yerr] }
-def PlotGraphOverlay2(graphs_, title=None, xlabel=None, ylabel=None, labels_=[], fout="scatter.png", log=False, NDPI=300):
+def PlotGraphOverlay2(graphs_, title=None, xlabel=None, ylabel=None, ymin=1, ymax=-1, labels_=[], fout="scatter.png", log=False, NDPI=300):
     
     # Create figure and axes
     fig, ax = plt.subplots()
@@ -407,6 +407,8 @@ def PlotGraphOverlay2(graphs_, title=None, xlabel=None, ylabel=None, labels_=[],
     ax.tick_params(axis='x', labelsize=13)  
     ax.tick_params(axis='y', labelsize=13)  
 
+    if (ymax > ymin):
+        ax.set_ylim(ymin, ymax)
     # Disable scientific notation
     # ax.ticklabel_format(useOffset=False)
 
@@ -710,6 +712,7 @@ def BarChart(data_, label_dict, title=None, xlabel=None, ylabel=None, fout="bar_
     ax.tick_params(axis='x', labelsize=14)  # Set x-axis tick label font size
     ax.tick_params(axis='y', labelsize=14)  # Set y-axis tick label font size
 
+ 
     # Scientific notation
     # if ax.get_xlim()[1] > 999:
     #     ax.xaxis.set_major_formatter(ScalarFormatter(useMathText=True))
@@ -729,7 +732,7 @@ def BarChart(data_, label_dict, title=None, xlabel=None, ylabel=None, fout="bar_
     # Clear memory
     plt.close()
 
-def BarChartOverlay(data_, label_dict, title=None, xlabel=None, ylabel=None, label_ = [], fout="bar_chart.png", percentage=False, bar_alpha=1.0, NDPI=300):
+def BarChartOverlay(data_, label_dict, ymin=1, ymax=-1, title=None, xlabel=None, ylabel=None, label_ = [], fout="bar_chart.png", percentage=False, bar_alpha=1.0, NDPI=300):
 
     # Initialize figure and axis
     fig, ax = plt.subplots()
@@ -799,6 +802,9 @@ def BarChartOverlay(data_, label_dict, title=None, xlabel=None, ylabel=None, lab
     # Set font size of tick labels on x and y axes
     ax.tick_params(axis='x', labelsize=14)
     ax.tick_params(axis='y', labelsize=14)
+
+    if (ymax > ymin):
+        ax.set_ylim(ymin, ymax)
 
     # Set scientific notation for y-axis if necessary
     if ax.get_ylim()[1] > 999:

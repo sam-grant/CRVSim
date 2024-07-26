@@ -298,6 +298,7 @@ def FilterParticles(data_, particle):
 
     # I think this really should be in trigger sectors only FIXME
     muonCondition = ak.any((data_[ut.coincsBranchName+"mc.pdgId"] == 13) | (data_[ut.coincsBranchName+"mc.pdgId"] == -13), axis=1)
+    # muonCondition = ak.any(abs(data_[ut.coincsBranchName+"mc.pdgId"]), axis=1) == 13
 
     if particle == "all":
         return data_

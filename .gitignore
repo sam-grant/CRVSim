@@ -17,3 +17,4 @@ Analyses/Logs/*
 Analyses/Jupyter/*.png
 Analyses/Jupyter/*.txt
 Analyses/Jupyter/Images
+Analyses/Jupyter/.ipynb_checkpoints

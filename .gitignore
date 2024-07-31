@@ -14,3 +14,5 @@ Analyses/Images/*
 Analyses/Txt/*
 Analyses/Attic/*
 Analyses/Logs/*
+.ipynb_checkpoints/
+Analyses/PyMacros/.ipynb_checkpoints/

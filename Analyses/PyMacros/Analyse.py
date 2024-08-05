@@ -1,11 +1,11 @@
 '''
-Samuel Grant 2024
-Analyse CRV efficiency from TrkAna in KPP geometry 
+Samuel Grant 2024.
+Analyse CRV efficiency from TrkAna in KPP geometry.
 
-KPP: three tiers, top and bottom tiers are trigger tiers, middle is the measurement tier
-* Two CRV-D modules with scintillator bars parallel to the DS axis (sector 3) 
-* Four CRV-T modules with scintillator bars perpendicular to the DS axis (sector 1) 
-* Two CRV side end cap modules with scintillator bars perpendicular to the DS axis (sector 2)
+KPP: three tiers, top and bottom tiers are trigger tiers, middle is the measurement tier.
+* Two CRV-L-end modules parallel to the DS axis (sector 3).
+* Four CRV-T modules perpendicular to the DS axis (sector 1).
+* Two CRV-DS modules perpendicular to the DS axis (sector 2).
 
 Procedure: 
  

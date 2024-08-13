@@ -228,20 +228,19 @@ def PrintEvent(event, showMasks):
     if showMasks: 
         eventStr = eventStr[:-86]
         eventStr += f"***** masks *****\n" 
+        eventStr += f"sector_condition: {event['sector_condition']}\n" 
         eventStr += f"PE_condition: {event['PE_condition']}\n" 
         eventStr += f"layer_condition: {event['layer_condition']}\n" 
         eventStr += f"angle_condition: {event['angle_condition']}\n" 
-        eventStr += f"is_coincidence: {event['is_coincidence']}\n" 
+        eventStr += f"CRVT_coincidence: {event['CRVT_coincidence']}\n" 
         eventStr += f"trigger: {event['trigger']}\n" 
         eventStr += f"oneCoinInTriggerSectors: {event['oneCoinInTriggerSectors']}\n"
-        eventStr += f"trk_bestFit: {event['trk_bestFit']}\n"
-        eventStr += f"trkfit_bestFit: {event['trkfit_bestFit']}\n"
-        eventStr += f"trkfit_KLCRV1: {event['trkfit_KLCRV1']}\n"
-        eventStr += f"goodTrk: {event['goodTrk']}\n"
-        eventStr += f"goodTrkFit: {event['goodTrkFit']}\n"
-        # eventStr += f"crv_mask: {event['crv_mask']}\n" 
-        # eventStr += f"trk_mask: {event['trk_mask']}\n" 
-        # eventStr += f"trkfit_mask: {event['trkfit_mask']}\n" 
+        # eventStr += f"trk_bestFit: {event['trk_bestFit']}\n"
+        # eventStr += f"trkfit_bestFit: {event['trkfit_bestFit']}\n"
+        # eventStr += f"trkfit_KLCRV1: {event['trkfit_KLCRV1']}\n"
+        # eventStr += f"goodTrk: {event['goodTrk']}\n"
+        # eventStr += f"goodTrkFit: {event['goodTrkFit']}\n"
+
         eventStr += f"-------------------------------------------------------------------------------------\n"
     
     return eventStr
@@ -254,17 +253,23 @@ def PrintNEvents(data_, nEvents=10, showMasks=False):
             return
 
 # ------------------------------------------------
-#               Coincidence finding 
+# Coincidence finding in measurement sector
 # ------------------------------------------------
 
 # Impose stricter conditions than the default, if desired
-def FindCoincidences(data_, coincidenceConditions="10PEs2Layers"): 
+def FindCoincidences(data_, coincidenceConditions="10PEs2Layers", sector=1): 
     
-    print("\n---> Marking coincidences")
+    # print("\n---> Marking coincidences")
+    print("\n---> Marking coincidences in measurement sector.")
 
     # Get conditions from file
     coincidenceConditions_ = cc.coincidenceConditions_[coincidenceConditions]
 
+    # Measurement sector condition 
+    print("* Measurement sector condition")
+    sectors_ = data_["crv"]["crvcoincs.sectorType"]
+    sectorCondition = sectors_ == sector
+    
     # PE threshold per layer
     print("* PE threshold condition")
     PEs_ = data_["crv"]["crvcoincs.PEsPerLayer[4]"]
@@ -282,12 +287,13 @@ def FindCoincidences(data_, coincidenceConditions="10PEs2Layers"):
     angleCondition = (abs(data_["crv"]["crvcoincs.angle"]) <= coincidenceConditions_["maxSlope"]) & (abs(data_["crv"]["crvcoincs.angle"]) >= coincidenceConditions_["minSlope"])
 
     # Combine conditions to mark per-module coincidences
-    coincidenceMask = layerCondition & angleCondition # PECondition is implicit in the layer condition!
+    coincidenceMask = sectorCondition & layerCondition & angleCondition # PECondition is implicit in the layer condition!
 
     # Add a new field 'is_coincidence' to mark coincidences
-    data_["is_coincidence"] = coincidenceMask
+    data_["CRVT_coincidence"] = coincidenceMask
 
     # Mark the individual coniditions for debugging 
+    data_["sector_condition"] = sectorCondition 
     data_["PE_condition"] = PECondition 
     data_["layer_condition"] = layerCondition 
     data_["angle_condition"] = angleCondition 
@@ -453,10 +459,9 @@ def SuccessfulTriggers(data_, success):
 
     print(f"\n---> Getting {successStr} triggers")
 
-    # Ensure at least one passing coincidence in each trigger sector
-    successCondition = (
-        ak.any(data_["is_coincidence"] & (data_["crv"]["crvcoincs.sectorType"] == 1), axis=1) 
-    )
+    # Ensure at least one passing coincidence the measurement sector
+    # Coincidence conditions are set in FindCoincidences()
+    successCondition = ak.any(data_["CRVT_coincidence"], axis=1) 
 
     print("...Done!")
 
@@ -467,23 +472,24 @@ def SuccessfulTriggers(data_, success):
 #                     Output 
 # ------------------------------------------------ 
 
-def WriteFailuresToFile(failures_, recon, doutTag, foutTag, coincidenceConditions):
+# # This is insane actually.
+# def WriteFailuresToFile(failures_, recon, doutTag, foutTag, coincidenceConditions):
 
-    # Define the output file path
-    foutName = f"../Txt/{recon}/failures_ntuple/{doutTag}/failures_ntuple_{foutTag}.csv" 
+#     # Define the output file path
+#     foutName = f"../Txt/{recon}/failures_ntuple/{doutTag}/failures_ntuple_{foutTag}.csv" 
 
-    print(f"\n---> Writing failures to:\n{foutName}") 
+#     print(f"\n---> Writing failures to:\n{foutName}") 
 
-    with open(foutName, "w") as fout:
-        # Write the header
-        header = "\t".join(ut.branchNamesTrkAna_) + "\n"
-        fout.write(header)
+#     with open(foutName, "w") as fout:
+#         # Write the header
+#         header = "\t".join(ut.branchNamesTrkAna_) + "\n"
+#         fout.write(header)
 
-        for event in failures_:
-            data = "\t".join(str(event[name]) for name in ut.branchNamesTrkAna_) + "\n"
-            fout.write(data)
+#         for event in failures_:
+#             data = "\t".join(str(event[name]) for name in ut.branchNamesTrkAna_) + "\n"
+#             fout.write(data)
 
-    return
+#     return
 
 def WriteFailureInfoToFile(failures_, recon, doutTag, foutTag, coincidenceConditions, verbose):
 
@@ -501,7 +507,7 @@ def WriteFailureInfoToFile(failures_, recon, doutTag, foutTag, coincidenceCondit
         # Write the events
         for event in failures_:
             fout.write(
-                f"{event['evtinfo.run']}, {event['evtinfo.subrun']}, {event['evtinfo.event']}\n"
+                f"{event['evt']['evtinfo.run']}, {event['evt']['evtinfo.subrun']}, {event['evt']['evtinfo.event']}\n"
             )
 
     # Verbose form
@@ -545,7 +551,7 @@ def WriteResultsToFile(data_, successes_, failures_, recon, doutTag, foutTag):
 #                       Run
 # ------------------------------------------------
 
-def Run(file, recon, coincidenceConditions, coincidenceFilterLevel, doutTag, foutTag, sanityPlots, verbose):
+def Run(file, recon, coincidenceConditions, doutTag, foutTag, sanityPlots, verbose):
 
     # Get data as a set of awkward arrays
     data_ = GetData(file) # finName)
@@ -566,23 +572,29 @@ def Run(file, recon, coincidenceConditions, coincidenceFilterLevel, doutTag, fou
     # This limits the analysis to a subset of the data
 
     # Is this the best way to handle this??? 
-    if coincidenceFilterLevel == "pass0":
-        data_ = PassZero(data_, fail=False)
-    elif coincidenceFilterLevel == "pass1":
-        print()
-    elif coincidenceFilterLevel == "pass2":
-        print()
-    elif coincdienceFilterLevel == "pass3":
-        data_ = PassThree(data_, fail=False)
+    # if coincidenceFilterLevel == "pass0":
     
-    # PrintNEvents(data_, 15, True)
+    data_ = PassZero(data_, fail=False)
+
+    
+    
+    # elif coincidenceFilterLevel == "pass1":
+    #     print()
+    # elif coincidenceFilterLevel == "pass2":
+    #     print()
+    # elif coincdienceFilterLevel == "pass3":
+    #     data_ = PassThree(data_, fail=False)
+    
+    PrintNEvents(data_, 15, True)
+
+    return
 
     # Successful and unsuccessful triggers
     successes_ = SuccessfulTriggers(data_, success=True)
     failures_ = SuccessfulTriggers(data_, success=False)
 
     # Write failures to file
-    WriteFailuresToFile(failures_, recon, doutTag, foutTag, coincidenceConditions) # write ntuple to table
+    # WriteFailuresToFile(failures_, recon, doutTag, foutTag, coincidenceConditions) # write ntuple to table
     WriteFailureInfoToFile(failures_, recon, doutTag, foutTag, coincidenceConditions, verbose) 
 
     # Write results to file
@@ -596,6 +608,10 @@ def Run(file, recon, coincidenceConditions, coincidenceFilterLevel, doutTag, fou
 
 def main():
 
+    # Testing
+    TestMain()
+    return
+    
     ##################################
     # Input parameters
     ##################################
@@ -603,11 +619,16 @@ def main():
     defname = "nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.root"
     recon = "MDC2020ae"
     # coincidenceConditions = "10PEs2Layers" # should be in a loop
-    coincidenceFilterLevel = "pass0" 
+    coincidenceFilterLevel = "pass0" # {"pass0" : "one_coincidence_per_trigger_sector"}
     sanityPlots = False
     verbose = False
     layers_ = [2, 3]
     PEs_ = np.arange(10, 132.5, 2.5) # Same steps as Tyler
+
+    # Not sure about this 
+    coincidenceFilters = {
+        "pass0" : "one_coincidence_per_trigger_sector"
+        , "pass1" : "coincidence_grouping"}
     
     ##################################
     # Setup
@@ -622,7 +643,7 @@ def main():
             # Scan PE thresholds
             for PE in PEs_: 
                 coincidenceConditions = f"{PE}PEs{layer}Layers"
-                foutTag = coincidenceConditions + "_" + coincidenceFilterLevel 
+                foutTag = coincidenceConditions + "_" + coincidenceFilters[coincidenceFilterLevel]
                 
                 print("\n---> Running with:\n")
                 print(f"fileName: {fileName}\n")
@@ -634,7 +655,7 @@ def main():
                 print(f"sanityPlots: {sanityPlots}\n")
                 print(f"verbose: {verbose}\n")
                 
-                Run(file, recon, coincidenceConditions, coincidenceFilterLevel, doutTag, foutTag, sanityPlots, verbose)
+                Run(file, recon, coincidenceConditions, doutTag, foutTag, sanityPlots, verbose)
                 # return
                 print() 
                 
@@ -650,8 +671,6 @@ def main():
     # Testing 
     processFunction(fileList[0])
 
-    
-
     # Submit jobs
     # pa.Multithread(fileList, processFunction) 
     
@@ -659,8 +678,29 @@ def main():
 
 # TestParallelise()
 
+def TestMain():
+
+    # Not sure about this 
+    coincidenceFilters = {
+        "pass0" : "one_coincidence_per_trigger_sector"
+        , "pass1" : "coincidence_grouping"
+    }
     
-    # Take command-line arguments
+    # fileName = "/exp/mu2e/data/users/sgrant/CRVSim/CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.000/11946817/00/00089/nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000015.root"
+    fileName = "/exp/mu2e/data/users/sgrant/CRVSim/CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.000/11946817/00/00023/nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000000.root"
+    file = uproot.open(fileName)
+    recon = "MDC2020ae"
+    coincidenceConditions = "10.0PEs2Layers"
+    coincidenceFilterLevel = "pass0"
+    doutTag = fileName.split('.')[-2] 
+    foutTag = coincidenceConditions + "_" + coincidenceFilters[coincidenceFilterLevel]
+    sanityPlots = False
+    verbose = False
+    
+    Run(file, recon, coincidenceConditions, doutTag, foutTag, sanityPlots, verbose)
+
+    
+    # # Take command-line arguments
     # finName = sys.argv[1] if len(sys.argv) > 1 else "/exp/mu2e/data/users/sgrant/CRVSim/CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.000/11946817/00/00089/nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000015.root" #  "/pnfs/mu2e/tape/usr-nts/nts/sgrant/CosmicCRYExtractedCatTriggered/MDC2020ae_best_v1_3/root/c4/15/nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000231.root" # "/pnfs/mu2e/tape/usr-nts/nts/sgrant/CosmicCRYExtractedCatDigiTrk/MDC2020z2_best_v1_1/root/40/73/nts.sgrant.CosmicCRYExtractedCatDigiTrk.MDC2020z2_best_v1_1.001205_00000000.root" # /pnfs/mu2e/scratch/users/sgrant/workflow/CosmicCRYExtractedTrk.MDC2020z2_best_v1_1/outstage/67605881/00/00000/nts.sgrant.CosmicCRYExtractedCatDigiTrk.MDC2020z2_best_v1_1.001205_00000000.root" # "/pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/82/e8/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00000000.tka"
     # recon = sys.argv[2] if len(sys.argv) > 2 else "MDC2020ae" # "original"
     # # particle = sys.argv[2] if len(sys.argv) > 2 else "all"

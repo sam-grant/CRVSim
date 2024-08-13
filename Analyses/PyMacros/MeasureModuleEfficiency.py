@@ -49,8 +49,58 @@ from Mu2eEAF import Parallelise as pa
 # ------------------------------------------------
 #                     Input 
 # ------------------------------------------------ 
+evtBranchNames_ = [ 
+                # Event info
+                "evtinfo.run"
+                , "evtinfo.subrun"
+                , "evtinfo.event"
+]
 
-def GetData(file): # finName):
+crvBranchNames_ = [
+                # Coincidences 
+                "crvcoincs.sectorType" 
+                , "crvcoincs.pos.fCoordinates.fX" 
+                , "crvcoincs.pos.fCoordinates.fY" 
+                , "crvcoincs.pos.fCoordinates.fZ"
+                , "crvcoincs.time" 
+                , "crvcoincs.timeStart"
+                , "crvcoincs.PEs" 
+                , "crvcoincs.nHits" 
+                , "crvcoincs.nLayers" 
+                , "crvcoincs.PEsPerLayer[4]"
+                , "crvcoincs.angle" 
+                # Coincidences (truth)
+                , "crvcoincsmc.valid" 
+                , "crvcoincsmc.pdgId" 
+]
+
+trkBranchNames_ = [
+                # Tracks
+                "kl.status"
+                , "kl.nactive"
+                , "kl.nhits"
+                , "kl.nplanes"
+                , "kl.nnullambig"
+                , "kl.ndof"
+                , "kl.fitcon"
+]
+
+trkFitBranchNames_ = [
+                # Track fits (vector of vector like objects)
+                "klfit"
+                , "klkl"
+] 
+
+allBranchNames_ = { "evt" : evtBranchNames_
+                   ,"crv" : crvBranchNames_
+                   ,"trk" : trkBranchNames_ 
+                   ,"trkfit" : trkFitBranchNames_
+                  }
+
+# headers_ = ["evt", "crv", "trk", "trkfit"]
+# allBranchNames_ = evtBranchNames_ + crvBranchNames_ + trkBranchNames_ + trkFitBranchNames_
+
+def GetData(file, quiet): # finName):
 
     # 1. Coincidence masks should ONLY be applied to coincidences.
     # 2. Global track masks should be applied to tracks and track fits.
@@ -60,70 +110,33 @@ def GetData(file): # finName):
     # Get data
     # finName = "/exp/mu2e/data/users/sgrant/CRVSim/CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.000/11946817/00/00089/nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000015.root"
     # treeName = "TrkAnaExt/trkana"
-
-    evtBranchNames = [ 
-                    # Event info
-                    "evtinfo.run"
-                    , "evtinfo.subrun"
-                    , "evtinfo.event"
-    ]
-
-    crvBranchNames = [
-                    # Coincidences 
-                    "crvcoincs.sectorType" 
-                    , "crvcoincs.pos.fCoordinates.fX" 
-                    , "crvcoincs.pos.fCoordinates.fY" 
-                    , "crvcoincs.pos.fCoordinates.fZ"
-                    , "crvcoincs.time" 
-                    , "crvcoincs.timeStart"
-                    , "crvcoincs.PEs" 
-                    , "crvcoincs.nHits" 
-                    , "crvcoincs.nLayers" 
-                    , "crvcoincs.PEsPerLayer[4]"
-                    , "crvcoincs.angle" 
-                    # Coincidences (truth)
-                    , "crvcoincsmc.valid" 
-                    , "crvcoincsmc.pdgId" 
-    ]
-
-    trkBranchNames = [
-                    # Tracks
-                    "kl.status"
-                    , "kl.nactive"
-                    , "kl.nhits"
-                    , "kl.nplanes"
-                    , "kl.nnullambig"
-                    , "kl.ndof"
-                    , "kl.fitcon"
-    ]
-
-    trkFitBranchNames = [
-                    # Track fits (vector of vector like objects)
-                    "klfit"
-                    , "klkl"
-    ] 
+    data_dict_ = {}
 
     # Open tree
     # with uproot.open(finName+":TrkAnaExt/trkana") as tree: 
     with file["TrkAnaExt/trkana"] as tree:
         # Seperate event info, coincidnces, tracks, and track fits. 
         # This way we can apply masks independently. 
-        evtData_ = tree.arrays(evtBranchNames) 
-        crvData_ = tree.arrays(crvBranchNames) 
-        trkData_ = tree.arrays(trkBranchNames)
-        trkFitData_ = tree.arrays(trkFitBranchNames)
+        for field, branch in allBranchNames_.items():
+            data_dict_[field] = tree.arrays(branch)
+            
+        # evtData_ = tree.arrays(evtBranchNames_) 
+        # crvData_ = tree.arrays(crvBranchNames_) 
+        # trkData_ = tree.arrays(trkBranchNames_)
+        # trkFitData_ = tree.arrays(trkFitBranchNames_)
 
     # Zip them together 
-    return ak.zip({"evt" : evtData_, "crv" : crvData_, "trk" : trkData_, "trkfit" : trkFitData_}) 
+    return ak.zip(data_dict_) 
+    # return ak.zip({"evt" : evtData_, "crv" : crvData_, "trk" : trkData_, "trkfit" : trkFitData_}) 
 
 # ------------------------------------------------
 #                Debugging functions 
 # ------------------------------------------------
 
-def SanityPlots(data_, recon, foutTag):
+def SanityPlots(data_, recon, foutTag, quiet):
     
     #TODO: add tracker sanity plots.
-    print("\n---> Making sanity plots")
+    if not quiet: print("\n---> Making sanity plots")
 
     # Reco
     sectors_ = ak.flatten(data_["crv"]["crvcoincs.sectorType"]) 
@@ -176,7 +189,7 @@ def SanityPlots(data_, recon, foutTag):
     ut.BarChart(data_=pdgid_, label_dict=ut.particle_dict, ylabel="Coincidences [%]", fout=f"../Images/{recon}/Sanity/bar_pdgid_{foutTag}.png", percentage=True)
     ut.BarChartOverlay(data_=[pdgid_[sectors_ == 3], pdgid_[sectors_ == 1], pdgid_[sectors_ == 2]], label_dict=label_dict, ylabel="Coincidences [%]", fout=f"../Images/{recon}/Sanity/bar_overlay_pdgid_{foutTag}.png", percentage=True, label_= ["Top", "Middle", "Bottom"])
 
-    print("...Done!")
+    if not quiet: print("Done!")
 
     return
 
@@ -257,21 +270,21 @@ def PrintNEvents(data_, nEvents=10, showMasks=False):
 # ------------------------------------------------
 
 # Impose stricter conditions than the default, if desired
-def FindCoincidences(data_, coincidenceConditions="10PEs2Layers", sector=1): 
+def FindCoincidences(data_, coincidenceConditions, quiet): 
     
     # print("\n---> Marking coincidences")
-    print("\n---> Marking coincidences in measurement sector.")
+    if not quiet: print("\n---> Marking coincidences in measurement sector.")
 
     # Get conditions from file
     coincidenceConditions_ = cc.coincidenceConditions_[coincidenceConditions]
 
     # Measurement sector condition 
-    print("* Measurement sector condition")
+    # print("* Measurement sector condition")
     sectors_ = data_["crv"]["crvcoincs.sectorType"]
-    sectorCondition = sectors_ == sector
+    sectorCondition = sectors_ == 1
     
     # PE threshold per layer
-    print("* PE threshold condition")
+    # print("* PE threshold condition")
     PEs_ = data_["crv"]["crvcoincs.PEsPerLayer[4]"]
     
     # PE condition per layer
@@ -279,11 +292,11 @@ def FindCoincidences(data_, coincidenceConditions="10PEs2Layers", sector=1):
 
     # Number of layers hit 
     # (based on number of coincidences with PEs per layer above threshold, not nLayers which is baked into the reconstruction in mcs)
-    print("* Layers condition")
+    # print("* Layers condition")
     layerCondition = ak.count(PEs_[PECondition], axis=2) >= coincidenceConditions_["nLayers"] # This can be adjusted on the level of nts 
 
     # Hit slope: horizontal / vertical direction 
-    print("* Angle condition")
+    # print("* Angle condition")
     angleCondition = (abs(data_["crv"]["crvcoincs.angle"]) <= coincidenceConditions_["maxSlope"]) & (abs(data_["crv"]["crvcoincs.angle"]) >= coincidenceConditions_["minSlope"])
 
     # Combine conditions to mark per-module coincidences
@@ -298,7 +311,7 @@ def FindCoincidences(data_, coincidenceConditions="10PEs2Layers", sector=1):
     data_["layer_condition"] = layerCondition 
     data_["angle_condition"] = angleCondition 
 
-    print("...Done!")
+    if not quiet: print("Done!")
 
     return # data_ # ["crv"][data_["is_coincidence"]]
 
@@ -312,26 +325,23 @@ def FindCoincidences(data_, coincidenceConditions="10PEs2Layers", sector=1):
 #     emptyEventCondition = ak.num(data_["crv"]["crvcoincs.nHits"]) == 0
 #     return data_[~emptyEventCondition]
 
-# Not needed.
-# Currently just "all", "muons", "non_muons"
-# Can generalise if needed
-# def FilterParticles(data_, particle):
-#     print(f"\n---> Filtering particles, keeping {particle}")
-#     # This is really just for debugging. 
-#     muonCondition = ak.any((data_["crv"]["crvcoincsmc.pdgId"] == 13) | (data_["crv"]["crvcoincsmc.pdgId"] == -13), axis=1)
-#     if particle == "all":
-#         return data_
-#     elif particle == "muons": 
-#         return data_[muonCondition] 
-#     elif particle == "non_muons":
-#         return data_[~muonCondition] 
-#     else:
-#         raise ValueError(f"Particle string {particle} not valid!")
+# "all", "muons", "non_muons"
+def FilterParticles(data_, particle, quiet):
+    if not quiet: print(f"\n---> Filtering particles, keeping {particle}")
+    
+    muonCondition = ak.any((data_["crv"]["crvcoincsmc.pdgId"] == 13) | (data_["crv"]["crvcoincsmc.pdgId"] == -13), axis=1)
+    if particle == "all":
+        return data_
+    elif particle == "muons": 
+        return data_[muonCondition] 
+    elif particle == "non_muons":
+        return data_[~muonCondition] 
+    else:
+        raise ValueError(f"Particle string {particle} not valid!")
 
 #  Events with ONE coincidence in sectors 2 & 3
-def PassZero(data_, fail=False):
-    
-    print(f"\n---> Running pass one filter") 
+def PassZero(data_, fail, quiet):
+    if not quiet: print(f"\n---> Running pass zero filter") 
 
     sector2Condition = data_["crv"]["crvcoincs.sectorType"] == 2
     sector3Condition = data_["crv"]["crvcoincs.sectorType"] == 3
@@ -345,7 +355,7 @@ def PassZero(data_, fail=False):
     
     data_["oneCoinInTriggerSectors"] = (oneCoincInSector2Condition & oneCoincInSector3Condition)
 
-    print("Done!")
+    if not quiet: print("Done!")
     
     # Cut on event level
     if not fail: 
@@ -355,9 +365,9 @@ def PassZero(data_, fail=False):
         
 
 # Events that pass the tracker cuts 
-def PassThree(data_, fail=False):
+def PassThree(data_, fail, quiet):
     
-    print(f"\n---> Running pass three filter") 
+    if not quiet: print(f"\n---> Running pass three filter") 
     
     data_["trkfit_KLCRV1"] = ( 
         (data_["trkfit"]["klfit"]["sid"] == 200) 
@@ -412,8 +422,8 @@ def PassThree(data_, fail=False):
     #     return data_[~data_["goodTrk"]]
 
 # Events at the end of the digitisation window get messed up
-def CutOnStartTime(data_): 
-    print(f"\n---> Cutting on start time")
+def CutOnStartTime(data_, quiet): 
+    if not quiet: print(f"\n---> Cutting on start time")
     startTimeCondition = ak.all(data_["crv"]["crvcoincs.timeStart"] <= 99500, axis=1)
     return data_[startTimeCondition]
 
@@ -422,9 +432,9 @@ def CutOnStartTime(data_):
 # ------------------------------------------------   
 
 # Basic trigger condition
-def Trigger(data_, fail=False): 
+def Trigger(data_, fail, quiet): 
 
-    print(f"\n---> Triggering")
+    if not quiet: print(f"\n---> Triggering")
 
     # Enforce basic trigger condition
     # triggerCondition = (
@@ -440,7 +450,7 @@ def Trigger(data_, fail=False):
 
     data_["trigger"] = triggerCondition
     
-    print("...Done!")
+    if not quiet: print("Done!")
 
     # return data_[~triggerCondition]
 
@@ -451,19 +461,19 @@ def Trigger(data_, fail=False):
         
 
 # Needs to come after the initial trigger 
-def SuccessfulTriggers(data_, success):
+def SuccessfulTriggers(data_, success, quiet):
 
     successStr = ""
     if success: successStr += "successful"
     else: successStr += "unsuccessful"
 
-    print(f"\n---> Getting {successStr} triggers")
+    if not quiet: print(f"\n---> Getting {successStr} triggers")
 
     # Ensure at least one passing coincidence the measurement sector
     # Coincidence conditions are set in FindCoincidences()
     successCondition = ak.any(data_["CRVT_coincidence"], axis=1) 
 
-    print("...Done!")
+    if not quiet: print("Done!")
 
     if success: return data_[successCondition] # successful triggers
     else: return data_[~successCondition] # unsuccessful triggers
@@ -472,33 +482,36 @@ def SuccessfulTriggers(data_, success):
 #                     Output 
 # ------------------------------------------------ 
 
-# # This is insane actually.
-# def WriteFailuresToFile(failures_, recon, doutTag, foutTag, coincidenceConditions):
+# Full failure NTuple for further analysis
+def WriteFailureNTuple(failures_, recon, doutTag, foutTag, coincidenceConditions, quiet):
 
-#     # Define the output file path
-#     foutName = f"../Txt/{recon}/failures_ntuple/{doutTag}/failures_ntuple_{foutTag}.csv" 
+    # Define the output file path
+    foutName = f"../Txt/{recon}/failures_ntuple/{doutTag}/failures_ntuple_{foutTag}.csv" 
+    if True: print(f"\n---> Writing failures to:\n{foutName}", flush=True) 
 
-#     print(f"\n---> Writing failures to:\n{foutName}") 
+    # this is sloppy, can we generalise?
 
-#     with open(foutName, "w") as fout:
-#         # Write the header
-#         header = "\t".join(ut.branchNamesTrkAna_) + "\n"
-#         fout.write(header)
 
-#         for event in failures_:
-#             data = "\t".join(str(event[name]) for name in ut.branchNamesTrkAna_) + "\n"
-#             fout.write(data)
+    with open(foutName, "w") as fout:
+        # Write the header
+        header = "\t".join(allBranchNames_) + "\n"
+        fout.write(header)
 
-#     return
+        for event in failures_:
+            data = "\t".join(str(event[field][name]) for field, name in branchNames_.items()) + "\n"
+            fout.write(data)
 
-def WriteFailureInfoToFile(failures_, recon, doutTag, foutTag, coincidenceConditions, verbose):
+    return
+
+def WriteFailureInfo(failures_, recon, doutTag, foutTag, coincidenceConditions, quiet):
 
     # Define the output file path
     foutNameConcise = f"../Txt/{recon}/failures_concise/{doutTag}/failures_concise_{foutTag}.csv" 
     foutNameVerbose = f"../Txt/{recon}/failures_verbose/{doutTag}/failures_verbose_{foutTag}.csv" 
 
-    print(f"\n---> Writing failure info to:\n{foutNameConcise}") #\n{foutNameVerbose}")
-    if verbose: print(foutNameVerbose)
+    if True: print(f"\n---> Writing failure info to:\n{foutNameConcise}\n{foutNameVerbose}", flush=True) 
+
+# allBranchNames_ = evtBranchNames_ + crvBranchNames_ + trkBranchNames_ + trkFitBranchNames_
 
     # Concise form
     with open(foutNameConcise, "w") as fout:
@@ -511,7 +524,7 @@ def WriteFailureInfoToFile(failures_, recon, doutTag, foutTag, coincidenceCondit
             )
 
     # Verbose form
-    if verbose: 
+    if True: 
         with open(foutNameVerbose, "w") as fout:
             # Write the events
             for event in failures_:
@@ -521,10 +534,10 @@ def WriteFailureInfoToFile(failures_, recon, doutTag, foutTag, coincidenceCondit
 
     return
 
-def WriteResultsToFile(data_, successes_, failures_, recon, doutTag, foutTag):
+def WriteResults(data_, successes_, failures_, recon, doutTag, foutTag, quiet):
 
     foutName = f"../Txt/{recon}/results/{doutTag}/results_{foutTag}.csv"
-    print(f"\n---> Writing results to {foutName}")
+    if not quiet: print(f"\n---> Writing results to {foutName}")
     tot = len(data_)
     efficiency = len(successes_) / tot * 100
     inefficiency = len(failures_) / tot * 100
@@ -543,7 +556,7 @@ def WriteResultsToFile(data_, successes_, failures_, recon, doutTag, foutTag):
         fout.write(f"{tot}, {len(successes_)}, {len(failures_)}, {efficiency}, {inefficiency}\n")
         # fout.write(outputStr)
 
-    print(outputStr)
+    print(outputStr, flush=True)
 
     return
 
@@ -551,22 +564,24 @@ def WriteResultsToFile(data_, successes_, failures_, recon, doutTag, foutTag):
 #                       Run
 # ------------------------------------------------
 
-def Run(file, recon, coincidenceConditions, doutTag, foutTag, sanityPlots, verbose):
+def Run(file, recon, particle, coincidenceConditions, doutTag, foutTag, sanityPlots, quiet): 
+
+    # Placeholder
+    fail = False
 
     # Get data as a set of awkward arrays
-    data_ = GetData(file) # finName)
+    data_ = GetData(file, quiet) # finName)
     
     # Sanity plots 
-    if (sanityPlots): SanityPlots(data_, recon, foutTag)
+    if (sanityPlots): SanityPlots(data_, recon, foutTag, quiet)
 
     # Apply start time cut
-    data_ = CutOnStartTime(data_)
+    data_ = CutOnStartTime(data_, quiet)
 
-    # Find coincidences
-    FindCoincidences(data_, coincidenceConditions)
+    data_ = FilterParticles(data_, particle, quiet)
 
     # Basic trigger
-    data_ = Trigger(data_, fail=False)
+    data_ = Trigger(data_, fail, quiet)
 
     # Pass 1 
     # This limits the analysis to a subset of the data
@@ -574,9 +589,8 @@ def Run(file, recon, coincidenceConditions, doutTag, foutTag, sanityPlots, verbo
     # Is this the best way to handle this??? 
     # if coincidenceFilterLevel == "pass0":
     
-    data_ = PassZero(data_, fail=False)
+    data_ = PassZero(data_, fail, quiet)
 
-    
     
     # elif coincidenceFilterLevel == "pass1":
     #     print()
@@ -585,20 +599,22 @@ def Run(file, recon, coincidenceConditions, doutTag, foutTag, sanityPlots, verbo
     # elif coincdienceFilterLevel == "pass3":
     #     data_ = PassThree(data_, fail=False)
     
-    PrintNEvents(data_, 15, True)
+    # Find coincidences in measurement sector
+    # This could actually be written into SuccessfulTriggers no? 
+    FindCoincidences(data_, coincidenceConditions, quiet)
 
-    return
-
+    # PrintNEvents(data_, 15, True)
+    
     # Successful and unsuccessful triggers
-    successes_ = SuccessfulTriggers(data_, success=True)
-    failures_ = SuccessfulTriggers(data_, success=False)
+    successes_ = SuccessfulTriggers(data_, success=True, quiet=quiet)
+    failures_ = SuccessfulTriggers(data_, success=False, quiet=quiet)
 
     # Write failures to file
-    # WriteFailuresToFile(failures_, recon, doutTag, foutTag, coincidenceConditions) # write ntuple to table
-    WriteFailureInfoToFile(failures_, recon, doutTag, foutTag, coincidenceConditions, verbose) 
+    WriteFailureNTuple(failures_, recon, doutTag, foutTag, coincidenceConditions, quiet) # write ntuple to table
+    WriteFailureInfo(failures_, recon, doutTag, foutTag, coincidenceConditions, quiet) 
 
     # Write results to file
-    WriteResultsToFile(data_, successes_, failures_, recon, doutTag, foutTag) 
+    WriteResults(data_, successes_, failures_, recon, doutTag, foutTag, quiet) 
 
     return
 
@@ -609,8 +625,8 @@ def Run(file, recon, coincidenceConditions, doutTag, foutTag, sanityPlots, verbo
 def main():
 
     # Testing
-    TestMain()
-    return
+    # TestMain()
+    # return
     
     ##################################
     # Input parameters
@@ -619,16 +635,22 @@ def main():
     defname = "nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.root"
     recon = "MDC2020ae"
     # coincidenceConditions = "10PEs2Layers" # should be in a loop
-    coincidenceFilterLevel = "pass0" # {"pass0" : "one_coincidence_per_trigger_sector"}
+    coincidenceFilterLevel = "pass0" 
     sanityPlots = False
-    verbose = False
+    quiet = True
+    particles_ = ["all", "muon", "non_muon"]
     layers_ = [2, 3]
-    PEs_ = np.arange(10, 132.5, 2.5) # Same steps as Tyler
-
+    PEs_ = np.arange(10.0, 135.0, 5) # Same steps as Tyler
+    
     # Not sure about this 
     coincidenceFilters = {
         "pass0" : "one_coincidence_per_trigger_sector"
         , "pass1" : "coincidence_grouping"}
+
+    # Get file list
+    fileList = rd.GetFileList(defname) 
+
+    trials = len(fileList) + len(particles_) + len(layers_) + len(PEs_)
     
     ##################################
     # Setup
@@ -636,43 +658,57 @@ def main():
     
     # Wrap Run() in a process function
     def processFunction(fileName):
-        file = rd.ReadFile(fileName, quiet=True)
+        file = rd.ReadFile(fileName, quiet)
         doutTag = fileName.split('.')[-2] 
-        # Scan layers
-        for layer in layers_:
-            # Scan PE thresholds
-            for PE in PEs_: 
-                coincidenceConditions = f"{PE}PEs{layer}Layers"
-                foutTag = coincidenceConditions + "_" + coincidenceFilters[coincidenceFilterLevel]
+        count = 0 
+        # Scan particles
+        for particle in particles_:
+            # Scan layers
+            for layer in layers_:
+                # Scan PE thresholds
+                for PE in PEs_: 
+                    coincidenceConditions = f"{PE}PEs{layer}Layers"
+                    foutTag = particle + "_" + coincidenceConditions + "_" + coincidenceFilters[coincidenceFilterLevel]
+                    percent_done = (count / trials) * 100
+                    
+                    outputStr = (
+                        "\n---> Running with:\n"
+                        f"fileName: {fileName}\n"
+                        f"recon: {recon}\n"
+                        f"particle: {particle}\n"
+                        f"layers: {layer}/4\n"
+                        f"PEs: {PE}\n"
+                        f"coincidenceConditions: {coincidenceConditions}\n"
+                        f"coincidenceFilterLevel: {coincidenceFilterLevel}\n"
+                        f"doutTag: {doutTag}\n"
+                        f"foutTag: {foutTag}\n"
+                        f"sanityPlots: {sanityPlots}\n"
+                        f"Percent done: {percent_done:.2f}%\n" # Doesn't really work with multithreading. Worth fixing?
+                    )
+                    
+                    print(outputStr, flush=True)
                 
-                print("\n---> Running with:\n")
-                print(f"fileName: {fileName}\n")
-                print(f"recon: {recon}\n")
-                print(f"coincidenceConditions: {coincidenceConditions}\n")
-                print(f"coincidenceFilterLevel: {coincidenceFilterLevel}\n")
-                print(f"doutTag: {doutTag}\n")
-                print(f"foutTag: {foutTag}\n")
-                print(f"sanityPlots: {sanityPlots}\n")
-                print(f"verbose: {verbose}\n")
-                
-                Run(file, recon, coincidenceConditions, doutTag, foutTag, sanityPlots, verbose)
-                # return
-                print() 
-                
-        # return 
+                    # Run script
+                    Run(file, recon, particle, coincidenceConditions, doutTag, foutTag, sanityPlots, quiet) 
+      
+                    count += 1
+                    # print() 
+                    # Uncomment for testing 
+                    # return   
+        return 
 
     ##################################
     # Submit 
-    ##################################
-    
-    # Get file list
-    fileList = rd.GetFileList(defname) 
+    ##################################    
 
     # Testing 
-    processFunction(fileList[0])
+    # processFunction(fileList[0])
+    # processFunction(fileList[1])
 
     # Submit jobs
-    # pa.Multithread(fileList, processFunction) 
+    pa.Multithread(fileList, processFunction) 
+
+    print("---> Analysis complete!", flush=True)
     
     return
 

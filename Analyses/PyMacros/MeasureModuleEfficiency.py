@@ -194,7 +194,7 @@ def SanityPlots(data_, recon, foutTag, quiet):
     return
 
 # Printout helper functions
-def PrintEvent(event, showMasks):
+def PrintEvent(event, showMasks=False):
     
     eventStr = (
         f"-------------------------------------------------------------------------------------\n"
@@ -483,25 +483,29 @@ def SuccessfulTriggers(data_, success, quiet):
 # ------------------------------------------------ 
 
 # Full failure NTuple for further analysis
-def WriteFailureNTuple(failures_, recon, doutTag, foutTag, coincidenceConditions, quiet):
+# Not efficient given how complex TrkAna can be! Better just to write the event info. 
+# def WriteFailureNTuple(failures_, recon, doutTag, foutTag, coincidenceConditions, quiet):
 
-    # Define the output file path
-    foutName = f"../Txt/{recon}/failures_ntuple/{doutTag}/failures_ntuple_{foutTag}.csv" 
-    if True: print(f"\n---> Writing failures to:\n{foutName}", flush=True) 
+#     # Define the output file path
+#     foutName = f"../Txt/{recon}/failures_ntuple/{doutTag}/failures_ntuple_{foutTag}.csv" 
+#     if True: print(f"\n---> Writing failures to:\n{foutName}", flush=True) 
 
-    # this is sloppy, can we generalise?
+#     # this is sloppy, can we generalise?
 
+#     # Flatten the dictionary values into a single list
+#     branchNames_ = [branch for sublist in allBranchNames_.values() for branch in sublist]
+    
+#     # Create header by joining branch names with tabs
+#     header = "\t".join(branchNames_) + "\n"
+    
+#     with open(foutName, "w") as fout:
+#         # Write the header
+#         fout.write(header)
+#         for event in failures_:
+#             data = "\t".join(str(event[field][name]) for field, name in allBranchNames_.items()) + "\n"
+#             fout.write(data)
 
-    with open(foutName, "w") as fout:
-        # Write the header
-        header = "\t".join(allBranchNames_) + "\n"
-        fout.write(header)
-
-        for event in failures_:
-            data = "\t".join(str(event[field][name]) for field, name in branchNames_.items()) + "\n"
-            fout.write(data)
-
-    return
+#     return
 
 def WriteFailureInfo(failures_, recon, doutTag, foutTag, coincidenceConditions, quiet):
 
@@ -556,7 +560,7 @@ def WriteResults(data_, successes_, failures_, recon, doutTag, foutTag, quiet):
         fout.write(f"{tot}, {len(successes_)}, {len(failures_)}, {efficiency}, {inefficiency}\n")
         # fout.write(outputStr)
 
-    print(outputStr, flush=True)
+    if True: print(outputStr, flush=True)
 
     return
 
@@ -590,7 +594,6 @@ def Run(file, recon, particle, coincidenceConditions, doutTag, foutTag, sanityPl
     # if coincidenceFilterLevel == "pass0":
     
     data_ = PassZero(data_, fail, quiet)
-
     
     # elif coincidenceFilterLevel == "pass1":
     #     print()
@@ -610,14 +613,14 @@ def Run(file, recon, particle, coincidenceConditions, doutTag, foutTag, sanityPl
     failures_ = SuccessfulTriggers(data_, success=False, quiet=quiet)
 
     # Write failures to file
-    WriteFailureNTuple(failures_, recon, doutTag, foutTag, coincidenceConditions, quiet) # write ntuple to table
+    # WriteFailureNTuple(failures_, recon, doutTag, foutTag, coincidenceConditions, quiet) # write ntuple to table
     WriteFailureInfo(failures_, recon, doutTag, foutTag, coincidenceConditions, quiet) 
 
     # Write results to file
     WriteResults(data_, successes_, failures_, recon, doutTag, foutTag, quiet) 
 
     return
-
+    
 # ------------------------------------------------
 #                      Main
 # ------------------------------------------------
@@ -638,9 +641,9 @@ def main():
     coincidenceFilterLevel = "pass0" 
     sanityPlots = False
     quiet = True
-    particles_ = ["all", "muon", "non_muon"]
+    particles_ = ["all", "muons", "non_muons"]
     layers_ = [2, 3]
-    PEs_ = np.arange(10.0, 135.0, 5) # Same steps as Tyler
+    PEs_ = np.arange(10, 135, 5) # Same steps as Tyler
     
     # Not sure about this 
     coincidenceFilters = {

@@ -378,18 +378,23 @@ def PlotGraphOverlay2(graphs_, title=None, xlabel=None, ylabel=None, ymin=1, yma
     # Iterate over each pair of xy lists
     for i, (label, data_) in enumerate(graphs_.items()):
 
-        x = data_[0] 
+        x = data_[0]
         xerr = data_[1]
-        y = data_[2] 
+        y = data_[2]
         yerr = data_[3]
+
+        # print("UNC Y:", yerr)
 
          # Plot scatter with error bars
         if len(xerr)==0: xerr = [0] * len(x) # Sometimes we only use yerr
         if len(yerr)==0: yerr = [0] * len(y) # Sometimes we only use yerr
+
+        # yerr = [1.0] * len(y)
+        
         # Scatter plot each pair
         # ax.scatter(x, y, s=16, color=colours[i+1], edgecolor=colours[i+1], marker='o', linestyle='None', label=label)
         # ax.errorbar(x, y, xerr=xerr, yerr=yerr, fmt='o', color=colours[i+1], markersize=4, ecolor=colours[i+1], capsize=2, elinewidth=1, linestyle='None',label=label)
-        ax.errorbar(x, y, xerr=xerr, yerr=yerr, fmt='o', color=colours[i+1], markersize=4, ecolor=colours[i+1], capsize=0, elinewidth=0, linestyle='None',label=label)
+        ax.errorbar(x, y, xerr=xerr, yerr=yerr, fmt='o', color=colours[i+1], markersize=4, ecolor=colours[i+1], capsize=2, elinewidth=1, linestyle='-',label=label)
 
     if log: 
         # ax.set_xscale("log")
@@ -422,6 +427,10 @@ def PlotGraphOverlay2(graphs_, title=None, xlabel=None, ylabel=None, ymin=1, yma
     #     ax.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
     #     ax.yaxis.offsetText.set_fontsize(13)
 
+    # Add a line at 99.99% efficiency
+    # ax.text(100, 1.2e-4, "99.99% efficiency", color="gray") #, transform=ax.transAxes, ha='right')
+    # ax.axhline(y=1e-4, color='gray', linestyle='--')
+
     ax.legend(loc="best", frameon=False, fontsize=13) # , markerscale=5)
 
     # Save the figure
@@ -430,6 +439,8 @@ def PlotGraphOverlay2(graphs_, title=None, xlabel=None, ylabel=None, ymin=1, yma
 
     # Clear memory
     plt.close()
+
+    return
 
 def Plot1D(data, nbins=100, xmin=-1.0, xmax=1.0, title=None, xlabel=None, ylabel=None, fout="hist.png", legPos="best", stats=True, underOver=False, errors=False, NDPI=300):
     
@@ -451,8 +462,8 @@ def Plot1D(data, nbins=100, xmin=-1.0, xmax=1.0, title=None, xlabel=None, ylabel
 
     # # Create legend text
     legend_text = f"Entries: {N}\nMean: {Round(mean, 3)}\nStd Dev: {Round(stdDev, 3)}"
-    # if errors: legend_text = f"Entries: {N}\nMean: {Round(mean, 3)}$\pm${Round(meanErr, 1)}\nStd Dev: {Round(stdDev, 3)}$\pm${Round(stdDevErr, 1)}"
-    # if underOver: legend_text += f"\nUnderflows: {underflows}\nOverflows: {overflows}"
+    if errors: legend_text = f"Entries: {N}\nMean: {Round(mean, 3)}$\pm${Round(meanErr, 1)}\nStd Dev: {Round(stdDev, 3)}$\pm${Round(stdDevErr, 1)}"
+    if underOver: legend_text += f"\nUnderflows: {underflows}\nOverflows: {overflows}"
 
     # # legend_text = f"Entries: {N}\nMean: {Round(mean, 3)}$\pm${Round(meanErr, 1)}\nStd Dev: {Round(stdDev, 3)}$\pm${Round(stdDev, 1)}"
 

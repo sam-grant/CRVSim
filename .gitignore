@@ -15,4 +15,6 @@ Analyses/Txt/*
 Analyses/Attic/*
 Analyses/Logs/*
 .ipynb_checkpoints/
+
 Analyses/PyMacros/.ipynb_checkpoints/
+Analyses/Jupyter/.ipynb_checkpoints/

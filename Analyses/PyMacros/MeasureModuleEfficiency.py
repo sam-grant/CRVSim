@@ -38,6 +38,7 @@ import sys
 import uproot 
 import numpy as np
 import awkward as ak
+import pandas as pd
 
 # Internal libraries
 import Utils as ut
@@ -49,6 +50,9 @@ from Mu2eEAF import Parallelise as pa
 # ------------------------------------------------
 #                     Input 
 # ------------------------------------------------ 
+
+#TODO: remove this and use the version in Utils.py 
+
 evtBranchNames_ = [ 
                 # Event info
                 "evtinfo.run"
@@ -538,11 +542,12 @@ def WriteFailureInfo(failures_, recon, finTag, foutTag, coincidenceConditions, q
     # Concise form
     with open(foutNameConcise, "w") as fout:
         # Write the header
+        # TODO: changed this to have no spaces!
         fout.write("evtinfo.run, evtinfo.subrun, evtinfo.event\n")
         # Write the events
         for event in failures_:
             fout.write(
-                f"{event['evt']['evtinfo.run']}, {event['evt']['evtinfo.subrun']}, {event['evt']['evtinfo.event']}\n"
+                f"{event['evt']['evtinfo.run']},{event['evt']['evtinfo.subrun']},{event['evt']['evtinfo.event']}\n"
             )
             
     # Verbose form
@@ -566,6 +571,8 @@ def WriteResults(data_, successes_, failures_, recon, finTag, foutTag, quiet):
 
     outputStr = f"""
     ****************************************************
+    Input tag: {finTag}
+    Output tag: {foutTag}
     Number of failures: {len(failures_)}
     Number of successes: {len(successes_)}
     Efficiency: {len(successes_)}/{tot} = {efficiency:.2f}%
@@ -574,11 +581,11 @@ def WriteResults(data_, successes_, failures_, recon, finTag, foutTag, quiet):
     """
 
     with open(foutName, "w") as fout:
-        fout.write("Total, Successes, Failures, Efficiency [%], Inefficiency [%]\n")
+        fout.write("Total,Successes,Failures,Efficiency [%],Inefficiency [%]\n") # no spaces!
         fout.write(f"{tot}, {len(successes_)}, {len(failures_)}, {efficiency}, {inefficiency}\n")
         # fout.write(outputStr)
 
-    if not quiet: print(outputStr, flush=True)
+    if True: print(outputStr)
 
     return
 
@@ -635,7 +642,8 @@ def Run(file, recon, particle, PE, layer, filterLevel, finTag, sanityPlots, quie
     # elif coincdienceFilterLevel == "pass3":
     #     data_ = PassThree(data_, fail=False)
 
-    # This needs to come after all the filtering! 
+    # This needs to come after all the filtering!
+    # Well it needs to come after the trigger I guess. 
     # Find coincidences in measurement sector
     # This could actually be written into SuccessfulTriggers no? 
     FindCoincidences(data_, coincidenceConditions, quiet)
@@ -731,108 +739,144 @@ def Multithread2(processFunction2, fileName, particles_, layers_, PEs_):
     print("\nMultithreading completed!")
     return
 
+# Multithread on many files with many configs
+# This seems to use huge amount of memory! Like 35 GB per file... 
+def Multithread3(processFunction2, fileList_, particles_, layers_, PEs_, max_workers=254):
     
+    print("\n---> Starting multithreading...\n")
+    
+    totalFiles = len(fileList_)
+    totalConfigurations = len(particles_) * len(layers_) * len(PEs_)
+    completedTasks = 0
+    
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        
+        # Prepare the list of futures
+        futures = []
+        
+        # Submit tasks for each file
+        for fileName in fileList_:
+            # Generate all combinations of (particle, layer, PE) for each file
+            configurations = product(particles_, layers_, PEs_)
+            for particle, layer, PE in configurations:
+                futures.append(
+                    executor.submit(processFunction2, fileName, particle, layer, PE)
+                )
+        
+        # Process results as they complete
+        for future in as_completed(futures):
+            try:
+                future.result()  # Retrieve the result or raise an exception if occurred
+                completedTasks += 1
+                percentComplete = (completedTasks / (totalFiles * totalConfigurations)) * 100
+                print(f'---> Task {completedTasks} processed successfully! ({percentComplete:.1f}% complete)')
+            except Exception as exc:
+                print(f'---> Task generated an exception!\n{exc}')
+                
+    print("\n---> Multithreading completed!")
+    return
+
+
+def Multithread4(processFunction3, fileList_, max_workers=381):
+    
+    print("\n---> Starting multithreading...\n")
+
+    completedTasks = 0
+    totalFiles = len(fileList_)
+    
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        
+        # Prepare the list of futures
+        futures_ = [executor.submit(processFunction3, fileName) for fileName in fileList_]
+        
+        # Process results as they complete
+        for future in as_completed(futures_):
+            try:
+                future.result()  # Retrieve the result or raise an exception if occurred
+                completedTasks += 1
+                percentComplete = (completedTasks / (totalFiles)) * 100
+                print(f'\n---> Task {completedTasks} processed successfully! ({percentComplete:.1f}% complete)')
+            except Exception as exc:
+                print(f'\n---> Task generated an exception!\n{exc}')
+                
+    print("\n---> Multithreading completed!")
+    return
+    
+# This is good. TODO: add this to Mu2eEAF. 
+def Multithread5(processFunction, fileList_, max_workers=381):
+    
+    print("\n---> Starting multithreading...\n")
+
+    completedFiles = 0
+    totalFiles = len(fileList_)
+    
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        
+        # Prepare a list of futures and map them to file names
+        futures_ = {executor.submit(processFunction, fileName): (fileName) for fileName in fileList_}
+        
+        # Process results as they complete
+        for future in as_completed(futures_):
+            fileName = futures_[future]  # Get the file name associated with this future
+            # print(f'\n---> Processing {fileName}...') 
+            try:
+                future.result()  # Retrieve the result or raise an exception if occurred
+                completedFiles += 1
+                percentComplete = (completedFiles / (totalFiles)) * 100
+                print(f'\n---> {fileName} processed successfully! ({percentComplete:.1f}% complete)')
+            except Exception as exc:
+                print(f'\n---> {fileName} generated an exception!\n{exc}')
+                
+    print("\n---> Multithreading completed!")
+    return
+
+def Multithread6(processFunction, fileList_, max_workers=381):
+    
+    print("\n---> Starting multithreading...\n")
+
+    completedFiles = 0
+    totalFiles = len(fileList_)
+    
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        
+        # Prepare a list of futures and map them to file names
+        futures_ = {executor.submit(processFunction, fileName): (fileName) for fileName in fileList_}
+        
+        # Process results as they complete
+        for future in as_completed(futures_):
+            fileName = futures_[future]  # Get the file name associated with this future
+            future.result()  # Retrieve the result 
+            completedFiles += 1
+            percentComplete = (completedFiles / (totalFiles)) * 100
+            print(f'\n---> {fileName} processed successfully! ({percentComplete:.1f}% complete)')
+            # Exceptions are handled in the processFunction. 
+                
+    print("\n---> Multithreading completed!")
+    return
+
 # ------------------------------------------------
 #                      Main
 # ------------------------------------------------
-
-# Lazy as hell 
-# def PassOne():
-    
-#     fileName = "nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000000.root"
-#     recon = "MDC2020ae"
-    
-#     particles_ = ["all", "muons", "non_muons"]
-#     layers_ = [2, 3]
-#     PEs_ = np.arange(10, 135, 5)
-    
-#     filterLevel = 0
-#     sanityPlots = False
-#     quiet = True # True
-
-#     def processFunction2(fileName, particle, layer, PE):
-#         # Always open the file in the processFunction 
-#         file = rd.ReadFile(fileName, quiet)
-#         finTag = fileName.split('.')[-2] 
-#         outputStr = (
-#                         "\n---> Running with:\n"
-#                         f"fileName: {fileName}\n"
-#                         f"recon: {recon}\n"
-#                         f"particle: {particle}\n"
-#                         f"PEs: {PE}\n"
-#                         f"layers: {layer}/4\n"
-#                         f"filterLevel: {filterLevel}\n"
-#                         f"finTag: {finTag}\n"
-#                         f"sanityPlots: {sanityPlots}\n"
-#                         f"quiet: {quiet}\n"
-#                     )
-#         if not quiet: print(outputStr, flush=True)
-#         Run(file, recon, particle, PE, layer, filterLevel, finTag, sanityPlots, quiet)
-#         return
-
-#     Multithread2(processFunction2, fileName, particles_, layers_, PEs_) 
-
-#     return
-
-# # Lazy as hell 
-# def PassTwo():
-    
-#     fileName = "nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000000.root"
-#     recon = "MDC2020ae"
-    
-#     particles_ = ["all", "muons", "non_muons"]
-#     layers_ = [2, 3]
-#     PEs_ = np.arange(10, 135, 5)
-    
-#     filterLevel = 1
-#     sanityPlots = False
-#     quiet = True # True
-
-#     def processFunction2(fileName, particle, layer, PE):
-#         # Always open the file in the processFunction 
-#         file = rd.ReadFile(fileName, quiet)
-#         finTag = fileName.split('.')[-2] 
-#         outputStr = (
-#                         "\n---> Running with:\n"
-#                         f"fileName: {fileName}\n"
-#                         f"recon: {recon}\n"
-#                         f"particle: {particle}\n"
-#                         f"PEs: {PE}\n"
-#                         f"layers: {layer}/4\n"
-#                         f"filterLevel: {filterLevel}\n"
-#                         f"finTag: {finTag}\n"
-#                         f"sanityPlots: {sanityPlots}\n"
-#                         f"quiet: {quiet}\n"
-#                     )
-#         if not quiet: print(outputStr, flush=True)
-#         Run(file, recon, particle, PE, layer, filterLevel, finTag, sanityPlots, quiet)
-#         return
-
-#     Multithread2(processFunction2, fileName, particles_, layers_, PEs_) 
-
-#     return
     
 def main():
 
-    # PassOne()
-    # PassTwo()
-
     # return
-
-    fileName = "nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000000.root"
+    defname = "nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.root"
     recon = "MDC2020ae"
     
+    filterLevels_ = [0, 1]
     particles_ = ["all", "muons", "non_muons"]
-    layers_ = [2, 3]
-    PEs_ = np.arange(10, 135, 5)
+    layers_ = [3, 2]
+    # PEs_ = np.arange(10, 135, 5)
+    PEs_ = np.arange(100, 135, 5)
 
-    particles_ = ["muons"]
-    layers_ = [3]
-    PEs_ = [100] 
-    
-    filterLevel = 1
+    # filterLevel_ = [0, 1] # [0, 1]
+    # particles_ = ["all"] # , "muons", "non_muons"]
+    # layers_ = [2] # , 3]
+    # PEs_ = [10] # np.arange(10, 135, 5)
+
     sanityPlots = False
-    quiet = False # True
+    quiet = True # True
 
     def processFunction2(fileName, particle, layer, PE):
         # Always open the file in the processFunction 
@@ -854,151 +898,122 @@ def main():
         Run(file, recon, particle, PE, layer, filterLevel, finTag, sanityPlots, quiet)
         return
 
-    Multithread2(processFunction2, fileName, particles_, layers_, PEs_) 
-
-    return
-    
-    # Testing
-    # TestMain()
-    # return
-    
-    ##################################
-    # Input parameters
-    ##################################
-
-    defname = "nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.root"
-    recon = "MDC2020ae"
-    # coincidenceConditions = "10PEs2Layers" # should be in a loop
-    coincidenceFilterLevel = "pass0" 
-    sanityPlots = False
-    quiet = True
-    particles_ = ["all", "muons", "non_muons"]
-    layers_ = [2, 3]
-    PEs_ = np.arange(10, 135, 5) # Same steps as Tyler
-    
-    # Not sure about this 
-    coincidenceFilters = {
-        "pass0" : "one_coincidence_per_trigger_sector"
-        , "pass1" : "coincidence_grouping"}
-
-    # Get file list
-    fileList = rd.GetFileList(defname) 
-
-    trials = len(fileList) + len(particles_) + len(layers_) + len(PEs_)
-    
-    ##################################
-    # Setup
-    ##################################
-    
-    # Wrap Run() in a process function
-    def processFunction(fileName):
+    def processFunction3(fileName):
+        # Always open the file in the processFunction 
         file = rd.ReadFile(fileName, quiet)
         finTag = fileName.split('.')[-2] 
-        count = 0 
-        # Scan particles
-        for particle in particles_:
-            # Scan layers
-            for layer in layers_:
-                # Scan PE thresholds
-                for PE in PEs_: 
-                    coincidenceConditions = f"{PE}PEs{layer}Layers"
-                    foutTag = particle + "_" + coincidenceConditions + "_" + coincidenceFilters[coincidenceFilterLevel]
-                    percent_done = (count / trials) * 100
+        
+        # Build one datapoint at a time, so PEs need to go on the bottom
+        # Scan PE thresholds
+        for PE in PEs_: # Data point level
+            # Scan particles
+            for particle in particles_: # Series level
+                # Scan filters
+                for filterLevel in filterLevels_: # Plot level
+                    # Scan layers
+                    for layer in layers_: # Plot level
                     
-                    outputStr = (
-                        "\n---> Running with:\n"
-                        f"fileName: {fileName}\n"
-                        f"recon: {recon}\n"
-                        f"particle: {particle}\n"
-                        f"layers: {layer}/4\n"
-                        f"PEs: {PE}\n"
-                        f"coincidenceConditions: {coincidenceConditions}\n"
-                        f"coincidenceFilterLevel: {coincidenceFilterLevel}\n"
-                        f"finTag: {finTag}\n"
-                        f"foutTag: {foutTag}\n"
-                        f"sanityPlots: {sanityPlots}\n"
-                        f"Percent done: {percent_done:.2f}%\n" # Doesn't really work with multithreading. Worth fixing?
-                    )
-                    
-                    print(outputStr, flush=True)
-                
-                    # Run script
-                    Run(file, recon, particle, coincidenceConditions, finTag, foutTag, sanityPlots, quiet) 
-      
-                    count += 1
-                    # print() 
-                    # Uncomment for testing 
-                    # return   
-        return 
+                        outputStr = (
+                            "\n---> Running with:\n"
+                            f"fileName: {fileName}\n"
+                            f"recon: {recon}\n"
+                            f"particle: {particle}\n"
+                            f"PEs: {PE}\n"
+                            f"layers: {layer}/4\n"
+                            f"filterLevel: {filterLevel}\n"
+                            f"finTag: {finTag}\n"
+                            f"sanityPlots: {sanityPlots}\n"
+                            f"quiet: {quiet}\n"
+                        )
+                        if not quiet: print(outputStr) 
+                            
+                        Run(file, recon, particle, PE, layer, filterLevel, finTag, sanityPlots, quiet)
+        return
 
-    ##################################
-    # Submit 
-    ##################################    
+    # Resubmission of failures.
+    def processFunction4(fileName):
 
-    # Test with one file! 
-    # processFunction(fileList[0])
+        # Get failed jobs
+        failedJobsFile = "../Txt/MDC2020ae/FailedJobs/failures.csv"
+        df_failedJobs_ = pd.read_csv(failedJobsFile)
+        
+        # Always open the file in the processFunction 
+        file = rd.ReadFile(fileName, quiet)
+        finTag = fileName.split('.')[-2] 
+
+        df_failedJobs_ = df_failedJobs_[df_failedJobs_["Tag"] == finTag]
+
+        # helper to get filter level from dict
+        def get_key(d, val):
+          keys = [k for k, v in d.items() if v == val]
+          return keys[0] if keys else None
+            
+        # Submit failed configs
+        for index, row in df_failedJobs_.iterrows():
+
+            # print(row["PEs"], row["PEs"], row["Layer"], row["Particle"], row["Filter"]) 
+            particle = row["Particle"]
+            PE = row["PEs"]
+            layer = row["Layer"]
+            filterLevel = get_key(filters_, row["Filter"])
+
+            outputStr = (
+                    "\n---> Running with:\n"
+                    f"fileName: {fileName}\n"
+                    f"recon: {recon}\n"
+                    f"particle: {particle}\n"
+                    f"PEs: {PE}\n"
+                    f"layers: {layer}/4\n"
+                    f"filterLevel: {filterLevel}\n"
+                    f"finTag: {finTag}\n"
+                    f"sanityPlots: {sanityPlots}\n"
+                    f"quiet: {quiet}\n"
+                )
+
+            if not quiet: print(outputStr) 
+
+            try:
+                Run(file, recon, particle, PE, layer, filterLevel, finTag, sanityPlots, quiet)
+            except Exception as exc:
+                print(f'---> Exception!\n{row}\n{exc}')
+            
+        return
+
+        
+    fileList_ = rd.GetFileList(defname) 
+
+
+    # Get failed jobs
+    failedJobsFile = "../Txt/MDC2020ae/FailedJobs/failures.csv"
+    df_failedJobs_ = pd.read_csv(failedJobsFile)
+
+    # Set of tags
+    tags_ = list(set(df_failedJobs_["Tag"]))
     
-    # this one had an edge case in it. 
-    # Can we multithread this?
-    processFunction("nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000006.root")
+    # Extract the tag from the file name
+    def ExtractTag(fileName):
+        parts = fileName.split('.')
+        if len(parts) > 1:
+            return parts[-2]
+        return None
 
-    # Submit jobs
-    # pa.Multithread(fileList, processFunction) 
+    # Filter and sort files based on tags
+    fileList_ = sorted(
+        [file for file in fileList_ if ExtractTag(file) in tags_]
+        , key=lambda file: tags_.index(ExtractTag(file))
+    )
 
-    print("---> Analysis complete!", flush=True)
-    
-    return
-
-# TestParallelise()
-
-def TestMain():
-
-    # Not sure about this 
-    coincidenceFilters = {
-        "pass0" : "one_coincidence_per_trigger_sector"
-        , "pass1" : "coincidence_grouping"
-    }
-    
-    # fileName = "/exp/mu2e/data/users/sgrant/CRVSim/CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.000/11946817/00/00089/nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000015.root"
-    fileName = "/exp/mu2e/data/users/sgrant/CRVSim/CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.000/11946817/00/00023/nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000000.root"
-    file = uproot.open(fileName)
-    recon = "MDC2020ae"
-    coincidenceConditions = "10.0PEs2Layers"
-    coincidenceFilterLevel = "pass0"
-    finTag = fileName.split('.')[-2] 
-    foutTag = coincidenceConditions + "_" + coincidenceFilters[coincidenceFilterLevel]
-    sanityPlots = False
-    verbose = False
-    
-    Run(file, recon, coincidenceConditions, finTag, foutTag, sanityPlots, verbose)
-
-    # for particle in particles_:
-    #     # Scan layers
-    #     for layer in layers_:
-    #         # Scan PE thresholds
-    #         for PE in PEs_: 
-                # Run process function with all these arugments 
+    print(f"---> Got {len(fileList_)} files.")
+    # Multithread5(processFunction3, fileList_) 
+    Multithread5(processFunction4, fileList_)
+    Multithread6(processFunction4, fileList_)
 
     
-    # # Take command-line arguments
-    # finName = sys.argv[1] if len(sys.argv) > 1 else "/exp/mu2e/data/users/sgrant/CRVSim/CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.000/11946817/00/00089/nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000015.root" #  "/pnfs/mu2e/tape/usr-nts/nts/sgrant/CosmicCRYExtractedCatTriggered/MDC2020ae_best_v1_3/root/c4/15/nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000231.root" # "/pnfs/mu2e/tape/usr-nts/nts/sgrant/CosmicCRYExtractedCatDigiTrk/MDC2020z2_best_v1_1/root/40/73/nts.sgrant.CosmicCRYExtractedCatDigiTrk.MDC2020z2_best_v1_1.001205_00000000.root" # /pnfs/mu2e/scratch/users/sgrant/workflow/CosmicCRYExtractedTrk.MDC2020z2_best_v1_1/outstage/67605881/00/00000/nts.sgrant.CosmicCRYExtractedCatDigiTrk.MDC2020z2_best_v1_1.001205_00000000.root" # "/pnfs/mu2e/tape/phy-nts/nts/mu2e/CosmicCRYExtractedTrk/MDC2020z1_best_v1_1_std_v04_01_00/tka/82/e8/nts.mu2e.CosmicCRYExtractedTrk.MDC2020z1_best_v1_1_std_v04_01_00.001205_00000000.tka"
-    # recon = sys.argv[2] if len(sys.argv) > 2 else "MDC2020ae" # "original"
-    # # particle = sys.argv[2] if len(sys.argv) > 2 else "all"
-    # coincidenceConditions = sys.argv[3] if len(sys.argv) > 3 else "10PEs2Layers" # "ana1" # "default"
+    # Multithread3(processFunction2, fileList_[:2], particles_, layers_, PEs_) 
     
-    # # coincidenceFilter = sys.argv[5] if len(sys.argv) > 5 else "one_coincidence_per_trigger_sector"
-    # sanityPlots = bool(sys.argv[4]) if len(sys.argv) > 4 else False
-    # verbose = bool(sys.argv[5]) if len(sys.argv) > 5 else False # False
-
-    # print("\n---> Running with inputs:\n")
-    # print("\tfinName:", finName)
-    # print("\recon:", recon)
-    # print("\tcoincidenceConditions:", coincidenceConditions)
-    # # print("\tcoincidenceFilter:", coincidenceFilter)
-    # print("\tsanityPlots:", sanityPlots)
-    # print("\tverbose:", verbose, "\n")
-
-    # Run(finName=finName, recon=recon, coincidenceConditions=coincidenceConditions, sanityPlots=sanityPlots, verbose=verbose) 
+    # Multithread4(processFunction3, ["nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000000.root"]) 
+    # Multithread3(processFunction2, fileList_[:20], particles_, layers_, PEs_) 
+    # Multithread2(processFunction2, fileName, particles_, layers_, PEs_) 
 
     return
 

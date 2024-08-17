@@ -198,7 +198,7 @@ def SanityPlots(data_, recon, foutTag, quiet):
     return
 
 # Printout helper functions
-def PrintEvent(event, showMasks=False):
+def PrintEvent(event, showMasks=False, showTrkMasks=False):
     
     eventStr = (
         f"-------------------------------------------------------------------------------------\n"
@@ -254,20 +254,21 @@ def PrintEvent(event, showMasks=False):
         eventStr += f"oneOrZeroCoincInMeasurementSector: {event['oneOrZeroCoincInMeasurementSector']}\n"
         eventStr += f"oneCoinInTriggerSectors: {event['oneCoinInTriggerSectors']}\n"
         eventStr += f"filter_zero: {event['filter_zero']}\n"
-        # eventStr += f"trk_bestFit: {event['trk_bestFit']}\n"
-        # eventStr += f"trkfit_bestFit: {event['trkfit_bestFit']}\n"
-        # eventStr += f"trkfit_KLCRV1: {event['trkfit_KLCRV1']}\n"
-        # eventStr += f"goodTrk: {event['goodTrk']}\n"
-        # eventStr += f"goodTrkFit: {event['goodTrkFit']}\n"
+        if showTrkMasks:
+            eventStr += f"trk_bestFit: {event['trk_bestFit']}\n"
+            eventStr += f"trkfit_bestFit: {event['trkfit_bestFit']}\n"
+            eventStr += f"trkfit_KLCRV1: {event['trkfit_KLCRV1']}\n"
+            eventStr += f"goodTrk: {event['goodTrk']}\n"
+            eventStr += f"goodTrkFit: {event['goodTrkFit']}\n"
 
         eventStr += f"-------------------------------------------------------------------------------------\n"
     
     return eventStr
 
-def PrintNEvents(data_, nEvents=10, showMasks=False):
+def PrintNEvents(data_, nEvents=10, showMasks=False, showTrkMasks=False):
      # Iterate event-by-event
     for i, event in enumerate(data_, start=1):
-        print(PrintEvent(event, showMasks))
+        print(PrintEvent(event, showMasks, showTrkMasks))
         if i >= nEvents: 
             return
 
@@ -367,6 +368,9 @@ def FilterSingles(data_, fail, quiet):
     data_["oneCoinInTriggerSectors"] = (oneCoincInSector2Condition & oneCoincInSector3Condition)
     data_["filter_zero"] = (oneOrZeroCoincInMeasurementSector & oneCoincInSector2Condition & oneCoincInSector3Condition)
     # data_["filter_zero"] = (oneCoincInSector2Condition & oneCoincInSector3Condition)
+
+    # Debugging
+    # PrintNEvents(data_, 1, True)
     
     if not quiet: print("Done!")
     
@@ -409,30 +413,20 @@ def ApplyTrackerCuts(data_, fail, quiet):
 
     # Mark events which now have empty tracks or track fits after cuts
     data_["goodTrk"] = ak.any(data_["trk"]["kl.status"], axis=1, keepdims=False) > 0 
-    # Could be handled better? 
-    # data_["goodTrkFit"] = (
-    #     (ak.any(data_["trkfit"]["klfit"]["sid"], axis=-1, keepdims=False) > 0) 
-    #     & (ak.any(data_["trkfit"]["klkl"]["z0err"], axis=-1, keepdims=False) > 0) )
     data_["goodTrkFit"] = (
         (ak.count(data_["trkfit"]["klfit"]["sid"], axis=-1, keepdims=False) > 0) 
         & (ak.count(data_["trkfit"]["klkl"]["z0err"], axis=-1, keepdims=False) > 0) )
-    # Flatten (needed for masking)
+ 
     data_["goodTrkFit"] = ak.any(data_["goodTrkFit"], axis=-1, keepdims=False) == True 
-        # & (ak.any(data_["trkfit"]["klkl"]["z0err"], axis=-1, keepdims=False) > 0) )
-    
-    # (ak.any(data_["trkfit_KLCRV1"], axis=-1, keepdims=False) == True))
 
-    # # Apply cut on event level
-    # data_["goodTrk"] = ak.any(data_["trk"]["kl.status"], axis=1, keepdims=False) > 0 
-    # # Check for a good track fit after cuts
-    # data_["goodTrkFit"] = (ak.all(data_["trkfit"]["klfit"]["sid"], axis=1, keepdims=False) > 0) & (ak.count(data_["trkfit"]["klkl"], axis=1, keepdims=False) > 0) 
-    # Return events passing track fits
-    return data_[(data_["goodTrk"] & data_["goodTrkFit"])]
+    # Debugging
+    # PrintNEvents(data_, 1, True, True)
     
-    # if not fail:  
-    #     return data_[data_["goodTrk"]]
-    # else:
-    #     return data_[~data_["goodTrk"]]
+    # Return events passing/failing track fits
+    if not fail:  
+        return data_[data_["goodTrk"]]
+    else:
+        return data_[~data_["goodTrk"]]
 
 # Events at the end of the digitisation window get messed up
 def CutOnStartTime(data_, quiet): 
@@ -565,9 +559,12 @@ def WriteResults(data_, successes_, failures_, recon, finTag, foutTag, quiet):
 
     foutName = f"../Txt/{recon}/results/{finTag}/results_{foutTag}.csv"
     if not quiet: print(f"\n---> Writing results to {foutName}")
+
+    # Calculate efficiency 
+    # Handle edge cases where the remaining subset has length zero.
     tot = len(data_)
-    efficiency = len(successes_) / tot * 100
-    inefficiency = len(failures_) / tot * 100
+    efficiency = len(successes_) / tot * 100 if tot else np.nan
+    inefficiency = len(failures_) / tot * 100 if tot else np.nan
 
     outputStr = f"""
     ****************************************************
@@ -585,7 +582,7 @@ def WriteResults(data_, successes_, failures_, recon, finTag, foutTag, quiet):
         fout.write(f"{tot}, {len(successes_)}, {len(failures_)}, {efficiency}, {inefficiency}\n")
         # fout.write(outputStr)
 
-    if True: print(outputStr)
+    if not quiet: print(outputStr)
 
     return
 
@@ -623,36 +620,15 @@ def Run(file, recon, particle, PE, layer, filterLevel, finTag, sanityPlots, quie
     # Basic trigger
     data_ = Trigger(data_, fail, quiet)
 
-    # Pass 1 
-    # This limits the analysis to a subset of the data
-
-    # Is this the best way to handle this??? 
-    # if coincidenceFilterLevel == "pass0":
+    # Filter the triggered sample
     if filterLevel == 0:
         data_ = FilterSingles(data_, fail, quiet)
     elif filterLevel == 1: 
         data_ = FilterSingles(data_, fail, quiet)
         data_ = ApplyTrackerCuts(data_, fail, quiet)
         
-    
-    # elif coincidenceFilterLevel == "pass1":
-    #     print()
-    # elif coincidenceFilterLevel == "pass2":
-    #     print()
-    # elif coincdienceFilterLevel == "pass3":
-    #     data_ = PassThree(data_, fail=False)
-
-    # This needs to come after all the filtering!
-    # Well it needs to come after the trigger I guess. 
-    # Find coincidences in measurement sector
-    # This could actually be written into SuccessfulTriggers no? 
+    # Mark coincidences in the measurement sector for the remaining subset
     FindCoincidences(data_, coincidenceConditions, quiet)
-
-    # PrintNEvents(data_, 10, True)
-    # thisEventCondition = ((data_["evt"]["evtinfo.run"] == 1205) & (data_["evt"]["evtinfo.subrun"] == 1497) & (data_["evt"]["evtinfo.event"] == 19255))
-    # data_["evt"] = data_["evt"][thisEventCondition]
-    
-    # PrintEvent(data_["evt"], showMasks=True)
     
     # Successful and unsuccessful triggers
     successes_ = SuccessfulTriggers(data_, success=True, quiet=quiet)
@@ -672,36 +648,36 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 # ------------------------------------------------
 #              Multithread 
 # ------------------------------------------------
-import subprocess
+# import subprocess
 
-# Read a single file
-def ReadFile2(fileName, quiet=False): 
-    try:
-        # Setup commands
-        commands = "source /cvmfs/mu2e.opensciencegrid.org/setupmu2e-art.sh; muse setup ops;"
-        commands += f"echo {fileName} | mdh print-url -s root -"
-        if not quiet:
-            print(f"---> Reading file:\n{fileName}")
-        # Execute commands 
-        fileName = subprocess.check_output(commands, shell=True, universal_newlines=True)
-        if not quiet:
-            print(f"\n---> Created xroot url:\n{fileName}")
-            print("---> Opening file with uproot...") 
-        # Open the file 
-        with uproot.open(fileName) as file:
-            if not quiet: 
-                print("Done!")
-            return file 
-    except OSError as e:
-        # Setup alternative commands 
-        print(f"\n----> Exception timeout while opening file with xroot, retrying locally: {fileName}")                    
-        commands = "source /cvmfs/mu2e.opensciencegrid.org/setupmu2e-art.sh; muse setup ops;"
-        commands += f"echo {fileName} | mdh copy-file -s tape -l local -" 
-        # Execute commands
-        subprocess.check_output(commands, shell=True, universal_newlines=True)
-        # Return the opened file 
-        with uproot.open(fileName) as file:
-            return file
+# # Read a single file
+# def ReadFile2(fileName, quiet=False): 
+#     try:
+#         # Setup commands
+#         commands = "source /cvmfs/mu2e.opensciencegrid.org/setupmu2e-art.sh; muse setup ops;"
+#         commands += f"echo {fileName} | mdh print-url -s root -"
+#         if not quiet:
+#             print(f"---> Reading file:\n{fileName}")
+#         # Execute commands 
+#         fileName = subprocess.check_output(commands, shell=True, universal_newlines=True)
+#         if not quiet:
+#             print(f"\n---> Created xroot url:\n{fileName}")
+#             print("---> Opening file with uproot...") 
+#         # Open the file 
+#         with uproot.open(fileName) as file:
+#             if not quiet: 
+#                 print("Done!")
+#             return file 
+#     except OSError as e:
+#         # Setup alternative commands 
+#         print(f"\n----> Exception timeout while opening file with xroot, retrying locally: {fileName}")                    
+#         commands = "source /cvmfs/mu2e.opensciencegrid.org/setupmu2e-art.sh; muse setup ops;"
+#         commands += f"echo {fileName} | mdh copy-file -s tape -l local -" 
+#         # Execute commands
+#         subprocess.check_output(commands, shell=True, universal_newlines=True)
+#         # Return the opened file 
+#         with uproot.open(fileName) as file:
+#             return file
             
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from itertools import product
@@ -741,94 +717,94 @@ def Multithread2(processFunction2, fileName, particles_, layers_, PEs_):
 
 # Multithread on many files with many configs
 # This seems to use huge amount of memory! Like 35 GB per file... 
-def Multithread3(processFunction2, fileList_, particles_, layers_, PEs_, max_workers=254):
+# def Multithread3(processFunction2, fileList_, particles_, layers_, PEs_, max_workers=254):
     
-    print("\n---> Starting multithreading...\n")
+#     print("\n---> Starting multithreading...\n")
     
-    totalFiles = len(fileList_)
-    totalConfigurations = len(particles_) * len(layers_) * len(PEs_)
-    completedTasks = 0
+#     totalFiles = len(fileList_)
+#     totalConfigurations = len(particles_) * len(layers_) * len(PEs_)
+#     completedTasks = 0
     
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+#     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         
-        # Prepare the list of futures
-        futures = []
+#         # Prepare the list of futures
+#         futures = []
         
-        # Submit tasks for each file
-        for fileName in fileList_:
-            # Generate all combinations of (particle, layer, PE) for each file
-            configurations = product(particles_, layers_, PEs_)
-            for particle, layer, PE in configurations:
-                futures.append(
-                    executor.submit(processFunction2, fileName, particle, layer, PE)
-                )
+#         # Submit tasks for each file
+#         for fileName in fileList_:
+#             # Generate all combinations of (particle, layer, PE) for each file
+#             configurations = product(particles_, layers_, PEs_)
+#             for particle, layer, PE in configurations:
+#                 futures.append(
+#                     executor.submit(processFunction2, fileName, particle, layer, PE)
+#                 )
         
-        # Process results as they complete
-        for future in as_completed(futures):
-            try:
-                future.result()  # Retrieve the result or raise an exception if occurred
-                completedTasks += 1
-                percentComplete = (completedTasks / (totalFiles * totalConfigurations)) * 100
-                print(f'---> Task {completedTasks} processed successfully! ({percentComplete:.1f}% complete)')
-            except Exception as exc:
-                print(f'---> Task generated an exception!\n{exc}')
+#         # Process results as they complete
+#         for future in as_completed(futures):
+#             try:
+#                 future.result()  # Retrieve the result or raise an exception if occurred
+#                 completedTasks += 1
+#                 percentComplete = (completedTasks / (totalFiles * totalConfigurations)) * 100
+#                 print(f'---> Task {completedTasks} processed successfully! ({percentComplete:.1f}% complete)')
+#             except Exception as exc:
+#                 print(f'---> Task generated an exception!\n{exc}')
                 
-    print("\n---> Multithreading completed!")
-    return
+#     print("\n---> Multithreading completed!")
+#     return
 
 
-def Multithread4(processFunction3, fileList_, max_workers=381):
+# def Multithread4(processFunction3, fileList_, max_workers=381):
     
-    print("\n---> Starting multithreading...\n")
+#     print("\n---> Starting multithreading...\n")
 
-    completedTasks = 0
-    totalFiles = len(fileList_)
+#     completedTasks = 0
+#     totalFiles = len(fileList_)
     
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+#     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         
-        # Prepare the list of futures
-        futures_ = [executor.submit(processFunction3, fileName) for fileName in fileList_]
+#         # Prepare the list of futures
+#         futures_ = [executor.submit(processFunction3, fileName) for fileName in fileList_]
         
-        # Process results as they complete
-        for future in as_completed(futures_):
-            try:
-                future.result()  # Retrieve the result or raise an exception if occurred
-                completedTasks += 1
-                percentComplete = (completedTasks / (totalFiles)) * 100
-                print(f'\n---> Task {completedTasks} processed successfully! ({percentComplete:.1f}% complete)')
-            except Exception as exc:
-                print(f'\n---> Task generated an exception!\n{exc}')
+#         # Process results as they complete
+#         for future in as_completed(futures_):
+#             try:
+#                 future.result()  # Retrieve the result or raise an exception if occurred
+#                 completedTasks += 1
+#                 percentComplete = (completedTasks / (totalFiles)) * 100
+#                 print(f'\n---> Task {completedTasks} processed successfully! ({percentComplete:.1f}% complete)')
+#             except Exception as exc:
+#                 print(f'\n---> Task generated an exception!\n{exc}')
                 
-    print("\n---> Multithreading completed!")
-    return
+#     print("\n---> Multithreading completed!")
+#     return
     
-# This is good. TODO: add this to Mu2eEAF. 
-def Multithread5(processFunction, fileList_, max_workers=381):
+# # This is good. TODO: add this to Mu2eEAF. 
+# def Multithread5(processFunction, fileList_, max_workers=381):
     
-    print("\n---> Starting multithreading...\n")
+#     print("\n---> Starting multithreading...\n")
 
-    completedFiles = 0
-    totalFiles = len(fileList_)
+#     completedFiles = 0
+#     totalFiles = len(fileList_)
     
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+#     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         
-        # Prepare a list of futures and map them to file names
-        futures_ = {executor.submit(processFunction, fileName): (fileName) for fileName in fileList_}
+#         # Prepare a list of futures and map them to file names
+#         futures_ = {executor.submit(processFunction, fileName): (fileName) for fileName in fileList_}
         
-        # Process results as they complete
-        for future in as_completed(futures_):
-            fileName = futures_[future]  # Get the file name associated with this future
-            # print(f'\n---> Processing {fileName}...') 
-            try:
-                future.result()  # Retrieve the result or raise an exception if occurred
-                completedFiles += 1
-                percentComplete = (completedFiles / (totalFiles)) * 100
-                print(f'\n---> {fileName} processed successfully! ({percentComplete:.1f}% complete)')
-            except Exception as exc:
-                print(f'\n---> {fileName} generated an exception!\n{exc}')
+#         # Process results as they complete
+#         for future in as_completed(futures_):
+#             fileName = futures_[future]  # Get the file name associated with this future
+#             # print(f'\n---> Processing {fileName}...') 
+#             try:
+#                 future.result()  # Retrieve the result or raise an exception if occurred
+#                 completedFiles += 1
+#                 percentComplete = (completedFiles / (totalFiles)) * 100
+#                 print(f'\n---> {fileName} processed successfully! ({percentComplete:.1f}% complete)')
+#             except Exception as exc:
+#                 print(f'\n---> {fileName} generated an exception!\n{exc}')
                 
-    print("\n---> Multithreading completed!")
-    return
+#     print("\n---> Multithreading completed!")
+#     return
 
 def Multithread6(processFunction, fileList_, max_workers=381):
     
@@ -860,6 +836,17 @@ def Multithread6(processFunction, fileList_, max_workers=381):
     
 def main():
 
+    # Test exception
+    # Tag,PEs,Layer,Particle,Filter
+    # 001205_00000006,10,2,non_muons,singles_track_cuts
+    # Sometimes the track cuts just wipe everything out. 
+    
+    # fileName="/exp/mu2e/data/users/sgrant/CRVSim/CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.000/11946817/00/00038/nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000006.root"
+    # finTag = fileName.split('.')[-2] 
+    # with uproot.open(fileName) as file:
+    #     Run(file, recon="MDC2020ae", particle="non_muons", PE="10", layer="2", filterLevel=1, finTag=finTag, sanityPlots=False, quiet=False)
+    # return
+
     # return
     defname = "nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.root"
     recon = "MDC2020ae"
@@ -876,7 +863,7 @@ def main():
     # PEs_ = [10] # np.arange(10, 135, 5)
 
     sanityPlots = False
-    quiet = True # True
+    quiet = False # True
 
     def processFunction2(fileName, particle, layer, PE):
         # Always open the file in the processFunction 
@@ -976,12 +963,13 @@ def main():
                 Run(file, recon, particle, PE, layer, filterLevel, finTag, sanityPlots, quiet)
             except Exception as exc:
                 print(f'---> Exception!\n{row}\n{exc}')
+
+            # Testing
+            return
             
         return
-
         
     fileList_ = rd.GetFileList(defname) 
-
 
     # Get failed jobs
     failedJobsFile = "../Txt/MDC2020ae/FailedJobs/failures.csv"
@@ -1005,9 +993,8 @@ def main():
 
     print(f"---> Got {len(fileList_)} files.")
     # Multithread5(processFunction3, fileList_) 
-    Multithread5(processFunction4, fileList_)
-    Multithread6(processFunction4, fileList_)
-
+    # Multithread5(processFunction4, fileList_)
+    Multithread6(processFunction4, fileList_[:2])
     
     # Multithread3(processFunction2, fileList_[:2], particles_, layers_, PEs_) 
     

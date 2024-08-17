@@ -11,11 +11,11 @@ layers_=(2 3)
 PEs_=($(seq 10 5 130.0))
 
 output_file="../Txt/${recon}/FailedJobs/failures.csv"
+previous_output_file="../Txt/${recon}/FailedJobs/previous_failures.csv"
 
 if [ -f $output_file ]; then
     echo "---> Output file exists, making a copy and deleting original."
-    cp $output_file "${output_file}.BK"
-    echo "${output_file}.BK"
+    cp $output_file ${previous_output_file}
     rm $output_file
 fi
 

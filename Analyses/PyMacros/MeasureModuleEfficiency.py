@@ -42,311 +42,138 @@ import pandas as pd
 
 # Internal libraries
 import Utils as ut
+import PrintUtils as pr
 import CoincidenceConditions as cc
 
 from Mu2eEAF import ReadData as rd 
 from Mu2eEAF import Parallelise as pa
 
-# Best practice?
-filters_ = { 
-    0 : "singles"
-    , 1 : "track_cuts"
-    , 2 : "singles_track_cuts"
-    , 3 : "pass_singles_fail_track_cuts" # this is where the supposed improvement comes in. 
-    , 4 : "fail_singles_pass_track_cuts"
-    , 5 : "fail_singles_fail_track_cuts"
-}
-    
-# ------------------------------------------------
-#                     Input 
-# ------------------------------------------------ 
-
-#TODO: remove this and use the version in Utils.py 
-
-evtBranchNames_ = [ 
-                # Event info
-                "evtinfo.run"
-                , "evtinfo.subrun"
-                , "evtinfo.event"
-]
-
-crvBranchNames_ = [
-                # Coincidences 
-                "crvcoincs.sectorType" 
-                , "crvcoincs.pos.fCoordinates.fX" 
-                , "crvcoincs.pos.fCoordinates.fY" 
-                , "crvcoincs.pos.fCoordinates.fZ"
-                , "crvcoincs.time" 
-                , "crvcoincs.timeStart"
-                , "crvcoincs.PEs" 
-                , "crvcoincs.nHits" 
-                , "crvcoincs.nLayers" 
-                , "crvcoincs.PEsPerLayer[4]"
-                , "crvcoincs.angle" 
-                # Coincidences (truth)
-                , "crvcoincsmc.valid" 
-                , "crvcoincsmc.pdgId" 
-                , "crvcoincsmc.primaryE" 
-]
-
-trkBranchNames_ = [
-                # Tracks
-                "kl.status"
-                , "kl.nactive"
-                , "kl.nhits"
-                , "kl.nplanes"
-                , "kl.nnullambig"
-                , "kl.ndof"
-                , "kl.fitcon"
-]
-
-trkFitBranchNames_ = [
-                # Track fits (vector of vector like objects)
-                "klfit"
-                , "klkl"
-] 
-
-allBranchNames_ = { "evt" : evtBranchNames_
-                   ,"crv" : crvBranchNames_
-                   ,"trk" : trkBranchNames_ 
-                   ,"trkfit" : trkFitBranchNames_
-                  }
-
-# headers_ = ["evt", "crv", "trk", "trkfit"]
-# allBranchNames_ = evtBranchNames_ + crvBranchNames_ + trkBranchNames_ + trkFitBranchNames_
-
-def GetData(file, quiet): # finName):
-
-    # 1. Coincidence masks should ONLY be applied to coincidences.
-    # 2. Global track masks should be applied to tracks and track fits.
-    # 3. Local track masks should be applied to track fits.
-    # ... We need to split the data array up into these parts.
-
-    # Get data
-    # finName = "/exp/mu2e/data/users/sgrant/CRVSim/CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.000/11946817/00/00089/nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000015.root"
-    # treeName = "TrkAnaExt/trkana"
-    data_dict_ = {}
-
-    # Open tree
-    # with uproot.open(finName+":TrkAnaExt/trkana") as tree: 
-    with file["TrkAnaExt/trkana"] as tree:
-        # Seperate event info, coincidnces, tracks, and track fits. 
-        # This way we can apply masks independently. 
-        for field, branch in allBranchNames_.items():
-            data_dict_[field] = tree.arrays(branch)
-            
-        # evtData_ = tree.arrays(evtBranchNames_) 
-        # crvData_ = tree.arrays(crvBranchNames_) 
-        # trkData_ = tree.arrays(trkBranchNames_)
-        # trkFitData_ = tree.arrays(trkFitBranchNames_)
-
-    # Zip them together 
-    return ak.zip(data_dict_) 
-    # return ak.zip({"evt" : evtData_, "crv" : crvData_, "trk" : trkData_, "trkfit" : trkFitData_}) 
-
 # ------------------------------------------------
 #                Debugging functions 
 # ------------------------------------------------
 
-# Printout helper functions
-def PrintEvent(event, showMasks=False, showTrkMasks=False):
+# def SanityPlots(data_, recon, filterLevel, foutTag, quiet):
     
-    eventStr = (
-        f"-------------------------------------------------------------------------------------\n"
-        f"***** evt *****\n"
-        f"evtinfo.run: {event['evt']['evtinfo.run']}\n" 
-        f"evtinfo.subrun: {event['evt']['evtinfo.subrun']}\n" 
-        f"evtinfo.eventid: {event['evt']['evtinfo.event']}\n"
-        f"***** crv *****\n"
-        f"crvcoincs.sectorType: {event['crv']['crvcoincs.sectorType']}\n"
-        f"crvcoincs.nLayers {event['crv']['crvcoincs.nLayers']}\n"
-        f"crvcoincs.angle: {event['crv']['crvcoincs.angle']}\n"
-        f"crvcoincs.pos.fCoordinates: ({event['crv']['crvcoincs.pos.fCoordinates.fX']}, {event['crv']['crvcoincs.pos.fCoordinates.fY']}, {event['crv']['crvcoincs.pos.fCoordinates.fZ']})\n"
-        f"crvcoincs.timeStart: {event['crv']['crvcoincs.timeStart']}\n"
-        f"crvcoincs.time: {event['crv']['crvcoincs.time']}\n"
-        f"crvcoincs.PEs: {event['crv']['crvcoincs.PEs']}\n"
-        f"crvcoincs.PEsPerLayer[4]: {event['crv']['crvcoincs.PEsPerLayer[4]']}\n"
-        f"crvcoincs.nHits: {event['crv']['crvcoincs.nHits']}\n"
-        f"crvcoincsmc.pdgId: {event['crv']['crvcoincsmc.pdgId']}\n"
-        f"crvcoincsmc.valid: {event['crv']['crvcoincsmc.valid']}\n"
-        f"crvcoincsmc.primaryE: {event['crv']['crvcoincsmc.primaryE']}\n"
-        f"***** trk *****\n"
-        f"kl.status: {event['trk']['kl.status']}\n"
-        f"kl.nactive: {event['trk']['kl.nactive']}\n"
-        f"kl.nhits: {event['trk']['kl.nhits']}\n"
-        f"kl.nplanes: {event['trk']['kl.nplanes']}\n"
-        f"kl.nnullambig: {event['trk']['kl.nnullambig']}\n"
-        f"kl.ndof: {event['trk']['kl.ndof']}\n"
-        f"kl.kl.fitcon: {event['trk']['kl.fitcon']}\n"
-        f"***** trkfit *****\n"
-        f"klfit: {event['trkfit']['klfit']}\n"
-        f"klfit.sid: {event['trkfit']['klfit']['sid']}\n"
-        f"klfit.sindex: {event['trkfit']['klfit']['sindex']}\n"
-        f"klfit.time: {event['trkfit']['klfit']['time']}\n"
-        # f"Example variables from klfit...\n"
-        # f"klfit.sid: {event['trkfit']['klfit']['sid']}\n"
-        # f"klfit.sindex: {event['trkfit']['klfit']['sindex']}\n"
-        # f"klfit: {event['trkfit']['klfit']}\n"
-        f"klkl: {event['trkfit']['klkl']}\n"
-        f"klkl.z0err: {event['trkfit']['klkl']['z0err']}\n"
-        f"klkl.d0err: {event['trkfit']['klkl']['d0err']}\n"
-        f"klkl.thetaerr: {event['trkfit']['klkl']['thetaerr']}\n"
-        f"klkl.phi0err: {event['trkfit']['klkl']['phi0err']}\n"
-        f"-------------------------------------------------------------------------------------\n"
-    )
+#     #TODO: add tracker sanity plots.
+#     if not quiet: print("\n---> Making sanity plots")
 
-    if showMasks: 
-        eventStr = eventStr[:-86]
-        eventStr += f"***** masks *****\n" 
-        eventStr += f"sector_condition: {event['sector_condition']}\n" 
-        eventStr += f"PE_condition: {event['PE_condition']}\n" 
-        eventStr += f"layer_condition: {event['layer_condition']}\n" 
-        eventStr += f"angle_condition: {event['angle_condition']}\n" 
-        eventStr += f"CRVT_coincidence: {event['CRVT_coincidence']}\n" 
-        eventStr += f"pass_trigger: {event['pass_trigger']}\n" 
-        eventStr += f"oneOrZeroCoincInMeasurementSector: {event['oneOrZeroCoincInMeasurementSector']}\n"
-        eventStr += f"oneCoinInTriggerSectors: {event['oneCoinInTriggerSectors']}\n"
-        eventStr += f"pass_singles: {event['pass_singles']}\n"
-        eventStr += f"trk_bestFit: {event['trk_bestFit']}\n"
-        eventStr += f"trkfit_bestFit: {event['trkfit_bestFit']}\n"
-        eventStr += f"trkfit_KLCRV1: {event['trkfit_KLCRV1']}\n"
-        eventStr += f"goodTrk: {event['goodTrk']}\n"
-        eventStr += f"goodTrkFit: {event['goodTrkFit']}\n"
-        eventStr += f"pass_track_cuts: {event['pass_track_cuts']}\n"
-
-        eventStr += f"-------------------------------------------------------------------------------------\n"
+#     ###################################################################
+#     # CRV reco
     
-    return eventStr
+#     sectors_ = ak.flatten(data_["crv"]["crvcoincs.sectorType"]) 
+#     t_ = ak.flatten(data_["crv"]["crvcoincs.time"]) 
+#     x_ = ak.flatten(data_["crv"]["crvcoincs.pos.fCoordinates.fX"]) * 1e-3 # mm -> m
+#     y_ = ak.flatten(data_["crv"]["crvcoincs.pos.fCoordinates.fY"]) * 1e-3 # mm -> m
+#     z_ = ak.flatten(data_["crv"]["crvcoincs.pos.fCoordinates.fZ"]) * 1e-3 # mm -> m
+#     PEs_ = ak.flatten(data_["crv"]["crvcoincs.PEs"]) 
+#     PEsPerLayer_ = ak.flatten(data_["crv"]["crvcoincs.PEsPerLayer[4]"])
+#     nHits_ = ak.flatten(data_["crv"]["crvcoincs.nHits"]) 
+#     nLayers_ = ak.flatten(data_["crv"]["crvcoincs.nLayers"]) 
+#     slopes_ = ak.flatten(data_["crv"]["crvcoincs.angle"])
 
-def PrintNEvents(data_, nEvents=10, showMasks=False, showTrkMasks=False):
-     # Iterate event-by-event
-    for i, event in enumerate(data_, start=1):
-        print(PrintEvent(event, showMasks, showTrkMasks))
-        if i >= nEvents: 
-            return
+#     # Coincidence
+#     ut.PlotGraphOverlay(graphs_=[(x_[sectors_ == 3], y_[sectors_ == 3]), (x_[sectors_ == 1], y_[sectors_ == 1]), (x_[sectors_ == 2], y_[sectors_ == 2])]
+#                         , labels_=["Top", "Middle", "Bottom"], xlabel="x-position [m]", ylabel="y-position [m]", fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}/gr_XY_{foutTag}.png")
+#     ut.PlotGraphOverlay(graphs_=[(z_[sectors_ == 3], y_[sectors_ == 3]), (z_[sectors_ == 1], y_[sectors_ == 1]), (z_[sectors_ == 2], y_[sectors_ == 2])]
+#                         , labels_=["Top", "Middle", "Bottom"], xlabel="z-position [m]", ylabel="y-position [m]", fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}/gr_ZY_{foutTag}.png")
+#     ut.Plot1DOverlay(hists_=[t_[sectors_ == 3], t_[sectors_ == 1], t_[sectors_ == 2]], nbins=1000, xmin = np.min(t_), xmax = np.max(t_)
+#                      , xlabel="Average hit time [ns]", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}/h1_times_{foutTag}.png") 
+#     ut.Plot1DOverlay(hists_=[nHits_[sectors_ == 3], nHits_[sectors_ == 1], nHits_[sectors_ == 2]], nbins=41, xmin = -0.5, xmax = 40.5
+#                      , xlabel="Number of hits", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}/h1_nHits_{foutTag}.png") 
+#     ut.Plot1DOverlay(hists_=[nLayers_[sectors_ == 3], nLayers_[sectors_ == 1], nLayers_[sectors_ == 2]], nbins=5, xmin = -0.5, xmax = 4.5
+#                      , xlabel="Number of layers hit", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}/h1_nLayers_{foutTag}.png") 
+#     ut.Plot1DOverlay(hists_=[slopes_[sectors_ == 3], slopes_[sectors_ == 1], slopes_[sectors_ == 2]], nbins=1000, xmin = -2, xmax = 2
+#                      , xlabel="Slope", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}/h1_slopes_{foutTag}.png") 
 
-def SanityPlots(data_, recon, filterLevel, foutTag, quiet):
+#     # Calculate the sum of each length-4 array in PEsPerLayer_
+#     PEsPerLayerSum_ = ak.sum(PEsPerLayer_, axis=-1)
+#     PEsDiff_ = PEs_ - PEsPerLayerSum_
+
+#     ut.Plot1DOverlay(hists_=[PEs_[sectors_ == 3], PEs_[sectors_ == 1], PEs_[sectors_ == 2]], nbins=1000, xmin = 0, xmax = 1000, title="PEs", xlabel="PEs", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}/h1_PEs_{foutTag}.png")
+#     ut.Plot1DOverlay(hists_=[PEsPerLayerSum_[sectors_ == 3], PEsPerLayerSum_[sectors_ == 1], PEsPerLayerSum_[sectors_ == 2]], nbins=1000, xmin = 0, xmax = 1000, title="PEs per layer", xlabel="PEs", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}/h1_PEsPerLayer_{foutTag}.png")
+
+#     ut.Plot1DOverlay(hists_=[PEsPerLayer_[:, 0], PEsPerLayer_[:, 1], PEsPerLayer_[:, 2], PEsPerLayer_[:, 3]], nbins=500, xmin = 0, xmax = 500, title="PEs per layer", ylabel="Coincidences", label_=["Layer0", "Layer 1", "Layer 2", "Layer 3"], fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}//h1_PEsPerLayerAllSectors_{foutTag}.png")
+#     ut.Plot1DOverlay(hists_=[PEsDiff_[sectors_ == 3], PEsDiff_[sectors_ == 1], PEsDiff_[sectors_ == 2]], nbins=40, xmin = -0.0002, xmax = 0.0002, xlabel="PEs $\minus$ PEs per layer sum", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}/h1_PEsDiff_{foutTag}.png", logY=True)
+#     ut.Plot1DOverlay(hists_=[PEsDiff_], nbins=200, xmin = np.min(PEsDiff_)-1e-4, xmax = np.max(PEsDiff_)+1e-4, xlabel="PEs $\minus$ PEs per layer sum", ylabel="Coincidences", label_=["All modules"], fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}/h1_PEsDiffAll_{foutTag}.png", logY=True, includeBlack=True)
+
+#     # MC 
+#     # valid_ = ak.flatten(data_["crv"]["crvcoincsmc.valid"])
+#     pdgid_ = ak.flatten(data_["crv"]["crvcoincsmc.pdgId"])
+#     primaryE_ = ak.flatten(data_["crv"]["crvcoincsmc.primaryE"]) 
+
+#     ut.Plot1D(primaryE_, nbins=100, xmin = 0, xmax = 1e5, xlabel="Primary energy [unit?]", ylabel="Coincidences", fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}/h1_primaryE_{foutTag}.png") 
+
+#     # ut.Plot1D(hists_=[valid_[sectors_ == 3], valid_[sectors_ == 1], valid_[sectors_ == 2]], nbins=2, xmin = 0, xmax = 2, xlabel="Valid MC event", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}/h1_valid_{foutTag}.png")
     
-    #TODO: add tracker sanity plots.
-    if not quiet: print("\n---> Making sanity plots")
+#     label_dict = {
+#         2212: 'proton',
+#         211: 'pi+',
+#         -211: 'pi-',
+#         -13: 'mu+',
+#         13: 'mu-',
+#         -11: 'e+',
+#         11: 'e-',
+#         "other": "other"
+#         # Add more particle entries as needed
+#     }
 
-    ###################################################################
-    # CRV reco
-    
-    sectors_ = ak.flatten(data_["crv"]["crvcoincs.sectorType"]) 
-    t_ = ak.flatten(data_["crv"]["crvcoincs.time"]) 
-    x_ = ak.flatten(data_["crv"]["crvcoincs.pos.fCoordinates.fX"]) * 1e-3 # mm -> m
-    y_ = ak.flatten(data_["crv"]["crvcoincs.pos.fCoordinates.fY"]) * 1e-3 # mm -> m
-    z_ = ak.flatten(data_["crv"]["crvcoincs.pos.fCoordinates.fZ"]) * 1e-3 # mm -> m
-    PEs_ = ak.flatten(data_["crv"]["crvcoincs.PEs"]) 
-    PEsPerLayer_ = ak.flatten(data_["crv"]["crvcoincs.PEsPerLayer[4]"])
-    nHits_ = ak.flatten(data_["crv"]["crvcoincs.nHits"]) 
-    nLayers_ = ak.flatten(data_["crv"]["crvcoincs.nLayers"]) 
-    slopes_ = ak.flatten(data_["crv"]["crvcoincs.angle"])
+#     ut.BarChart(data_=pdgid_, label_dict=ut.particleDict, ylabel="Coincidences [%]", fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}/bar_pdgid_{foutTag}.png", percentage=True)
+#     ut.BarChartOverlay(data_=[pdgid_[sectors_ == 3], pdgid_[sectors_ == 1], pdgid_[sectors_ == 2]], label_dict=label_dict, ylabel="Coincidences [%]", fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}/bar_overlay_pdgid_{foutTag}.png", percentage=True, label_= ["Top", "Middle", "Bottom"])
 
-    # Coincidence
-    ut.PlotGraphOverlay(graphs_=[(x_[sectors_ == 3], y_[sectors_ == 3]), (x_[sectors_ == 1], y_[sectors_ == 1]), (x_[sectors_ == 2], y_[sectors_ == 2])]
-                        , labels_=["Top", "Middle", "Bottom"], xlabel="x-position [m]", ylabel="y-position [m]", fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}/gr_XY_{foutTag}.png")
-    ut.PlotGraphOverlay(graphs_=[(z_[sectors_ == 3], y_[sectors_ == 3]), (z_[sectors_ == 1], y_[sectors_ == 1]), (z_[sectors_ == 2], y_[sectors_ == 2])]
-                        , labels_=["Top", "Middle", "Bottom"], xlabel="z-position [m]", ylabel="y-position [m]", fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}/gr_ZY_{foutTag}.png")
-    ut.Plot1DOverlay(hists_=[t_[sectors_ == 3], t_[sectors_ == 1], t_[sectors_ == 2]], nbins=1000, xmin = np.min(t_), xmax = np.max(t_)
-                     , xlabel="Average hit time [ns]", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}/h1_times_{foutTag}.png") 
-    ut.Plot1DOverlay(hists_=[nHits_[sectors_ == 3], nHits_[sectors_ == 1], nHits_[sectors_ == 2]], nbins=41, xmin = -0.5, xmax = 40.5
-                     , xlabel="Number of hits", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}/h1_nHits_{foutTag}.png") 
-    ut.Plot1DOverlay(hists_=[nLayers_[sectors_ == 3], nLayers_[sectors_ == 1], nLayers_[sectors_ == 2]], nbins=5, xmin = -0.5, xmax = 4.5
-                     , xlabel="Number of layers hit", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}/h1_nLayers_{foutTag}.png") 
-    ut.Plot1DOverlay(hists_=[slopes_[sectors_ == 3], slopes_[sectors_ == 1], slopes_[sectors_ == 2]], nbins=1000, xmin = -2, xmax = 2
-                     , xlabel="Slope", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}/h1_slopes_{foutTag}.png") 
-
-    # Calculate the sum of each length-4 array in PEsPerLayer_
-    PEsPerLayerSum_ = ak.sum(PEsPerLayer_, axis=-1)
-    PEsDiff_ = PEs_ - PEsPerLayerSum_
-
-    ut.Plot1DOverlay(hists_=[PEs_[sectors_ == 3], PEs_[sectors_ == 1], PEs_[sectors_ == 2]], nbins=1000, xmin = 0, xmax = 1000, title="PEs", xlabel="PEs", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}/h1_PEs_{foutTag}.png")
-    ut.Plot1DOverlay(hists_=[PEsPerLayerSum_[sectors_ == 3], PEsPerLayerSum_[sectors_ == 1], PEsPerLayerSum_[sectors_ == 2]], nbins=1000, xmin = 0, xmax = 1000, title="PEs per layer", xlabel="PEs", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}/h1_PEsPerLayer_{foutTag}.png")
-
-    ut.Plot1DOverlay(hists_=[PEsPerLayer_[:, 0], PEsPerLayer_[:, 1], PEsPerLayer_[:, 2], PEsPerLayer_[:, 3]], nbins=500, xmin = 0, xmax = 500, title="PEs per layer", ylabel="Coincidences", label_=["Layer0", "Layer 1", "Layer 2", "Layer 3"], fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}//h1_PEsPerLayerAllSectors_{foutTag}.png")
-    ut.Plot1DOverlay(hists_=[PEsDiff_[sectors_ == 3], PEsDiff_[sectors_ == 1], PEsDiff_[sectors_ == 2]], nbins=40, xmin = -0.0002, xmax = 0.0002, xlabel="PEs $\minus$ PEs per layer sum", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}/h1_PEsDiff_{foutTag}.png", logY=True)
-    ut.Plot1DOverlay(hists_=[PEsDiff_], nbins=200, xmin = np.min(PEsDiff_)-1e-4, xmax = np.max(PEsDiff_)+1e-4, xlabel="PEs $\minus$ PEs per layer sum", ylabel="Coincidences", label_=["All modules"], fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}/h1_PEsDiffAll_{foutTag}.png", logY=True, includeBlack=True)
-
-    # MC 
-    # valid_ = ak.flatten(data_["crv"]["crvcoincsmc.valid"])
-    pdgid_ = ak.flatten(data_["crv"]["crvcoincsmc.pdgId"])
-    primaryE_ = ak.flatten(data_["crv"]["crvcoincsmc.primaryE"]) 
-
-    ut.Plot1D(primaryE_, nbins=100, xmin = 0, xmax = 1e5, xlabel="Primary energy [unit?]", ylabel="Coincidences", fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}/h1_primaryE_{foutTag}.png") 
-
-    # ut.Plot1D(hists_=[valid_[sectors_ == 3], valid_[sectors_ == 1], valid_[sectors_ == 2]], nbins=2, xmin = 0, xmax = 2, xlabel="Valid MC event", ylabel="Coincidences", label_=["Top", "Middle", "Bottom"], fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}/h1_valid_{foutTag}.png")
-    
-    label_dict = {
-        2212: 'proton',
-        211: 'pi+',
-        -211: 'pi-',
-        -13: 'mu+',
-        13: 'mu-',
-        -11: 'e+',
-        11: 'e-',
-        "other": "other"
-        # Add more particle entries as needed
-    }
-
-    ut.BarChart(data_=pdgid_, label_dict=ut.particleDict, ylabel="Coincidences [%]", fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}/bar_pdgid_{foutTag}.png", percentage=True)
-    ut.BarChartOverlay(data_=[pdgid_[sectors_ == 3], pdgid_[sectors_ == 1], pdgid_[sectors_ == 2]], label_dict=label_dict, ylabel="Coincidences [%]", fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}/bar_overlay_pdgid_{foutTag}.png", percentage=True, label_= ["Top", "Middle", "Bottom"])
-
-    # title=filters_[filterLevel] 
+#     # title=filters_[filterLevel] 
 
 
-    # Tracker stuff
-    title=filters_[filterLevel] 
-    # sector1Condition = data_["crv"]["crvcoincs.sectorType"] == 1
+#     # Tracker stuff
+#     title=filters_[filterLevel] 
+#     # sector1Condition = data_["crv"]["crvcoincs.sectorType"] == 1
 
-    # # CRV-DS with 826.0 length 2,570
-    # crvDS_len = 2570
-    # crvDS_wid = 826
-    ut.Plot2D(x=ak.flatten(data_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fZ"], axis=None)
-                     , y=ak.flatten(data_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fX"], axis=None)
-                     , nbinsX=50, xmin=-4000, xmax=4000, nbinsY=50, ymin=-4000, ymax=4000
-                     # , xbox_= [-crvDS_len/2, crvDS_len/2], ybox_ =  [-crvDS_wid/2, crvDS_wid/2]
-                     , title=title, xlabel="KKInter Z [mm]", ylabel="KKInter X [mm]"
-                     , fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}/h2_ZX_{foutTag}.png")
+#     # # CRV-DS with 826.0 length 2,570
+#     # crvDS_len = 2570
+#     # crvDS_wid = 826
+#     ut.Plot2D(x=ak.flatten(data_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fZ"], axis=None)
+#                      , y=ak.flatten(data_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fX"], axis=None)
+#                      , nbinsX=50, xmin=-4000, xmax=4000, nbinsY=50, ymin=-4000, ymax=4000
+#                      # , xbox_= [-crvDS_len/2, crvDS_len/2], ybox_ =  [-crvDS_wid/2, crvDS_wid/2]
+#                      , title=title, xlabel="KKInter Z [mm]", ylabel="KKInter X [mm]"
+#                      , fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}/h2_ZX_{foutTag}.png")
 
 
-    # Requires singles and track cuts
-    if (filterLevel == 2): 
+#     # Requires singles and track cuts
+#     if (filterLevel == 2): 
         
-        # Direct comparison between tracker and CRV1 variables 
+#         # Direct comparison between tracker and CRV1 variables 
     
-        sector1Condition = data_["crv"]["crvcoincs.sectorType"] == 1
-        # oneSector1Condition = ak.count(data_["crv"]["crvcoincs.sectorType"], axis=1) == 1 
+#         sector1Condition = data_["crv"]["crvcoincs.sectorType"] == 1
+#         # oneSector1Condition = ak.count(data_["crv"]["crvcoincs.sectorType"], axis=1) == 1 
     
-        # ut.Plot1D(ak.flatten(data_["trkfit"]["klfit"]["time"], axis=None) - ak.flatten(data_["crv"]["crvcoincs.time"][sector1Condition], axis=None)
-        #           , nbins=250, xmin=-30, xmax=30 #, norm=300, mu=0, sigma=3, fitMin=-30, fitMax=30
-        #           , xlabel="$T_{KKInter} - T_{CRV}$ [ns]", ylabel="Counts", fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}/h1_deltaT_{foutTag}.png"
-        #           , stats=True) 
+#         # ut.Plot1D(ak.flatten(data_["trkfit"]["klfit"]["time"], axis=None) - ak.flatten(data_["crv"]["crvcoincs.time"][sector1Condition], axis=None)
+#         #           , nbins=250, xmin=-30, xmax=30 #, norm=300, mu=0, sigma=3, fitMin=-30, fitMax=30
+#         #           , xlabel="$T_{KKInter} - T_{CRV}$ [ns]", ylabel="Counts", fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}/h1_deltaT_{foutTag}.png"
+#         #           , stats=True) 
     
-        ut.Plot1DWithGaussFit(ak.flatten(data_["trkfit"]["klfit"]["time"], axis=None) - ak.flatten(data_["crv"]["crvcoincs.time"][sector1Condition], axis=None)
-                  , nbins=250, xmin=-30, xmax=30, norm=300, mu=0, sigma=3, fitMin=-30, fitMax=30
-                  , title=title, xlabel="$T_{KKInter} - T_{CRV}$ [ns]", ylabel="Counts", fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}/h1_fit_deltaT_{foutTag}.png"
-                  , stats=True) 
+#         ut.Plot1DWithGaussFit(ak.flatten(data_["trkfit"]["klfit"]["time"], axis=None) - ak.flatten(data_["crv"]["crvcoincs.time"][sector1Condition], axis=None)
+#                   , nbins=250, xmin=-30, xmax=30, norm=300, mu=0, sigma=3, fitMin=-30, fitMax=30
+#                   , title=title, xlabel="$T_{KKInter} - T_{CRV}$ [ns]", ylabel="Counts", fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}/h1_fit_deltaT_{foutTag}.png"
+#                   , stats=True) 
     
     
-        ut.Plot2D(x=ak.flatten(data_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fZ"], axis=None)
-                  , y=ak.flatten(data_["crv"]["crvcoincs.pos.fCoordinates.fZ"][sector1Condition], axis=None)
-                  , nbinsX=100, xmin=-8000, xmax=8000, nbinsY=100, ymin=-8000, ymax=8000
-                  , title=title, xlabel="KKInter Z [mm]", ylabel="CRV Z [mm]"
-                  , fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}/h2_ZZ_singles_track_cuts.png")
+#         ut.Plot2D(x=ak.flatten(data_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fZ"], axis=None)
+#                   , y=ak.flatten(data_["crv"]["crvcoincs.pos.fCoordinates.fZ"][sector1Condition], axis=None)
+#                   , nbinsX=100, xmin=-8000, xmax=8000, nbinsY=100, ymin=-8000, ymax=8000
+#                   , title=title, xlabel="KKInter Z [mm]", ylabel="CRV Z [mm]"
+#                   , fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}/h2_ZZ_singles_track_cuts.png")
     
         
     
-        ut.Plot2D(x=ak.flatten(data_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fX"], axis=None)
-                  , y=ak.flatten(data_["crv"]["crvcoincs.pos.fCoordinates.fX"][sector1Condition], axis=None)
-                  , nbinsX=100, xmin=-8000, xmax=8000, nbinsY=100, ymin=-8000, ymax=8000
-                  , title=title, xlabel="KKInter X [mm]", ylabel="CRV X [mm]"
-                  , fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}/h2_XX_singles_track_cuts.png")
+#         ut.Plot2D(x=ak.flatten(data_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fX"], axis=None)
+#                   , y=ak.flatten(data_["crv"]["crvcoincs.pos.fCoordinates.fX"][sector1Condition], axis=None)
+#                   , nbinsX=100, xmin=-8000, xmax=8000, nbinsY=100, ymin=-8000, ymax=8000
+#                   , title=title, xlabel="KKInter X [mm]", ylabel="CRV X [mm]"
+#                   , fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}/h2_XX_singles_track_cuts.png")
         
-    if not quiet: print("Done!")
+#     if not quiet: print("Done!")
 
-    return
+#     return
     
 # ------------------------------------------------
 # Coincidence finding in measurement sector
@@ -396,17 +223,11 @@ def FindCoincidences(data_, coincidenceConditions, quiet):
 
     if not quiet: print("Done!")
 
-    return # data_ # ["crv"][data_["is_coincidence"]]
+    return 
 
 # ------------------------------------------------
 #                     Filtering 
 # ------------------------------------------------ 
-
-# Not needed.
-# def RemoveEmptyEvents(data_):
-#     print(f"\n---> Removing empty events")
-#     emptyEventCondition = ak.num(data_["crv"]["crvcoincs.nHits"]) == 0
-#     return data_[~emptyEventCondition]
 
 # "all", "muons", "non_muons"
 def FilterParticles(data_, particle, quiet):
@@ -448,54 +269,55 @@ def FilterSingles(data_, fail, quiet):
     else: 
         return data_[~data_["pass_singles"]]
         
-
-# Events that pass the tracker cuts 
-def ApplyTrackerCuts(data_, fail, quiet):
+# Tracker cuts
+def ApplyTrackerCuts(arrays_, fail=False, quiet=False):
     
     if not quiet: print(f"\n---> Applying tracker cuts") 
-    
-    data_["trkfit_KLCRV1"] = ( 
-        (data_["trkfit"]["klfit"]["sid"] == 200) 
-        & (data_["trkfit"]["klfit"]["sindex"] == 1) )
 
-    data_["trk_bestFit"] = ( 
-        (data_["trk"]["kl.ndof"] >= 10)
-        & (data_["trk"]["kl.fitcon"] > 0.1)
-        & ((data_["trk"]["kl.nactive"]/data_["trk"]["kl.nhits"]) > 0.99)
-        & (data_["trk"]["kl.nplanes"] >= 4)
-        & ((data_["trk"]["kl.nnullambig"]/data_["trk"]["kl.nhits"]) < 0.2) )
-    
-    data_["trkfit_bestFit"] = ( 
-        (data_["trkfit"]["klkl"]["z0err"] < 1) 
-        & (data_["trkfit"]["klkl"]["d0err"] < 1) 
-        & (data_["trkfit"]["klkl"]["thetaerr"] < 0.004)
-        & (data_["trkfit"]["klkl"]["phi0err"] < 0.001) )
+    # Mark cuts on the track and track fit level
+    arrays_["trkfit_KLCRV1"] = ( 
+        (arrays_["trkfit"]["klfit"]["sid"] == 200) 
+        & (arrays_["trkfit"]["klfit"]["sindex"] == 1) )
 
-    # Apply cuts on the track and track fit level
+    arrays_["trk_bestFit"] = ( 
+        (arrays_["trk"]["kl.ndof"] >= 10)
+        & (arrays_["trk"]["kl.fitcon"] > 0.1)
+        & ((arrays_["trk"]["kl.nactive"]/arrays_["trk"]["kl.nhits"]) > 0.99)
+        & (arrays_["trk"]["kl.nplanes"] >= 4)
+        & ((arrays_["trk"]["kl.nnullambig"]/arrays_["trk"]["kl.nhits"]) < 0.2) )
+    
+    arrays_["trkfit_bestFit"] = ( 
+        (arrays_["trkfit"]["klkl"]["z0err"] < 1) 
+        & (arrays_["trkfit"]["klkl"]["d0err"] < 1) 
+        & (arrays_["trkfit"]["klkl"]["thetaerr"] < 0.004)
+        & (arrays_["trkfit"]["klkl"]["phi0err"] < 0.001) )
+
     if not fail: 
-        data_["trkfit"] = data_["trkfit"][(data_["trkfit_bestFit"] & data_["trkfit_KLCRV1"])]
-        data_["trk"] = data_["trk"][data_["trk_bestFit"]]
+        # Create masks
+        arrays_["trkfit"] = arrays_["trkfit"][(arrays_["trkfit_bestFit"] & arrays_["trkfit_KLCRV1"])]
+        arrays_["trk"] = arrays_["trk"][arrays_["trk_bestFit"]]
     else: 
-        data_["trkfit"] = data_["trkfit"][~(data_["trkfit_bestFit"] & data_["trkfit_KLCRV1"])]
-        data_["trk"] = data_["trk"][~data_["trk_bestFit"]]
+        # Create masks
+        arrays_["trkfit"] = arrays_["trkfit"][~(arrays_["trkfit_bestFit"] & arrays_["trkfit_KLCRV1"])]
+        arrays_["trk"] = arrays_["trk"][~arrays_["trk_bestFit"]]
 
-    # These cuts are applied to trk and trkfit, events that fail will now have no track cut informatio.
-    # Mark events which still have tracks or track fits after cuts
-    data_["goodTrk"] = ak.any(data_["trk"]["kl.status"], axis=1, keepdims=False) > 0 
-    data_["goodTrkFit"] = (
-        (ak.count(data_["trkfit"]["klfit"]["sid"], axis=-1, keepdims=False) > 0) 
-        & (ak.count(data_["trkfit"]["klkl"]["z0err"], axis=-1, keepdims=False) > 0) )
+    # Check for a track in the event after cuts.
+    trkCut = ak.any(arrays_["trk"]["kl.status"], axis=1, keepdims=False) > 0 
+    # Check for a track fit in the event after cuts
+    trkFitCut = (
+        (ak.count(arrays_["trkfit"]["klfit"]["sid"], axis=-1, keepdims=False) > 0) 
+        & (ak.count(arrays_["trkfit"]["klkl"]["z0err"], axis=-1, keepdims=False) > 0) )
+    
     # Reset to event level
-    data_["goodTrkFit"] = ak.any(data_["goodTrkFit"], axis=-1, keepdims=False) == True 
+    trkFitCut = ak.any(trkFitCut, axis=-1, keepdims=False) == True 
 
-    # Mark total track cuts
-    data_["pass_track_cuts"] = (data_["goodTrk"] & data_["goodTrkFit"])
-
-    # Return events passing/failing track fits
-    if not fail:  
-        return data_[data_["pass_track_cuts"]]
-    else:
-        return data_[~data_["pass_track_cuts"]]
+    # Both do the same thing, but mark them pass/fail for bookkeeping.
+    if not fail: 
+        arrays_["pass_track_cuts"] = (trkCut & trkFitCut)
+        return arrays_[arrays_["pass_track_cuts"]]
+    else: 
+        arrays_["fail_track_cuts"] = (trkCut & trkFitCut)
+        return arrays_[arrays_["fail_track_cuts"]]
 
 # Events at the end of the digitisation window get messed up
 def CutOnStartTime(data_, quiet): 
@@ -508,17 +330,11 @@ def CutOnStartTime(data_, quiet):
 # ------------------------------------------------   
 
 # Basic trigger condition
-def Trigger(data_, fail, quiet): 
+def Trigger(data_, fail=False, quiet=False): 
 
     if not quiet: print(f"\n---> Triggering")
-
-    # Enforce basic trigger condition
-    # triggerCondition = (
-    #     ak.any(data_["is_coincidence"] & (data_["crv"]["crvcoincs.sectorType"] == 2), axis=1) &
-    #     ak.any(data_["is_coincidence"] & (data_["crv"]["crvcoincs.sectorType"] == 3), axis=1)
-    # )
-
-    # Leave the trigger sectors at 2 layers and 10 PEs. 
+        
+    # Enforce trigger condititon 
     triggerCondition = (
         ak.any((data_["crv"]["crvcoincs.sectorType"] == 2), axis=1) &
         ak.any((data_["crv"]["crvcoincs.sectorType"] == 3), axis=1)
@@ -527,8 +343,6 @@ def Trigger(data_, fail, quiet):
     data_["pass_trigger"] = triggerCondition
     
     if not quiet: print("Done!")
-
-    # return data_[~triggerCondition]
 
     if not fail: 
         return data_[data_["pass_trigger"]]
@@ -548,9 +362,6 @@ def SuccessfulTriggers(data_, success, quiet):
     # Ensure at least one passing coincidence the measurement sector
     # Coincidence conditions are set in FindCoincidences()
     successCondition = ak.any(data_["CRVT_coincidence"], axis=1) 
-    
-    # ONE coincidence in the measurement sector 
-    # successCondition = ak.count(data_["CRVT_coincidence"], axis=1) == 1
     
     if not quiet: print("Done!")
 
@@ -592,64 +403,83 @@ def WriteSuccessInfo(successes_, recon, finTag, foutTag, coincidenceConditions, 
     return
 
     
-def WriteFailureInfo(failures_, recon, finTag, foutTag, coincidenceConditions, quiet):
+def WriteFailureInfo(failures_dict_, recon, finTag, foutTag, coincidenceConditions, quiet):
 
-    # Define the output file path
-    foutNameConcise = f"../Txt/{recon}/failures_concise/{finTag}/failures_concise_{foutTag}.csv" 
-    foutNameVerbose = f"../Txt/{recon}/failures_verbose/{finTag}/failures_verbose_{foutTag}.csv" 
+    for trkTag, failures_ in failures_dict_.items():
+        
+        # Define the output file path
+        foutNameConcise = f"../Txt/{recon}/failures_concise/{finTag}/failures_concise_{foutTag}_{trkTag}.csv" 
+        foutNameVerbose = f"../Txt/{recon}/failures_verbose/{finTag}/failures_verbose_{foutTag}_{trkTag}.csv" 
+        
+        if not quiet: print(f"\n---> Writing failure info to:\n{foutNameConcise}\n{foutNameVerbose}", flush=True) 
     
-    if not quiet: print(f"\n---> Writing failure info to:\n{foutNameConcise}\n{foutNameVerbose}", flush=True) 
+        # Concise form
+        with open(foutNameConcise, "w") as fout:
+            # Write the header
+            # TODO: changed this to have no spaces!
+            fout.write("evtinfo.run, evtinfo.subrun, evtinfo.event\n")
+            # Write the events
+            for event in failures_:
+                fout.write(
+                    f"{event['evt']['evtinfo.run']},{event['evt']['evtinfo.subrun']},{event['evt']['evtinfo.event']}\n"
+                )
+                
+        # Verbose form
 
-# allBranchNames_ = evtBranchNames_ + crvBranchNames_ + trkBranchNames_ + trkFitBranchNames_
+        # Setup mask string
+        masks_ = ["pass_singles", "pass_trigger", "CRVT_coincidence"]
+        if trkTag == "track_cuts":
+            masks_ += ["trk_bestFit", "trkfit_bestFit", "trkfit_KLCRV1", "pass_track_cuts"]
 
-    # Concise form
-    with open(foutNameConcise, "w") as fout:
-        # Write the header
-        # TODO: changed this to have no spaces!
-        fout.write("evtinfo.run, evtinfo.subrun, evtinfo.event\n")
-        # Write the events
-        for event in failures_:
-            fout.write(
-                f"{event['evt']['evtinfo.run']},{event['evt']['evtinfo.subrun']},{event['evt']['evtinfo.event']}\n"
-            )
-            
-    # Verbose form
-    if True: 
+        maskStr = ""
+        for mask in masks_: 
+            maskStr += f"{mask}: {event[f'{mask}']}\n"
+        
         with open(foutNameVerbose, "w") as fout:
             # Write the events
             for event in failures_:
                 fout.write(
-                    PrintEvent(event)+"\n" 
+                    pr.PrintEvent(event, maskStr)+"\n" 
                 )
 
     return
 
-def WriteResults(data_, successes_, failures_, recon, finTag, foutTag, quiet):
+def WriteResults(data_, successes_, failures_, failures_track_cuts_, recon, finTag, foutTag, quiet):
 
-    foutName = f"../Txt/{recon}/results/{finTag}/results_{foutTag}.csv"
-    if not quiet: print(f"\n---> Writing results to {foutName}")
+    foutNameNoTrk = f"../Txt/{recon}/results/{finTag}/results_{foutTag}_no_track_cuts.csv"
+    foutNameTrk = f"../Txt/{recon}/results/{finTag}/results_{foutTag}_track_cuts.csv"
+    if not quiet: print(f"\n---> Writing results to:\n{foutNameNoTrk}\n{foutNameTrk}")
 
     # Calculate efficiency 
     # Handle edge cases where the remaining subset has length zero.
     tot = len(data_)
-    efficiency = len(successes_) / tot * 100 if tot else np.nan
     inefficiency = len(failures_) / tot * 100 if tot else np.nan
+    inefficiency_track_cuts = len(failures_track_cuts_) / tot * 100 if tot else np.nan
 
     outputStr = f"""
     ****************************************************
     Input tag: {finTag}
     Output tag: {foutTag}
-    Number of failures: {len(failures_)}
+
     Number of successes: {len(successes_)}
-    Efficiency: {len(successes_)}/{tot} = {efficiency:.2f}%
+    
+    No track cuts:
+    Failures: {len(failures_)}
     Inefficiency: {len(failures_)}/{tot} = {inefficiency:.2f}%
+    
+    With track cuts:
+    Failures: {len(failures_track_cuts_)}
+    Inefficiency: {len(failures_track_cuts_)}/{tot} = {inefficiency_track_cuts:.2f}%
     ****************************************************
     """
 
-    with open(foutName, "w") as fout:
-        fout.write("Total,Successes,Failures,Efficiency [%],Inefficiency [%]\n") # no spaces!
-        fout.write(f"{tot}, {len(successes_)}, {len(failures_)}, {efficiency}, {inefficiency}\n")
-        # fout.write(outputStr)
+    with open(foutNameNoTrk, "w") as foutNoTrk:
+        foutNoTrk.write("Total,Successes,Failures,Inefficiency [%]\n") # no spaces!
+        foutNoTrk.write(f"{tot}, {len(successes_)}, {len(failures_)}, {inefficiency}\n")
+
+    with open(foutNameTrk, "w") as foutTrk:
+        foutTrk.write("Total,Successes,Failures,Inefficiency [%]\n") # no spaces!
+        foutTrk.write(f"{tot}, {len(successes_)}, {len(failures_track_cuts_)}, {inefficiency_track_cuts}\n")
 
     if not quiet: print(outputStr)
 
@@ -659,255 +489,88 @@ def WriteResults(data_, successes_, failures_, recon, finTag, foutTag, quiet):
 #                       Run
 # ------------------------------------------------
 
-# def Run(file, recon, particle, coincidenceConditions, finTag, foutTag, sanityPlots, quiet): 
-def Run(file, recon, particle, PE, layer, filterLevel, finTag, sanityPlots, quiet): 
-
-    # Placeholder until I work out how to do this more better.
-    # failTrigger = False
-    # failSingles = False
-    # failTrackCuts = False
+def Run(file, recon, particle, PE, layer, finTag, quiet): 
     
     # Output strings
     coincidenceConditions = f"{PE}PEs{layer}Layers"
-    foutTag = particle + "_" + coincidenceConditions + "_" + filters_[filterLevel] # + "_" + failureModeStr
+    foutTag = particle + "_" + coincidenceConditions 
 
     # Get data as a set of awkward arrays
-    data_ = GetData(file, quiet) # finName)
+    data_ = ut.GetData(file) # finName)
 
     # Apply start time cut
     data_ = CutOnStartTime(data_, quiet)
 
+    # Filter particle species
     data_ = FilterParticles(data_, particle, quiet)
 
-    
-    
-    # This is the least complicated way I could think of doing this without making huge changes. 
-    # But, I feel like you could spend ages making ways to run in every possible permuation
-    # only to find that most of them really are not interesting. 
-    # This analysis is fairly linear.
-    # I really only care about things which pass/fail the tracker cuts, the trigger and singles are very simple. 
-    # Would be nicer if you could produce a failure ntuple with failure mode flags. 
+    # Enforce basic trigger
+    data_ = Trigger(data_, fail=False, quiet=quiet)
 
-    # filters_ = { 
-    #     0 : "singles"
-    #     , 1 : "track_cuts"
-    #     , 2 : "singles_track_cuts"
-    #     , 3 : "pass_singles_fail_track_cuts" # this is where the supposed improvement comes in. 
-    #     , 4 : "fail_singles_pass_track_cuts"
-    #     , 5 : "fail_singles_fail_track_cuts"
-    # }
+    # Singles cut
+    data_ = FilterSingles(data_, fail=False, quiet=quiet)
 
-    # Filter the triggered sample
-    if filterLevel == 0:
-        data_ = FilterSingles(data_, fail=False, quiet=quiet)
-    elif filterLevel == 1: 
-        data_ = ApplyTrackerCuts(data_, fail=False, quiet=quiet)
-    elif filterLevel == 2: 
-        data_ = FilterSingles(data_, fail=False, quiet=quiet)
-        data_ = ApplyTrackerCuts(data_, fail=False, quiet=quiet)
-    elif filterLevel == 3: 
-        data_ = FilterSingles(data_, fail=False, quiet=quiet)
-        data_ = ApplyTrackerCuts(data_, fail=True, quiet=quiet)
-    elif filterLevel == 4: 
-        data_ = FilterSingles(data_, fail=True, quiet=quiet)
-        data_ = ApplyTrackerCuts(data_, fail=False, quiet=quiet)
-    elif filterLevel == 5: 
-        data_ = FilterSingles(data_, fail=True, quiet=quiet)
-        data_ = ApplyTrackerCuts(data_, fail=True, quiet=quiet)
+    # Mark coincidences in the measurement sector for the remaining subset
+    FindCoincidences(data_, coincidenceConditions, quiet)
 
-    # Sanity plots 
-    if (sanityPlots): SanityPlots(data_, recon, filterLevel, foutTag, quiet)
+    # Successful and unsuccessful triggers
+    successes_ = SuccessfulTriggers(data_, success=True, quiet=quiet)
+    failures_ = SuccessfulTriggers(data_, success=False, quiet=quiet)
 
-    print("EARLY RETURN")
-    return        
+    # Apply track cuts to failures
+    failures_track_cuts_ =  ApplyTrackerCuts(failures_, fail=False, quiet=quiet)
 
-    
-    # # Basic trigger
-    # data_ = Trigger(data_, fail=failTrigger, quiet=quiet)
-    
-    # # Mark coincidences in the measurement sector for the remaining subset
-    # FindCoincidences(data_, coincidenceConditions, quiet)
+    # Write failures to file
+    WriteFailureInfo( {"no_track_cuts" : failures_, "track_cuts" : failures_track_cuts_}, recon, finTag, foutTag, coincidenceConditions, quiet) 
+                       
+    # Write results to file
+    WriteResults(data_, successes_, failures_, failures_track_cuts_, recon, finTag, foutTag, quiet) 
 
-    # # PrintNEvents(data_, showMasks=True)
-
-
-    # # Successful and unsuccessful triggers
-    # successes_ = SuccessfulTriggers(data_, success=True, quiet=quiet)
-    # failures_ = SuccessfulTriggers(data_, success=False, quiet=quiet)
-
-    # # Write failures to file
-    # # WriteSuccessInfo(successes_, recon, finTag, foutTag, coincidenceConditions, quiet) 
-    # WriteFailureInfo(failures_, recon, finTag, foutTag, coincidenceConditions, quiet) 
-
-    # # Write results to file
-    # WriteResults(data_, successes_, failures_, recon, finTag, foutTag, quiet) 
-
-    # return
+    return
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # ------------------------------------------------
 #              Multithread 
 # ------------------------------------------------
-# import subprocess
-
-# # Read a single file
-# def ReadFile2(fileName, quiet=False): 
-#     try:
-#         # Setup commands
-#         commands = "source /cvmfs/mu2e.opensciencegrid.org/setupmu2e-art.sh; muse setup ops;"
-#         commands += f"echo {fileName} | mdh print-url -s root -"
-#         if not quiet:
-#             print(f"---> Reading file:\n{fileName}")
-#         # Execute commands 
-#         fileName = subprocess.check_output(commands, shell=True, universal_newlines=True)
-#         if not quiet:
-#             print(f"\n---> Created xroot url:\n{fileName}")
-#             print("---> Opening file with uproot...") 
-#         # Open the file 
-#         with uproot.open(fileName) as file:
-#             if not quiet: 
-#                 print("Done!")
-#             return file 
-#     except OSError as e:
-#         # Setup alternative commands 
-#         print(f"\n----> Exception timeout while opening file with xroot, retrying locally: {fileName}")                    
-#         commands = "source /cvmfs/mu2e.opensciencegrid.org/setupmu2e-art.sh; muse setup ops;"
-#         commands += f"echo {fileName} | mdh copy-file -s tape -l local -" 
-#         # Execute commands
-#         subprocess.check_output(commands, shell=True, universal_newlines=True)
-#         # Return the opened file 
-#         with uproot.open(fileName) as file:
-#             return file
             
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from itertools import product
 
 # Multithread on one file with many configs
-def Multithread2(processFunction2, fileName, particles_, layers_, PEs_):
+# def Multithread2(processFunction2, fileName, particles_, layers_, PEs_):
     
-    print("\n---> Starting multithreading...")
+#     print("\n---> Starting multithreading...")
     
-    totalConfigurations = len(particles_) * len(layers_) * len(PEs_)
-    completedConfigurations = 0
-    
-    with ThreadPoolExecutor() as executor:
-        
-        # Generate all combinations of (particle, layer, PE)
-        configurations = product(particles_, layers_, PEs_)
-        
-        # Submit tasks to the executor
-        futures = {
-            executor.submit(processFunction2, fileName, particle, layer, PE): (particle, layer, PE)
-            for particle, layer, PE in configurations
-        }
-
-        # Process results as they complete
-        for future in as_completed(futures):
-            (particle, layer, PE) = futures[future]
-            try:
-                future.result()  # Retrieve the result or raise an exception if occurred
-                completedConfigurations += 1
-                percentComplete = (completedConfigurations / totalConfigurations) * 100
-                print(f'---> Configuration ({particle}, {layer}, {PE}) processed successfully! ({percentComplete:.1f}% complete)')
-            except Exception as exc:
-                print(f'---> Configuration ({particle}, {layer}, {PE}) generated an exception!\n{exc}')
-                
-    print("\nMultithreading completed!")
-    return
-
-# Multithread on many files with many configs
-# This seems to use huge amount of memory! Like 35 GB per file... 
-# def Multithread3(processFunction2, fileList_, particles_, layers_, PEs_, max_workers=254):
-    
-#     print("\n---> Starting multithreading...\n")
-    
-#     totalFiles = len(fileList_)
 #     totalConfigurations = len(particles_) * len(layers_) * len(PEs_)
-#     completedTasks = 0
+#     completedConfigurations = 0
     
-#     with ThreadPoolExecutor(max_workers=max_workers) as executor:
+#     with ThreadPoolExecutor() as executor:
         
-#         # Prepare the list of futures
-#         futures = []
+#         # Generate all combinations of (particle, layer, PE)
+#         configurations = product(particles_, layers_, PEs_)
         
-#         # Submit tasks for each file
-#         for fileName in fileList_:
-#             # Generate all combinations of (particle, layer, PE) for each file
-#             configurations = product(particles_, layers_, PEs_)
-#             for particle, layer, PE in configurations:
-#                 futures.append(
-#                     executor.submit(processFunction2, fileName, particle, layer, PE)
-#                 )
-        
+#         # Submit tasks to the executor
+#         futures = {
+#             executor.submit(processFunction2, fileName, particle, layer, PE): (particle, layer, PE)
+#             for particle, layer, PE in configurations
+#         }
+
 #         # Process results as they complete
 #         for future in as_completed(futures):
+#             (particle, layer, PE) = futures[future]
 #             try:
 #                 future.result()  # Retrieve the result or raise an exception if occurred
-#                 completedTasks += 1
-#                 percentComplete = (completedTasks / (totalFiles * totalConfigurations)) * 100
-#                 print(f'---> Task {completedTasks} processed successfully! ({percentComplete:.1f}% complete)')
+#                 completedConfigurations += 1
+#                 percentComplete = (completedConfigurations / totalConfigurations) * 100
+#                 print(f'---> Configuration ({particle}, {layer}, {PE}) processed successfully! ({percentComplete:.1f}% complete)')
 #             except Exception as exc:
-#                 print(f'---> Task generated an exception!\n{exc}')
+#                 print(f'---> Configuration ({particle}, {layer}, {PE}) generated an exception!\n{exc}')
                 
-#     print("\n---> Multithreading completed!")
+#     print("\nMultithreading completed!")
 #     return
 
-
-# def Multithread4(processFunction3, fileList_, max_workers=381):
-    
-#     print("\n---> Starting multithreading...\n")
-
-#     completedTasks = 0
-#     totalFiles = len(fileList_)
-    
-#     with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        
-#         # Prepare the list of futures
-#         futures_ = [executor.submit(processFunction3, fileName) for fileName in fileList_]
-        
-#         # Process results as they complete
-#         for future in as_completed(futures_):
-#             try:
-#                 future.result()  # Retrieve the result or raise an exception if occurred
-#                 completedTasks += 1
-#                 percentComplete = (completedTasks / (totalFiles)) * 100
-#                 print(f'\n---> Task {completedTasks} processed successfully! ({percentComplete:.1f}% complete)')
-#             except Exception as exc:
-#                 print(f'\n---> Task generated an exception!\n{exc}')
-                
-#     print("\n---> Multithreading completed!")
-#     return
-    
-# # This is good. TODO: add this to Mu2eEAF. 
-# def Multithread5(processFunction, fileList_, max_workers=381):
-    
-#     print("\n---> Starting multithreading...\n")
-
-#     completedFiles = 0
-#     totalFiles = len(fileList_)
-    
-#     with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        
-#         # Prepare a list of futures and map them to file names
-#         futures_ = {executor.submit(processFunction, fileName): (fileName) for fileName in fileList_}
-        
-#         # Process results as they complete
-#         for future in as_completed(futures_):
-#             fileName = futures_[future]  # Get the file name associated with this future
-#             # print(f'\n---> Processing {fileName}...') 
-#             try:
-#                 future.result()  # Retrieve the result or raise an exception if occurred
-#                 completedFiles += 1
-#                 percentComplete = (completedFiles / (totalFiles)) * 100
-#                 print(f'\n---> {fileName} processed successfully! ({percentComplete:.1f}% complete)')
-#             except Exception as exc:
-#                 print(f'\n---> {fileName} generated an exception!\n{exc}')
-                
-#     print("\n---> Multithreading completed!")
-#     return
-
-def Multithread6(processFunction, fileList_, max_workers=381):
+def Multithread(processFunction, fileList_, max_workers=381):
     
     print("\n---> Starting multithreading...\n")
 
@@ -939,167 +602,141 @@ def TestMain():
     
     fileName="/exp/mu2e/data/users/sgrant/CRVSim/CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.000/11946817/00/00038/nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000006.root"
     finTag = fileName.split('.')[-2] 
+
     with uproot.open(fileName) as file:
-        for key, item in filters_.items():
-            Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", filterLevel=key, finTag=finTag, sanityPlots=True, quiet=True)
+        Run(file, recon="MDC2020ae", particle="all", PE="100", layer="3", finTag=finTag, quiet=False)
+
     return
     
     
 def main():
 
-    TestMain()
-    return
+    # TestMain()
+    # return
 
     #########################################################
 
-    # return
     defname = "nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.root"
     recon = "MDC2020ae"
     
-    filterLevels_ = [0, 1]
     particles_ = ["all", "muons", "non_muons"]
     layers_ = [3, 2]
-    # PEs_ = np.arange(10, 135, 5)
     PEs_ = np.arange(100, 135, 5)
-
-    # filterLevel_ = [0, 1] # [0, 1]
-    # particles_ = ["all"] # , "muons", "non_muons"]
-    # layers_ = [2] # , 3]
-    # PEs_ = [10] # np.arange(10, 135, 5)
-
-    sanityPlots = False
     quiet = True
 
-    def processFunction2(fileName, particle, layer, PE):
+    def processFunction(fileName):
         # Always open the file in the processFunction 
         file = rd.ReadFile(fileName, quiet)
         finTag = fileName.split('.')[-2] 
-        outputStr = (
+        # Scan PE thresholds
+        for PE in PEs_: 
+            # Scan particles
+            for particle in particles_: 
+                # Scan layers
+                for layer in layers_: 
+                    outputStr = (
                         "\n---> Running with:\n"
                         f"fileName: {fileName}\n"
                         f"recon: {recon}\n"
                         f"particle: {particle}\n"
                         f"PEs: {PE}\n"
                         f"layers: {layer}/4\n"
-                        f"filterLevel: {filterLevel}\n"
                         f"finTag: {finTag}\n"
-                        f"sanityPlots: {sanityPlots}\n"
                         f"quiet: {quiet}\n"
                     )
-        if not quiet: print(outputStr, flush=True)
-        Run(file, recon, particle, PE, layer, filterLevel, finTag, sanityPlots, quiet)
+                    if not quiet: print(outputStr) 
+                    Run(file, recon, particle, PE, layer, finTag, quiet)
+                    # Uncomment to test
+                    return
         return
 
-    def processFunction3(fileName):
-        # Always open the file in the processFunction 
-        file = rd.ReadFile(fileName, quiet)
-        finTag = fileName.split('.')[-2] 
-        
-        # Build one datapoint at a time, so PEs need to go on the bottom
-        # Scan PE thresholds
-        for PE in PEs_: # Data point level
-            # Scan particles
-            for particle in particles_: # Series level
-                # Scan filters
-                for filterLevel in filterLevels_: # Plot level
-                    # Scan layers
-                    for layer in layers_: # Plot level
-                    
-                        outputStr = (
-                            "\n---> Running with:\n"
-                            f"fileName: {fileName}\n"
-                            f"recon: {recon}\n"
-                            f"particle: {particle}\n"
-                            f"PEs: {PE}\n"
-                            f"layers: {layer}/4\n"
-                            f"filterLevel: {filterLevel}\n"
-                            f"finTag: {finTag}\n"
-                            f"sanityPlots: {sanityPlots}\n"
-                            f"quiet: {quiet}\n"
-                        )
-                        if not quiet: print(outputStr) 
-                            
-                        Run(file, recon, particle, PE, layer, filterLevel, finTag, sanityPlots, quiet)
-        return
+    fileList_ = rd.GetFileList(defname) 
+    # Testing 
+    fileList_ = ["/exp/mu2e/data/users/sgrant/CRVSim/CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.000/11946817/00/00038/nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000006.root"]
+    print(f"---> Got {len(fileList_)} files.")
+
+    Multithread(processFunction, fileList_)
 
     # Resubmission of failures.
-    def processFunction4(fileName):
+    # def processFunction4(fileName):
 
-        # Get failed jobs
-        failedJobsFile = "../Txt/MDC2020ae/FailedJobs/failures.csv"
-        df_failedJobs_ = pd.read_csv(failedJobsFile)
+    #     # Get failed jobs
+    #     failedJobsFile = "../Txt/MDC2020ae/FailedJobs/failures.csv"
+    #     df_failedJobs_ = pd.read_csv(failedJobsFile)
         
-        # Always open the file in the processFunction 
-        file = rd.ReadFile(fileName, quiet)
-        finTag = fileName.split('.')[-2] 
+    #     # Always open the file in the processFunction 
+    #     file = rd.ReadFile(fileName, quiet)
+    #     finTag = fileName.split('.')[-2] 
 
-        df_failedJobs_ = df_failedJobs_[df_failedJobs_["Tag"] == finTag]
+    #     df_failedJobs_ = df_failedJobs_[df_failedJobs_["Tag"] == finTag]
 
-        # helper to get filter level from dict
-        def get_key(d, val):
-          keys = [k for k, v in d.items() if v == val]
-          return keys[0] if keys else None
+    #     # helper to get filter level from dict
+    #     def get_key(d, val):
+    #       keys = [k for k, v in d.items() if v == val]
+    #       return keys[0] if keys else None
             
-        # Submit failed configs
-        for index, row in df_failedJobs_.iterrows():
+    #     # Submit failed configs
+    #     for index, row in df_failedJobs_.iterrows():
 
-            # print(row["PEs"], row["PEs"], row["Layer"], row["Particle"], row["Filter"]) 
-            particle = row["Particle"]
-            PE = row["PEs"]
-            layer = row["Layer"]
-            filterLevel = get_key(filters_, row["Filter"])
+    #         # print(row["PEs"], row["PEs"], row["Layer"], row["Particle"], row["Filter"]) 
+    #         particle = row["Particle"]
+    #         PE = row["PEs"]
+    #         layer = row["Layer"]
+    #         filterLevel = get_key(filters_, row["Filter"])
 
-            outputStr = (
-                    "\n---> Running with:\n"
-                    f"fileName: {fileName}\n"
-                    f"recon: {recon}\n"
-                    f"particle: {particle}\n"
-                    f"PEs: {PE}\n"
-                    f"layers: {layer}/4\n"
-                    f"filterLevel: {filterLevel}\n"
-                    f"finTag: {finTag}\n"
-                    f"sanityPlots: {sanityPlots}\n"
-                    f"quiet: {quiet}\n"
-                )
+    #         outputStr = (
+    #                 "\n---> Running with:\n"
+    #                 f"fileName: {fileName}\n"
+    #                 f"recon: {recon}\n"
+    #                 f"particle: {particle}\n"
+    #                 f"PEs: {PE}\n"
+    #                 f"layers: {layer}/4\n"
+    #                 f"filterLevel: {filterLevel}\n"
+    #                 f"finTag: {finTag}\n"
+    #                 f"sanityPlots: {sanityPlots}\n"
+    #                 f"quiet: {quiet}\n"
+    #             )
 
-            if not quiet: print(outputStr) 
+    #         if not quiet: print(outputStr) 
 
-            try:
-                Run(file, recon, particle, PE, layer, filterLevel, finTag, sanityPlots, quiet)
-            except Exception as exc:
-                print(f'---> Exception!\n{row}\n{exc}')
+    #         try:
+    #             Run(file, recon, particle, PE, layer, filterLevel, finTag, sanityPlots, quiet)
+    #         except Exception as exc:
+    #             print(f'---> Exception!\n{row}\n{exc}')
 
-            # Testing
-            # return
+    #         # Testing
+    #         # return
             
-        return
-        
-    fileList_ = rd.GetFileList(defname) 
+    #     return
 
-    # Get failed jobs
-    failedJobsFile = "../Txt/MDC2020ae/FailedJobs/failures.csv"
-    df_failedJobs_ = pd.read_csv(failedJobsFile)
 
-    # Set of tags
-    tags_ = list(set(df_failedJobs_["Tag"]))
+    # TODO: wrap this in a proper function.
+    # # Get failed jobs
     
-    # Extract the tag from the file name
-    def ExtractTag(fileName):
-        parts = fileName.split('.')
-        if len(parts) > 1:
-            return parts[-2]
-        return None
+    # failedJobsFile = "../Txt/MDC2020ae/FailedJobs/failures.csv"
+    # df_failedJobs_ = pd.read_csv(failedJobsFile)
 
-    # Filter and sort files based on tags
-    fileList_ = sorted(
-        [file for file in fileList_ if ExtractTag(file) in tags_]
-        , key=lambda file: tags_.index(ExtractTag(file))
-    )
+    # # Set of tags
+    # tags_ = list(set(df_failedJobs_["Tag"]))
+    
+    # # Extract the tag from the file name
+    # def ExtractTag(fileName):
+    #     parts = fileName.split('.')
+    #     if len(parts) > 1:
+    #         return parts[-2]
+    #     return None
 
-    print(f"---> Got {len(fileList_)} files.")
+    # # Filter and sort files based on tags
+    # fileList_ = sorted(
+    #     [file for file in fileList_ if ExtractTag(file) in tags_]
+    #     , key=lambda file: tags_.index(ExtractTag(file))
+    # )
+
+    
+
     # Multithread5(processFunction3, fileList_) 
     # Multithread5(processFunction4, fileList_)
-    Multithread6(processFunction4, fileList_)
+    # Multithread6(processFunction4, fileList_)
     
     # Multithread3(processFunction2, fileList_[:2], particles_, layers_, PEs_) 
     

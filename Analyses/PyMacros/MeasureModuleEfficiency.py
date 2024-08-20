@@ -621,7 +621,7 @@ def main():
     
     particles_ = ["all", "muons", "non_muons"]
     layers_ = [3, 2]
-    PEs_ = np.arange(100, 135, 5)
+    PEs_ = np.arange(10, 135, 5)
     quiet = True
 
     def processFunction(fileName):
@@ -647,12 +647,11 @@ def main():
                     if not quiet: print(outputStr) 
                     Run(file, recon, particle, PE, layer, finTag, quiet)
                     # Uncomment to test
-                    return
+                    # return
         return
 
-    fileList_ = rd.GetFileList(defname) 
-    # Testing 
-    fileList_ = ["/exp/mu2e/data/users/sgrant/CRVSim/CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.000/11946817/00/00038/nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000006.root"]
+    fileList_ = rd.GetFileList(defname) #[:2]
+    
     print(f"---> Got {len(fileList_)} files.")
 
     Multithread(processFunction, fileList_)

@@ -430,14 +430,11 @@ def WriteFailureInfo(failures_dict_, recon, finTag, foutTag, coincidenceConditio
         masks_ = ["pass_singles", "pass_trigger", "CRVT_coincidence"]
         if trkTag == "track_cuts":
             masks_ += ["trk_bestFit", "trkfit_bestFit", "trkfit_KLCRV1", "pass_track_cuts"]
-
-        maskStr = ""
-        for mask in masks_: 
-            maskStr += f"{mask}: {event[f'{mask}']}\n"
         
         with open(foutNameVerbose, "w") as fout:
             # Write the events
             for event in failures_:
+                maskStr = ''.join([f"{mask}: {event[f'{mask}']}\n" for mask in masks_])
                 fout.write(
                     pr.PrintEvent(event, maskStr)+"\n" 
                 )
@@ -624,91 +621,101 @@ def main():
     PEs_ = np.arange(10, 135, 5)
     quiet = True
 
+    # def processFunction(fileName):
+    #     # Always open the file in the processFunction 
+    #     file = rd.ReadFile(fileName, quiet)
+    #     finTag = fileName.split('.')[-2] 
+    #     # Scan PE thresholds
+    #     for PE in PEs_: 
+    #         # Scan particles
+    #         for particle in particles_: 
+    #             # Scan layers
+    #             for layer in layers_: 
+    #                 outputStr = (
+    #                     "\n---> Running with:\n"
+    #                     f"fileName: {fileName}\n"
+    #                     f"recon: {recon}\n"
+    #                     f"particle: {particle}\n"
+    #                     f"PEs: {PE}\n"
+    #                     f"layers: {layer}/4\n"
+    #                     f"finTag: {finTag}\n"
+    #                     f"quiet: {quiet}\n"
+    #                 )
+    #                 if not quiet: print(outputStr) 
+    #                 try:
+    #                     Run(file, recon, particle, PE, layer, finTag, quiet)
+    #                 except Exception as exc:
+    #                     print(f'---> Exception!\n{row}\n{exc}')
+    #                 # Uncomment to test
+    #                 # return
+    #     return
+
+    # fileList_ = rd.GetFileList(defname) #[:2]
+    
+    # print(f"---> Got {len(fileList_)} files.")
+
+    # Multithread(processFunction, fileList_)
+
+    # Resubmission of failures.
     def processFunction(fileName):
+
+        # Get failed jobs
+        failedJobsFile = "../Txt/MDC2020ae/FailedJobs/failures.csv"
+        df_failedJobs_ = pd.read_csv(failedJobsFile)
+        
         # Always open the file in the processFunction 
         file = rd.ReadFile(fileName, quiet)
         finTag = fileName.split('.')[-2] 
-        # Scan PE thresholds
-        for PE in PEs_: 
-            # Scan particles
-            for particle in particles_: 
-                # Scan layers
-                for layer in layers_: 
-                    outputStr = (
-                        "\n---> Running with:\n"
-                        f"fileName: {fileName}\n"
-                        f"recon: {recon}\n"
-                        f"particle: {particle}\n"
-                        f"PEs: {PE}\n"
-                        f"layers: {layer}/4\n"
-                        f"finTag: {finTag}\n"
-                        f"quiet: {quiet}\n"
-                    )
-                    if not quiet: print(outputStr) 
-                    Run(file, recon, particle, PE, layer, finTag, quiet)
-                    # Uncomment to test
-                    # return
+    
+        df_failedJobs_ = df_failedJobs_[df_failedJobs_["Tag"] == finTag]
+    
+        # helper to get filter level from dict
+        def get_key(d, val):
+          keys = [k for k, v in d.items() if v == val]
+          return keys[0] if keys else None
+            
+        # Submit failed configs
+        for index, row in df_failedJobs_.iterrows():
+    
+            # print(row["PEs"], row["PEs"], row["Layer"], row["Particle"], row["Filter"]) 
+            particle = row["Particle"]
+            PE = row["PEs"]
+            layer = row["Layer"]
+    
+            outputStr = (
+                "\n---> Running with:\n"
+                f"fileName: {fileName}\n"
+                f"recon: {recon}\n"
+                f"particle: {particle}\n"
+                f"PEs: {PE}\n"
+                f"layers: {layer}/4\n"
+                f"finTag: {finTag}\n"
+                f"quiet: {quiet}\n"
+            )
+    
+            if not quiet: print(outputStr) 
+    
+            try:
+                Run(file, recon, particle, PE, layer, finTag, quiet)
+            except Exception as exc:
+                print(f'---> Exception!\n{row}\n{exc}')
+    
+            # Testing
+            # return
+            
         return
+
+    # fileName="nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000000.root"
+    # processFunction(fileName)
+
+    # return
 
     fileList_ = rd.GetFileList(defname) #[:2]
     
     print(f"---> Got {len(fileList_)} files.")
 
     Multithread(processFunction, fileList_)
-
-    # Resubmission of failures.
-    # def processFunction4(fileName):
-
-    #     # Get failed jobs
-    #     failedJobsFile = "../Txt/MDC2020ae/FailedJobs/failures.csv"
-    #     df_failedJobs_ = pd.read_csv(failedJobsFile)
-        
-    #     # Always open the file in the processFunction 
-    #     file = rd.ReadFile(fileName, quiet)
-    #     finTag = fileName.split('.')[-2] 
-
-    #     df_failedJobs_ = df_failedJobs_[df_failedJobs_["Tag"] == finTag]
-
-    #     # helper to get filter level from dict
-    #     def get_key(d, val):
-    #       keys = [k for k, v in d.items() if v == val]
-    #       return keys[0] if keys else None
-            
-    #     # Submit failed configs
-    #     for index, row in df_failedJobs_.iterrows():
-
-    #         # print(row["PEs"], row["PEs"], row["Layer"], row["Particle"], row["Filter"]) 
-    #         particle = row["Particle"]
-    #         PE = row["PEs"]
-    #         layer = row["Layer"]
-    #         filterLevel = get_key(filters_, row["Filter"])
-
-    #         outputStr = (
-    #                 "\n---> Running with:\n"
-    #                 f"fileName: {fileName}\n"
-    #                 f"recon: {recon}\n"
-    #                 f"particle: {particle}\n"
-    #                 f"PEs: {PE}\n"
-    #                 f"layers: {layer}/4\n"
-    #                 f"filterLevel: {filterLevel}\n"
-    #                 f"finTag: {finTag}\n"
-    #                 f"sanityPlots: {sanityPlots}\n"
-    #                 f"quiet: {quiet}\n"
-    #             )
-
-    #         if not quiet: print(outputStr) 
-
-    #         try:
-    #             Run(file, recon, particle, PE, layer, filterLevel, finTag, sanityPlots, quiet)
-    #         except Exception as exc:
-    #             print(f'---> Exception!\n{row}\n{exc}')
-
-    #         # Testing
-    #         # return
-            
-    #     return
-
-
+    
     # TODO: wrap this in a proper function.
     # # Get failed jobs
     

@@ -292,13 +292,28 @@ def ApplyTrackerCuts(arrays_, fail=False, quiet=False):
         & (arrays_["trkfit"]["klkl"]["thetaerr"] < 0.004)
         & (arrays_["trkfit"]["klkl"]["phi0err"] < 0.001) )
 
+    # CRV-T module overall length 6100 mm
+    # CRV-T module overall width 951.0 mm 
+    # Total layer offset 42.00*(4-1) = 127 mm
+    # TWO modules side-by-side w_tot = w + (N_mod-1)*(w_mod-off) 
+    # ---> 951 + (2-1)*(951-127) = 1775.0
+    # I thought there was supposed to be four in KPP?...
+    # Then we have a -500 mm offset in z
+    
+    # min_box_coords = (-1775.0-500, -6100/2)
+    # max_box_coords = (1775.0-500, 6100/2)
+
+    arrays_["trkfit_CRV1Fiducial"] = ( 
+        (abs(arrays_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fX"]) < 6100/2)
+        & (abs(arrays_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fZ"] + 500) < 1775.0) ) 
+
     if not fail: 
         # Create masks
-        arrays_["trkfit"] = arrays_["trkfit"][(arrays_["trkfit_bestFit"] & arrays_["trkfit_KLCRV1"])]
+        arrays_["trkfit"] = arrays_["trkfit"][(arrays_["trkfit_bestFit"] & arrays_["trkfit_KLCRV1"] & arrays_["trkfit_CRV1Fiducial"])]
         arrays_["trk"] = arrays_["trk"][arrays_["trk_bestFit"]]
     else: 
         # Create masks
-        arrays_["trkfit"] = arrays_["trkfit"][~(arrays_["trkfit_bestFit"] & arrays_["trkfit_KLCRV1"])]
+        arrays_["trkfit"] = arrays_["trkfit"][~(arrays_["trkfit_bestFit"] & arrays_["trkfit_KLCRV1"] & arrays_["trkfit_CRV1Fiducial"])]
         arrays_["trk"] = arrays_["trk"][~arrays_["trk_bestFit"]]
 
     # Check for a track in the event after cuts.
@@ -402,7 +417,6 @@ def SuccessfulTriggers(data_, success, quiet):
 
 #     return
 
-    
 def WriteFailureInfo(failures_dict_, recon, finTag, foutTag, coincidenceConditions, quiet):
 
     for trkTag, failures_ in failures_dict_.items():
@@ -428,7 +442,7 @@ def WriteFailureInfo(failures_dict_, recon, finTag, foutTag, coincidenceConditio
         # Setup mask string
         masks_ = ["pass_singles", "pass_trigger", "CRVT_coincidence"]
         if trkTag == "track_cuts":
-            masks_ += ["trk_bestFit", "trkfit_bestFit", "trkfit_KLCRV1", "pass_track_cuts"]
+            masks_ += ["trk_bestFit", "trkfit_bestFit", "trkfit_KLCRV1", "trkfit_CRV1Fiducial", "pass_track_cuts"]
         
         with open(foutNameVerbose, "w") as fout:
             # Write the events

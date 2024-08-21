@@ -373,34 +373,34 @@ def SuccessfulTriggers(data_, success, quiet):
 # ------------------------------------------------ 
 
 # For debugging single files only!
-def WriteSuccessInfo(successes_, recon, finTag, foutTag, coincidenceConditions, quiet):
+# def WriteSuccessInfo(successes_, recon, finTag, foutTag, coincidenceConditions, quiet):
 
-    # Define the output file path
-    foutNameConcise = f"../Txt/{recon}/successes_concise/{finTag}/successes_concise_{foutTag}.csv" 
-    foutNameVerbose = f"../Txt/{recon}/successes_verbose/{finTag}/successes_verbose_{foutTag}.csv" 
+#     # Define the output file path
+#     foutNameConcise = f"../Txt/{recon}/successes_concise/{finTag}/successes_concise_{foutTag}.csv" 
+#     foutNameVerbose = f"../Txt/{recon}/successes_verbose/{finTag}/successes_verbose_{foutTag}.csv" 
     
-    if not quiet: print(f"\n---> Writing failure info to:\n{foutNameConcise}\n{foutNameVerbose}", flush=True) 
+#     if not quiet: print(f"\n---> Writing failure info to:\n{foutNameConcise}\n{foutNameVerbose}", flush=True) 
         
-   # Concise form
-    with open(foutNameConcise, "w") as fout:
-        # Write the header
-        fout.write("evtinfo.run,evtinfo.subrun,evtinfo.event\n")
-        # Write the events
-        for event in successes_:
-            fout.write(
-                f"{event['evt']['evtinfo.run']}, {event['evt']['evtinfo.subrun']}, {event['evt']['evtinfo.event']}\n"
-            )
+#    # Concise form
+#     with open(foutNameConcise, "w") as fout:
+#         # Write the header
+#         fout.write("evtinfo.run,evtinfo.subrun,evtinfo.event\n")
+#         # Write the events
+#         for event in successes_:
+#             fout.write(
+#                 f"{event['evt']['evtinfo.run']}, {event['evt']['evtinfo.subrun']}, {event['evt']['evtinfo.event']}\n"
+#             )
             
-    # Verbose form
-    if True: 
-        with open(foutNameVerbose, "w") as fout:
-            # Write the events
-            for event in successes_:
-                fout.write(
-                    PrintEvent(event)+"\n" 
-                )
+#     # Verbose form
+#     if True: 
+#         with open(foutNameVerbose, "w") as fout:
+#             # Write the events
+#             for event in successes_:
+#                 fout.write(
+#                     PrintEvent(event)+"\n" 
+#                 )
 
-    return
+#     return
 
     
 def WriteFailureInfo(failures_dict_, recon, finTag, foutTag, coincidenceConditions, quiet):
@@ -416,8 +416,7 @@ def WriteFailureInfo(failures_dict_, recon, finTag, foutTag, coincidenceConditio
         # Concise form
         with open(foutNameConcise, "w") as fout:
             # Write the header
-            # TODO: changed this to have no spaces!
-            fout.write("evtinfo.run, evtinfo.subrun, evtinfo.event\n")
+            fout.write("evtinfo.run,evtinfo.subrun,evtinfo.event\n")
             # Write the events
             for event in failures_:
                 fout.write(
@@ -435,53 +434,77 @@ def WriteFailureInfo(failures_dict_, recon, finTag, foutTag, coincidenceConditio
             # Write the events
             for event in failures_:
                 maskStr = ''.join([f"{mask}: {event[f'{mask}']}\n" for mask in masks_])
+                # print(maskStr)
                 fout.write(
                     pr.PrintEvent(event, maskStr)+"\n" 
                 )
 
     return
 
-def WriteResults(data_, successes_, failures_, failures_track_cuts_, recon, finTag, foutTag, quiet):
+# Write inefficiency results
+# Successes and failures are dicts mapping cut labels to a tuple containing a success/failure pair
+def WriteResults(results_, recon, finTag, foutTag, quiet):
 
-    foutNameNoTrk = f"../Txt/{recon}/results/{finTag}/results_{foutTag}_no_track_cuts.csv"
-    foutNameTrk = f"../Txt/{recon}/results/{finTag}/results_{foutTag}_track_cuts.csv"
-    if not quiet: print(f"\n---> Writing results to:\n{foutNameNoTrk}\n{foutNameTrk}")
-
-    # Calculate efficiency 
-    # Handle edge cases where the remaining subset has length zero.
-    tot = len(data_)
-    inefficiency = len(failures_) / tot * 100 if tot else np.nan
-    inefficiency_track_cuts = len(failures_track_cuts_) / tot * 100 if tot else np.nan
-
-    outputStr = f"""
+    # Start output string 
+    resultStr = f"""
     ****************************************************
     Input tag: {finTag}
     Output tag: {foutTag}
+    """
 
-    Number of successes: {len(successes_)}
+    foutStr = f"\n----> Written results to:"
+
+    # Loop through tuple
+    for cut, result in results_.items():
     
-    No track cuts:
-    Failures: {len(failures_)}
-    Inefficiency: {len(failures_)}/{tot} = {inefficiency:.2f}%
-    
-    With track cuts:
-    Failures: {len(failures_track_cuts_)}
-    Inefficiency: {len(failures_track_cuts_)}/{tot} = {inefficiency_track_cuts:.2f}%
+        foutName = f"../Txt/{recon}/results/{finTag}/results_{foutTag}_{cut}.csv"
+
+        foutStr += f"\n{foutName}"
+
+        if not quiet: print(f"\n---> Writing results to:\n{foutName}")
+
+        # Calculate efficiency 
+        successes_ = result[0]
+        failures_ = result[1]
+        
+        # len should give the same value as ak.count(failures_, axis=0)
+        # Check this though...
+        if ak.num(failures_, axis=0) != len(failures_):
+            raise ValueError("---> Missing values in failure array!")
+
+        if ak.num(successes_, axis=0) != len(successes_):
+            raise ValueError("---> Missing values in successes array!")
+            
+        nfailures = len(failures_)
+        nsuccesses = len(successes_)
+        ntotal = nfailures + nsuccesses
+        
+        inefficiency = (nfailures / ntotal) * 100 if ntotal else np.nan
+
+        # Append output string 
+        resultStr += f"""\n
+        Cut: {cut}
+        Successes: {nsuccesses}
+        Failures: {nfailures}
+        Total: {ntotal}
+        Inefficiency: {nfailures}/{ntotal} = {inefficiency:.2f}%
+        """
+
+        # Write to file
+        with open(foutName, "w") as fout:
+            fout.write("Total,Successes,Failures,Inefficiency [%]\n") # no spaces!
+            fout.write(f"{ntotal}, {nsuccesses}, {nsuccesses}, {inefficiency}\n")
+
+    # Finish output string 
+    resultStr += f"""
     ****************************************************
     """
 
-    with open(foutNameNoTrk, "w") as foutNoTrk:
-        foutNoTrk.write("Total,Successes,Failures,Inefficiency [%]\n") # no spaces!
-        foutNoTrk.write(f"{tot}, {len(successes_)}, {len(failures_)}, {inefficiency}\n")
+    if not quiet: print(foutStr)
+    if not quiet: print(resultStr)
 
-    with open(foutNameTrk, "w") as foutTrk:
-        foutTrk.write("Total,Successes,Failures,Inefficiency [%]\n") # no spaces!
-        foutTrk.write(f"{tot}, {len(successes_)}, {len(failures_track_cuts_)}, {inefficiency_track_cuts}\n")
-
-    if not quiet: print(outputStr)
 
     return
-
 # ------------------------------------------------
 #                       Run
 # ------------------------------------------------
@@ -510,18 +533,22 @@ def Run(file, recon, particle, PE, layer, finTag, quiet):
     # Mark coincidences in the measurement sector for the remaining subset
     FindCoincidences(data_, coincidenceConditions, quiet)
 
-    # Successful and unsuccessful triggers
+    # Successful and unsuccessful triggers 
     successes_ = SuccessfulTriggers(data_, success=True, quiet=quiet)
     failures_ = SuccessfulTriggers(data_, success=False, quiet=quiet)
 
-    # Apply track cuts to failures
-    failures_track_cuts_ =  ApplyTrackerCuts(failures_, fail=False, quiet=quiet)
+    # Apply track cuts
+    data_ = ApplyTrackerCuts(successes_, fail=False, quiet=quiet)
+
+    # Successful and unsuccessful triggers with track cuts
+    successes_track_cuts_ = SuccessfulTriggers(data_, success=True, quiet=quiet)
+    failures_track_cuts_ = SuccessfulTriggers(data_, success=False, quiet=quiet)
 
     # Write failures to file
-    WriteFailureInfo( {"no_track_cuts" : failures_, "track_cuts" : failures_track_cuts_}, recon, finTag, foutTag, coincidenceConditions, quiet) 
-                       
+    WriteFailureInfo({"no_track_cuts" : failures_, "track_cuts" : failures_track_cuts_}, recon, finTag, foutTag, coincidenceConditions, quiet) 
+    
     # Write results to file
-    WriteResults(data_, successes_, failures_, failures_track_cuts_, recon, finTag, foutTag, quiet) 
+    WriteResults( {"no_track_cuts" : (successes_, failures_), "track_cuts" : (successes_track_cuts_, failures_track_cuts_)}, recon, finTag, foutTag, quiet) 
 
     return
 
@@ -533,39 +560,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
             
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from itertools import product
-
-# Multithread on one file with many configs
-# def Multithread2(processFunction2, fileName, particles_, layers_, PEs_):
-    
-#     print("\n---> Starting multithreading...")
-    
-#     totalConfigurations = len(particles_) * len(layers_) * len(PEs_)
-#     completedConfigurations = 0
-    
-#     with ThreadPoolExecutor() as executor:
-        
-#         # Generate all combinations of (particle, layer, PE)
-#         configurations = product(particles_, layers_, PEs_)
-        
-#         # Submit tasks to the executor
-#         futures = {
-#             executor.submit(processFunction2, fileName, particle, layer, PE): (particle, layer, PE)
-#             for particle, layer, PE in configurations
-#         }
-
-#         # Process results as they complete
-#         for future in as_completed(futures):
-#             (particle, layer, PE) = futures[future]
-#             try:
-#                 future.result()  # Retrieve the result or raise an exception if occurred
-#                 completedConfigurations += 1
-#                 percentComplete = (completedConfigurations / totalConfigurations) * 100
-#                 print(f'---> Configuration ({particle}, {layer}, {PE}) processed successfully! ({percentComplete:.1f}% complete)')
-#             except Exception as exc:
-#                 print(f'---> Configuration ({particle}, {layer}, {PE}) generated an exception!\n{exc}')
-                
-#     print("\nMultithreading completed!")
-#     return
 
 def Multithread(processFunction, fileList_, max_workers=381):
     
@@ -601,15 +595,15 @@ def TestMain():
     finTag = fileName.split('.')[-2] 
 
     with uproot.open(fileName) as file:
-        Run(file, recon="MDC2020ae", particle="all", PE="100", layer="3", finTag=finTag, quiet=False)
+        Run(file, recon="MDC2020ae", particle="all", PE="100", layer="2", finTag=finTag, quiet=False)
 
     return
     
     
 def main():
 
-    # TestMain()
-    # return
+    TestMain()
+    return
 
     #########################################################
 
@@ -621,43 +615,45 @@ def main():
     PEs_ = np.arange(10, 135, 5)
     quiet = True
 
-    # def processFunction(fileName):
-    #     # Always open the file in the processFunction 
-    #     file = rd.ReadFile(fileName, quiet)
-    #     finTag = fileName.split('.')[-2] 
-    #     # Scan PE thresholds
-    #     for PE in PEs_: 
-    #         # Scan particles
-    #         for particle in particles_: 
-    #             # Scan layers
-    #             for layer in layers_: 
-    #                 outputStr = (
-    #                     "\n---> Running with:\n"
-    #                     f"fileName: {fileName}\n"
-    #                     f"recon: {recon}\n"
-    #                     f"particle: {particle}\n"
-    #                     f"PEs: {PE}\n"
-    #                     f"layers: {layer}/4\n"
-    #                     f"finTag: {finTag}\n"
-    #                     f"quiet: {quiet}\n"
-    #                 )
-    #                 if not quiet: print(outputStr) 
-    #                 try:
-    #                     Run(file, recon, particle, PE, layer, finTag, quiet)
-    #                 except Exception as exc:
-    #                     print(f'---> Exception!\n{row}\n{exc}')
-    #                 # Uncomment to test
-    #                 # return
-    #     return
+    def processFunctionA(fileName):
+        # Always open the file in the processFunction 
+        file = rd.ReadFile(fileName, quiet)
+        finTag = fileName.split('.')[-2] 
+        # Scan PE thresholds
+        for PE in PEs_: 
+            # Scan particles
+            for particle in particles_: 
+                # Scan layers
+                for layer in layers_: 
+                    outputStr = (
+                        "\n---> Running with:\n"
+                        f"fileName: {fileName}\n"
+                        f"recon: {recon}\n"
+                        f"particle: {particle}\n"
+                        f"PEs: {PE}\n"
+                        f"layers: {layer}/4\n"
+                        f"finTag: {finTag}\n"
+                        f"quiet: {quiet}\n"
+                    )
+                    if not quiet: print(outputStr) 
+                    try:
+                        Run(file, recon, particle, PE, layer, finTag, quiet)
+                    except Exception as exc:
+                        print(f'---> Exception!\n{row}\n{exc}')
+                    # Uncomment to test
+                    # return
+        return
 
-    # fileList_ = rd.GetFileList(defname) #[:2]
+    fileList_ = rd.GetFileList(defname) #[:2]
     
-    # print(f"---> Got {len(fileList_)} files.")
+    print(f"---> Got {len(fileList_)} files.")
 
-    # Multithread(processFunction, fileList_)
+    Multithread(processFunctionA, fileList_)
+
+    return
 
     # Resubmission of failures.
-    def processFunction(fileName):
+    def processFunctionB(fileName):
 
         # Get failed jobs
         failedJobsFile = "../Txt/MDC2020ae/FailedJobs/failures.csv"
@@ -705,52 +701,47 @@ def main():
             
         return
 
-    # fileName="nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000000.root"
-    # processFunction(fileName)
-
-    # return
-
     fileList_ = rd.GetFileList(defname) #[:2]
     
     print(f"---> Got {len(fileList_)} files.")
 
-    Multithread(processFunction, fileList_)
-    
-    # TODO: wrap this in a proper function.
-    # # Get failed jobs
-    
-    # failedJobsFile = "../Txt/MDC2020ae/FailedJobs/failures.csv"
-    # df_failedJobs_ = pd.read_csv(failedJobsFile)
-
-    # # Set of tags
-    # tags_ = list(set(df_failedJobs_["Tag"]))
-    
-    # # Extract the tag from the file name
-    # def ExtractTag(fileName):
-    #     parts = fileName.split('.')
-    #     if len(parts) > 1:
-    #         return parts[-2]
-    #     return None
-
-    # # Filter and sort files based on tags
-    # fileList_ = sorted(
-    #     [file for file in fileList_ if ExtractTag(file) in tags_]
-    #     , key=lambda file: tags_.index(ExtractTag(file))
-    # )
-
-    
-
-    # Multithread5(processFunction3, fileList_) 
-    # Multithread5(processFunction4, fileList_)
-    # Multithread6(processFunction4, fileList_)
-    
-    # Multithread3(processFunction2, fileList_[:2], particles_, layers_, PEs_) 
-    
-    # Multithread4(processFunction3, ["nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000000.root"]) 
-    # Multithread3(processFunction2, fileList_[:20], particles_, layers_, PEs_) 
-    # Multithread2(processFunction2, fileName, particles_, layers_, PEs_) 
+    Multithread(processFunctionB, fileList_)
 
     return
 
 if __name__ == "__main__":
     main()
+
+
+# Multithread on one file with many configs
+# def Multithread2(processFunction2, fileName, particles_, layers_, PEs_):
+    
+#     print("\n---> Starting multithreading...")
+    
+#     totalConfigurations = len(particles_) * len(layers_) * len(PEs_)
+#     completedConfigurations = 0
+    
+#     with ThreadPoolExecutor() as executor:
+        
+#         # Generate all combinations of (particle, layer, PE)
+#         configurations = product(particles_, layers_, PEs_)
+        
+#         # Submit tasks to the executor
+#         futures = {
+#             executor.submit(processFunction2, fileName, particle, layer, PE): (particle, layer, PE)
+#             for particle, layer, PE in configurations
+#         }
+
+#         # Process results as they complete
+#         for future in as_completed(futures):
+#             (particle, layer, PE) = futures[future]
+#             try:
+#                 future.result()  # Retrieve the result or raise an exception if occurred
+#                 completedConfigurations += 1
+#                 percentComplete = (completedConfigurations / totalConfigurations) * 100
+#                 print(f'---> Configuration ({particle}, {layer}, {PE}) processed successfully! ({percentComplete:.1f}% complete)')
+#             except Exception as exc:
+#                 print(f'---> Configuration ({particle}, {layer}, {PE}) generated an exception!\n{exc}')
+                
+#     print("\nMultithreading completed!")
+#     return

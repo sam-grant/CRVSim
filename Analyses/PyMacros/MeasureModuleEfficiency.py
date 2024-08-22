@@ -507,7 +507,7 @@ def WriteResults(results_, recon, finTag, foutTag, quiet):
         # Write to file
         with open(foutName, "w") as fout:
             fout.write("Total,Successes,Failures,Inefficiency [%]\n") # no spaces!
-            fout.write(f"{ntotal}, {nsuccesses}, {nsuccesses}, {inefficiency}\n")
+            fout.write(f"{ntotal},{nsuccesses},{nfailures},{inefficiency}\n")
 
     # Finish output string 
     resultStr += f"""
@@ -552,7 +552,7 @@ def Run(file, recon, particle, PE, layer, finTag, quiet):
     failures_ = SuccessfulTriggers(data_, success=False, quiet=quiet)
 
     # Apply track cuts
-    data_ = ApplyTrackerCuts(successes_, fail=False, quiet=quiet)
+    data_ = ApplyTrackerCuts(data_, fail=False, quiet=quiet)
 
     # Successful and unsuccessful triggers with track cuts
     successes_track_cuts_ = SuccessfulTriggers(data_, success=True, quiet=quiet)
@@ -575,7 +575,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from itertools import product
 
-def Multithread(processFunction, fileList_, max_workers=381):
+def Multithread(processFunction, fileList_, max_workers=96): # One worker per file
     
     print("\n---> Starting multithreading...\n")
 
@@ -609,7 +609,7 @@ def TestMain():
     finTag = fileName.split('.')[-2] 
 
     with uproot.open(fileName) as file:
-        Run(file, recon="MDC2020ae", particle="all", PE="100", layer="2", finTag=finTag, quiet=False)
+        Run(file, recon="MDC2020ae", particle="all", PE="130", layer="2", finTag=finTag, quiet=False)
 
     return
     
@@ -624,10 +624,11 @@ def main():
     defname = "nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.root"
     recon = "MDC2020ae"
     
-    particles_ = ["all", "muons", "non_muons"]
-    layers_ = [3, 2]
-    PEs_ = np.arange(10, 135, 5)
-    quiet = True
+    particles_ = ["all"] # , "muons", "non_muons"]
+    layers_ = [3] # [3, 2]
+    # PEs_ = np.arange(10, 135, 5)
+    PEs_ = [100] # np.arange(10, 135, 5)
+    quiet = False
 
     def processFunctionA(fileName):
         # Always open the file in the processFunction 

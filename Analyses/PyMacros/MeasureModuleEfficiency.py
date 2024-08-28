@@ -303,9 +303,38 @@ def ApplyTrackerCuts(arrays_, fail=False, quiet=False):
     # min_box_coords = (-1775.0-500, -6100/2)
     # max_box_coords = (1775.0-500, 6100/2)
 
+    # CRV-L-end length = 3388 mm
+    # CRV-L-end width = 951 mm 
+    # CRV-DS length = 2570 mm
+    # CRV-DS width = 826 mm 
+    
+    # CRV-DS is rotated. length -> width. 
+    # z: width for CRV-L
+    # z: length for CRV-DS
+    # x: width for CRV-DS
+    # x: length for CRV-L
+    
+    # Total layer offset, off = 42.00*(4-1) = 127 mm
+    # 2 modules w_tot = w_mod + (N_mod-1)*(w_mod-off) 
+    # -500 offset in z
+    
+    # In x:
+    # CRV-L-end width < CRV-DS length
+    
+    # In z:
+    # CRV-L-end length > CRV-DS width
+    
+    # So the box is defined by:
+    # x: CRV-DS length
+    # z: CRV-L-end length
+    
+    # (z, x)
+    # min_box_coords = (-(2570/2)-500, -(3388/2))
+    # max_box_coords = (+(2570/2)-500, +(3388/2))
+
     arrays_["trkfit_CRV1Fiducial"] = ( 
-        (abs(arrays_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fX"]) < 6100/2)
-        & (abs(arrays_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fZ"] + 500) < 1775.0) ) 
+        (abs(arrays_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fX"]) < 3388/2)
+        & (abs(arrays_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fZ"] + 500) < 2570/2) ) 
 
     if not fail: 
         # Create masks
@@ -605,7 +634,7 @@ def Multithread(processFunction, fileList_, max_workers=96): # One worker per fi
 
 def TestMain():
     
-    fileName="/exp/mu2e/data/users/sgrant/CRVSim/CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.000/11946817/00/00038/nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000006.root"
+    fileName="/exp/mu2e/data/users/sgrant/CRVSim/CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.000/11946817/00/00063/nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000032.root"
     finTag = fileName.split('.')[-2] 
 
     with uproot.open(fileName) as file:
@@ -616,56 +645,22 @@ def TestMain():
     
 def main():
 
-    TestMain()
-    return
+    # TestMain()
+    # return
 
     #########################################################
 
     defname = "nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.root"
     recon = "MDC2020ae"
     
-    particles_ = ["all"] # , "muons", "non_muons"]
-    layers_ = [3] # [3, 2]
-    # PEs_ = np.arange(10, 135, 5)
-    PEs_ = [100] # np.arange(10, 135, 5)
-    quiet = False
+    particles_ = ["all", "muons", "non_muons"]
+    layers_ = [3, 2]
+    PEs_ = np.arange(10, 135, 5)
+    quiet = True
 
-    def processFunctionA(fileName):
-        # Always open the file in the processFunction 
-        file = rd.ReadFile(fileName, quiet)
-        finTag = fileName.split('.')[-2] 
-        # Scan PE thresholds
-        for PE in PEs_: 
-            # Scan particles
-            for particle in particles_: 
-                # Scan layers
-                for layer in layers_: 
-                    outputStr = (
-                        "\n---> Running with:\n"
-                        f"fileName: {fileName}\n"
-                        f"recon: {recon}\n"
-                        f"particle: {particle}\n"
-                        f"PEs: {PE}\n"
-                        f"layers: {layer}/4\n"
-                        f"finTag: {finTag}\n"
-                        f"quiet: {quiet}\n"
-                    )
-                    if not quiet: print(outputStr) 
-                    try:
-                        Run(file, recon, particle, PE, layer, finTag, quiet)
-                    except Exception as exc:
-                        print(f'---> Exception!\n{row}\n{exc}')
-                    # Uncomment to test
-                    # return
-        return
-
-    fileList_ = rd.GetFileList(defname) #[:2]
+    #########################################################
     
-    print(f"---> Got {len(fileList_)} files.")
-
-    Multithread(processFunctionA, fileList_)
-
-    return
+    #########################################################
 
     # Resubmission of failures.
     def processFunctionB(fileName):
@@ -723,6 +718,49 @@ def main():
     Multithread(processFunctionB, fileList_)
 
     return
+
+    #########################################################
+    
+    def processFunctionA(fileName):
+        # Always open the file in the processFunction 
+        file = rd.ReadFile(fileName, quiet)
+        # with uproot.open(fileName) as file:
+        finTag = fileName.split('.')[-2] 
+        # Scan PE thresholds
+        for PE in PEs_: 
+            # Scan particles
+            for particle in particles_: 
+                # Scan layers
+                for layer in layers_: 
+                    outputStr = (
+                        "\n---> Running with:\n"
+                        f"fileName: {fileName}\n"
+                        f"recon: {recon}\n"
+                        f"particle: {particle}\n"
+                        f"PEs: {PE}\n"
+                        f"layers: {layer}/4\n"
+                        f"finTag: {finTag}\n"
+                        f"quiet: {quiet}\n"
+                    )
+                    if not quiet: print(outputStr) 
+                    try:
+                        Run(file, recon, particle, PE, layer, finTag, quiet)
+                    except Exception as exc:
+                        print(f'---> Exception!\n{row}\n{exc}')
+                        # Uncomment to test
+                        # return
+        return
+
+    fileList_ = rd.GetFileList(defname) #[:2]
+    # fileList_ = ut.ReadFileList("../Txt/FileLists/MDC2020aeOnExpData.txt")
+    
+    print(f"---> Got {len(fileList_)} files.")
+
+    Multithread(processFunctionA, fileList_)
+
+    return
+
+
 
 if __name__ == "__main__":
     main()

@@ -1,55 +1,56 @@
-#  Count completed tasks
+#!/bin/bash
 
-recon="MDC2020ae" # "original"
+recon="MDC2020ae"
 particle_=("all" "muons" "non_muons")
-filter_=("singles" "singles_track_cuts")
-layers_=(2 3) 
-PEs_=($(seq 10 5 130.0))
+layers_=(2 3)
+PEs_=($(seq 10 5 130))
 
-# Calculate lengths of arrays
-len_particle_=${#particle_[@]}
-len_filter_=${#filter_[@]}
-len_layers_=${#layers_[@]}
-len_PEs_=${#PEs_[@]}
+len_particle=${#particle_[@]}
+len_layers=${#layers_[@]}
+len_PEs=${#PEs_[@]}
 
-# Find completed jobs 
 baseDir="../Txt/${recon}/results"
-numFiles=$(ls $baseDir | wc -l) 
-# Calculate the total number of tasks
-totalTasks=$(( numFiles * len_particle_ * len_filter_ * len_layers_ * len_PEs_ ))
+numFiles=$(ls $baseDir | wc -l)
+
+totalTasks=$((numFiles * len_particle * len_layers * len_PEs))
+
+#logFile="../Txt/Monitoring/completion_log_" + (date +%s) +".csv"
+logFile="../Txt/Monitoring/completion_log_$(date +%s).csv"
+
+echo "time,completed_tasks" > $logFile
+
 completedTasks=0
+previousCompleted=-1
 
-for dir in `ls ${baseDir}`; do 
-
-    # count=$(ls ${baseDir}/${dir} | wc -l) + count
-
-    # ((i++))
-
-    # echo "*************************"
-    # echo $dir
-    
-    # Now look and check which config failed
-    for PE in ${PEs_[@]}; do
-        for particle in ${particle_[@]}; do
-            for filter in ${filter_[@]}; do
-                for layer in ${layers_[@]}; do
-                    # results_all_100PEs2Layers_singles.csv
-                    file="results_${particle}_${PE}PEs${layer}Layers_${filter}.csv"
-                    filePath="${baseDir}/${dir}/${file}"
-                    # echo $filePath 
-                    if [ -f $filePath ]; then
-                        ((completedTasks++))
-                    fi
-                    # break 4
-                done
-            done
-        done
+# Loop to continually monitor the tasks
+while [ $completedTasks -lt $totalTasks ]; do
+    completedTasks=0
+    for dir in $(ls ${baseDir}); do
+		for PE in ${PEs_[@]}; do
+			for particle in ${particle_[@]}; do
+				for layer in ${layers_[@]}; do
+					file="results_${particle}_${PE}PEs${layer}Layers_track_cuts.csv"
+					filePath="${baseDir}/${dir}/${file}"
+					if [ -f $filePath ]; then
+					((completedTasks++))
+					fi
+				done
+			done
+		done
     done
-    
+
+    # Log only if the number of completed tasks has increased
+    if [ $completedTasks -gt $previousCompleted ]; then
+	echo "$(date +%s),${completedTasks}" >> $logFile
+	previousCompleted=$completedTasks
+    fi
+
+    #echo "${completedTasks}/${totalTasks} tasks completed."
+
+    # Sleep for a specified duration before the next check
+    sleep 300 # Check every 5 minutes; adjust this as needed
 done
 
-echo "${completedTasks}/${totalTasks}"
-# printf "%d failed files" $i
-# echo ", written configurations to ${output_file}"
+echo "---> All tasks completed."
 
 

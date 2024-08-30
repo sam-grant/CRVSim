@@ -45,8 +45,8 @@ import Utils as ut
 import PrintUtils as pr
 import CoincidenceConditions as cc
 
-from Mu2eEAF import ReadData as rd 
-from Mu2eEAF import Parallelise as pa
+from mu2etools import read_data as rd 
+from mu2etools import parallelise as pa
 
 # ------------------------------------------------
 #                Debugging functions 
@@ -332,6 +332,12 @@ def ApplyTrackerCuts(arrays_, fail=False, quiet=False):
     # min_box_coords = (-(2570/2)-500, -(3388/2))
     # max_box_coords = (+(2570/2)-500, +(3388/2))
 
+    # Measurement module
+    # arrays_["trkfit_CRV1Fiducial"] = ( 
+    #     (abs(arrays_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fX"]) < 1775)
+    #     & (abs(arrays_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fZ"] + 500) < 6100/2) ) 
+
+    # Trigger modules
     arrays_["trkfit_CRV1Fiducial"] = ( 
         (abs(arrays_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fX"]) < 3388/2)
         & (abs(arrays_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fZ"] + 500) < 2570/2) ) 
@@ -595,13 +601,11 @@ def Run(file, recon, particle, PE, layer, finTag, quiet):
 
     return
 
-from concurrent.futures import ThreadPoolExecutor, as_completed
-
 # ------------------------------------------------
 #              Multithread 
 # ------------------------------------------------
             
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
 from itertools import product
 
 def Multithread(processFunction, fileList_, max_workers=96): # One worker per file
@@ -628,21 +632,88 @@ def Multithread(processFunction, fileList_, max_workers=96): # One worker per fi
     print("\n---> Multithreading completed!")
     return
 
+def Multiprocess(processFunction, fileList_, max_workers=96): # One worker per file
+    
+    print("\n---> Starting multiprocessing...\n")
+
+    completedFiles = 0
+    totalFiles = len(fileList_)
+    
+    with ProcessPoolExecutor(max_workers=max_workers) as executor:
+        
+        # Prepare a list of futures and map them to file names
+        futures_ = {executor.submit(processFunction, fileName): (fileName) for fileName in fileList_}
+        
+        # Process results as they complete
+        for future in as_completed(futures_):
+            fileName = futures_[future]  # Get the file name associated with this future
+            future.result()  # Retrieve the result 
+            completedFiles += 1
+            percentComplete = (completedFiles / (totalFiles)) * 100
+            print(f'\n---> {fileName} processed successfully! ({percentComplete:.1f}% complete)')
+            # Exceptions are handled in the processFunction. 
+                
+    print("\n---> Multiprocessing completed!")
+    return
+
+# This need to be global for multiprocessing.
+# It starts chewing up such a huge amount of memory though. 
+# Don't understand this.
+# def processFunctionA(fileName):
+#     # Always open the file in the processFunction 
+#     file = rd.read_file(fileName, quiet)
+#     # with uproot.open(fileName) as file:
+#     finTag = fileName.split('.')[-2] 
+#     # Scan PE thresholds
+#     for PE in PEs_: 
+#         # Scan particles
+#         for particle in particles_: 
+#             # Scan layers
+#             for layer in layers_: 
+#                 outputStr = (
+#                     "\n---> Running with:\n"
+#                     f"fileName: {fileName}\n"
+#                     f"recon: {recon}\n"
+#                     f"particle: {particle}\n"
+#                     f"PEs: {PE}\n"
+#                     f"layers: {layer}/4\n"
+#                     f"finTag: {finTag}\n"
+#                     f"quiet: {quiet}\n"
+#                 )
+#                 if not quiet: print(outputStr) 
+#                 try:
+#                     Run(file, recon, particle, PE, layer, finTag, quiet)
+#                 except Exception as exc:
+#                     print(f'---> Exception!\n{row}\n{exc}')
+#                     # Uncomment to test
+#                     # return
+#     return
+
+#########################################################
+
+# These need to be global for multiprocessing.
+# I think this is OK. 
+# recon = "MDC2020ae"
+# particles_ = ["all", "muons", "non_muons"]
+# layers_ = [3, 2]
+# PEs_ = np.arange(10, 135, 5)
+# quiet = True
+
 # ------------------------------------------------
 #                      Main
 # ------------------------------------------------
 
 def TestMain():
     
-    fileName="/exp/mu2e/data/users/sgrant/CRVSim/CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.000/11946817/00/00063/nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000032.root"
+    fileName="/exp/mu2e/data/users/sgrant/CRVSim/CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.000/11946817/00/00069/nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000020.root"
     finTag = fileName.split('.')[-2] 
 
     with uproot.open(fileName) as file:
-        Run(file, recon="MDC2020ae", particle="all", PE="130", layer="2", finTag=finTag, quiet=False)
+        Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, quiet=False)
 
     return
-    
-    
+
+
 def main():
 
     # TestMain()
@@ -652,17 +723,12 @@ def main():
 
     defname = "nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.root"
     recon = "MDC2020ae"
-    
     particles_ = ["all", "muons", "non_muons"]
     layers_ = [3, 2]
     PEs_ = np.arange(10, 135, 5)
     quiet = True
 
-    #########################################################
-    
-    #########################################################
-
-    # Resubmission of failures.
+   # Resubmission of failures.
     def processFunctionB(fileName):
 
         # Get failed jobs
@@ -670,7 +736,7 @@ def main():
         df_failedJobs_ = pd.read_csv(failedJobsFile)
         
         # Always open the file in the processFunction 
-        file = rd.ReadFile(fileName, quiet)
+        file = rd.read_file(fileName, quiet)
         finTag = fileName.split('.')[-2] 
     
         df_failedJobs_ = df_failedJobs_[df_failedJobs_["Tag"] == finTag]
@@ -711,19 +777,19 @@ def main():
             
         return
 
-    fileList_ = rd.GetFileList(defname) #[:2]
+    fileList_ = rd.get_file_list(defname) #[:2]
     
     print(f"---> Got {len(fileList_)} files.")
 
     Multithread(processFunctionB, fileList_)
 
-    return
-
     #########################################################
+
+    return
     
     def processFunctionA(fileName):
         # Always open the file in the processFunction 
-        file = rd.ReadFile(fileName, quiet)
+        file = rd.read_file(fileName, quiet)
         # with uproot.open(fileName) as file:
         finTag = fileName.split('.')[-2] 
         # Scan PE thresholds
@@ -750,16 +816,16 @@ def main():
                         # Uncomment to test
                         # return
         return
-
-    fileList_ = rd.GetFileList(defname) #[:2]
+    
+    fileList_ = rd.get_file_list(defname) #[:2]
     # fileList_ = ut.ReadFileList("../Txt/FileLists/MDC2020aeOnExpData.txt")
     
     print(f"---> Got {len(fileList_)} files.")
 
     Multithread(processFunctionA, fileList_)
-
+    # Multiprocess(processFunctionA, fileList_)
+    
     return
-
 
 
 if __name__ == "__main__":

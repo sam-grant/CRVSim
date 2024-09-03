@@ -2,6 +2,7 @@
 # Oct 2023
 # Common functions and utilities for CRV KPP analysis
 # Utils.py should ONLY contain functions that are actually in-use, unused functions belong in ExtensiveUtils.py
+# TODO: split this into actual utils and plotting utils. 
 
 coincsBranchName = "crvcoincs" # crvhit
 
@@ -55,7 +56,8 @@ def Round(value, sf):
 # ROOT does the same thing with TH1
 def GetBasicStats(data, xmin, xmax):
 
-    filtered_data = data[(data >= xmin) & (data <= xmax)]  # Filter data within range
+    # I think ROOT does this over the full range?
+    filtered_data = data # [(data >= xmin) & (data <= xmax)]  # Filter data within range
 
     N = len(filtered_data)                      
     mean = np.mean(filtered_data)  
@@ -67,9 +69,189 @@ def GetBasicStats(data, xmin, xmax):
 
     return N, mean, meanErr, stdDev, stdDevErr, underflows, overflows
 
-# ---------------
-# TTree wrangling 
-# ---------------
+# Mu2eEAF 
+
+# Read a txt file contain a list of files
+def ReadFileList(fileListPath):
+  with open(fileListPath, "r") as fileList_:
+    lines = fileList_.readlines()
+    lines = [line.strip() for line in lines]  # Remove leading/trailing whitespace
+  return lines
+
+
+# This version seems safer since it opens the file inside a with statement. 
+# TODO: resinstall Mu2eEAF into your environment. 
+import subprocess
+
+# Read a single file
+def ReadFile(fileName, quiet=False): 
+    try:
+        # Setup commands
+        commands = "source /cvmfs/mu2e.opensciencegrid.org/setupmu2e-art.sh; muse setup ops;"
+        commands += f"echo {fileName} | mdh print-url -s root -"
+        if not quiet:
+            print(f"---> Reading file:\n{fileName}")
+        # Execute commands 
+        fileName = subprocess.check_output(commands, shell=True, universal_newlines=True)
+        if not quiet:
+            print(f"\n---> Created xroot url:\n{fileName}")
+            print("---> Opening file with uproot...") 
+        # Open the file 
+        with uproot.open(fileName) as file:
+            if not quiet: 
+                print("Done!")
+            return file 
+    except OSError as e:
+        # Setup alternative commands 
+        print(f"\n----> Exception timeout while opening file with xroot, retrying locally: {fileName}")
+        commands = "source /cvmfs/mu2e.opensciencegrid.org/setupmu2e-art.sh; muse setup ops;"
+        commands += f"echo {fileName} | mdh copy-file -s tape -l local -" 
+        # Execute commands
+        subprocess.check_output(commands, shell=True, universal_newlines=True)
+        # Return the opened file 
+        with uproot.open(fileName) as file:
+            return file
+
+def ExtractTag(fileName):
+    parts = fileName.split('.')
+    if len(parts) > 1:
+        return parts[-2]
+    return None
+    
+# ------------------------------------------------
+#                     Input 
+# ------------------------------------------------ 
+
+evtBranchNames_ = [ 
+                # Event info
+                "evtinfo.run"
+                , "evtinfo.subrun"
+                , "evtinfo.event"
+]
+
+crvBranchNames_ = [
+                # Coincidences 
+                "crvcoincs.sectorType" 
+                , "crvcoincs.pos.fCoordinates.fX" 
+                , "crvcoincs.pos.fCoordinates.fY" 
+                , "crvcoincs.pos.fCoordinates.fZ"
+                , "crvcoincs.time" 
+                , "crvcoincs.timeStart"
+                , "crvcoincs.PEs" 
+                , "crvcoincs.nHits" 
+                , "crvcoincs.nLayers" 
+                , "crvcoincs.PEsPerLayer[4]"
+                , "crvcoincs.angle" 
+                # Coincidences (truth)
+                , "crvcoincsmc.valid" 
+                , "crvcoincsmc.pdgId" 
+                , "crvcoincsmc.primaryE"
+]
+
+trkBranchNames_ = [
+                # Tracks
+                "kl.status"
+                , "kl.nactive"
+                , "kl.nhits"
+                , "kl.nplanes"
+                , "kl.nnullambig"
+                , "kl.ndof"
+                , "kl.fitcon"
+]
+
+trkFitBranchNames_ = [
+                # Track fits (vector of vector like objects)
+                "klfit"
+                , "klkl"
+] 
+
+allBranchNames_ = { "evt" : evtBranchNames_
+                   ,"crv" : crvBranchNames_
+                   ,"trk" : trkBranchNames_ 
+                   ,"trkfit" : trkFitBranchNames_
+                  }
+
+# headers_ = ["evt", "crv", "trk", "trkfit"]
+# allBranchNames_ = evtBranchNames_ + crvBranchNames_ + trkBranchNames_ + trkFitBranchNames_
+
+def GetData(file, treeName="TrkAnaExt/trkana", quiet=False): 
+
+    data_dict_ = {}
+
+    # Open tree
+    with file[treeName] as tree:
+        # Seperate event info, coincidnces, tracks, and track fits. 
+        # This way we can apply masks independently. 
+        for field, branch in allBranchNames_.items():
+            data_dict_[field] = tree.arrays(branch)
+
+    # Zip them together 
+    return ak.zip(data_dict_) 
+
+# ------------------------------------------------
+#               Debugging TrkAna 
+# ------------------------------------------------ 
+
+# Duplicate in PrintUtils.py
+# Not sure if I should remove this one or the other. 
+# Maybe the other. 
+
+def PrintEvent(event):
+    
+    eventStr = (
+        f"-------------------------------------------------------------------------------------\n"
+        f"***** evt *****\n"
+        f"evtinfo.run: {event['evt']['evtinfo.run']}\n" 
+        f"evtinfo.subrun: {event['evt']['evtinfo.subrun']}\n" 
+        f"evtinfo.event: {event['evt']['evtinfo.event']}\n"
+        f"***** crv *****\n"
+        f"crvcoincs.sectorType: {event['crv']['crvcoincs.sectorType']}\n"
+        f"crvcoincs.nLayers {event['crv']['crvcoincs.nLayers']}\n"
+        f"crvcoincs.angle: {event['crv']['crvcoincs.angle']}\n"
+        f"crvcoincs.pos.fCoordinates: ({event['crv']['crvcoincs.pos.fCoordinates.fX']}, {event['crv']['crvcoincs.pos.fCoordinates.fY']}, {event['crv']['crvcoincs.pos.fCoordinates.fZ']})\n"
+        f"crvcoincs.timeStart: {event['crv']['crvcoincs.timeStart']}\n"
+        f"crvcoincs.time: {event['crv']['crvcoincs.time']}\n"
+        f"crvcoincs.PEs: {event['crv']['crvcoincs.PEs']}\n"
+        f"crvcoincs.PEsPerLayer[4]: {event['crv']['crvcoincs.PEsPerLayer[4]']}\n"
+        f"crvcoincs.nHits: {event['crv']['crvcoincs.nHits']}\n"
+        f"crvcoincsmc.pdgId: {event['crv']['crvcoincsmc.pdgId']}\n"
+        f"crvcoincsmc.valid: {event['crv']['crvcoincsmc.valid']}\n"
+        f"crvcoincsmc.primaryE: {event['crv']['crvcoincsmc.primaryE']}\n"
+        f"***** trk *****\n"
+        f"kl.status: {event['trk']['kl.status']}\n"
+        f"kl.nactive: {event['trk']['kl.nactive']}\n"
+        f"kl.nhits: {event['trk']['kl.nhits']}\n"
+        f"kl.nplanes: {event['trk']['kl.nplanes']}\n"
+        f"kl.nnullambig: {event['trk']['kl.nnullambig']}\n"
+        f"kl.ndof: {event['trk']['kl.ndof']}\n"
+        f"kl.kl.fitcon: {event['trk']['kl.fitcon']}\n"
+        f"***** trkfit *****\n"
+        f"klfit: {event['trkfit']['klfit']}\n"
+        f"klfit.sid: {event['trkfit']['klfit']['sid']}\n"
+        f"klfit.sindex: {event['trkfit']['klfit']['sindex']}\n"
+        # f"Example variables from klfit...\n"
+        # f"klfit.sid: {event['trkfit']['klfit']['sid']}\n"
+        # f"klfit.sindex: {event['trkfit']['klfit']['sindex']}\n"
+        # f"klfit: {event['trkfit']['klfit']}\n"
+        f"klkl: {event['trkfit']['klkl']}\n"
+        f"klkl.z0err: {event['trkfit']['klkl']['z0err']}\n"
+        f"klkl.d0err: {event['trkfit']['klkl']['d0err']}\n"
+        f"klkl.thetaerr: {event['trkfit']['klkl']['thetaerr']}\n"
+        f"klkl.phi0err: {event['trkfit']['klkl']['phi0err']}\n"
+        f"-------------------------------------------------------------------------------------\n"
+    )
+
+    return eventStr
+
+def PrintNEvents(data_, nEvents=10):
+     # Iterate event-by-event
+    for i, event in enumerate(data_, start=1):
+        print(PrintEvent(event))
+        if i >= nEvents: 
+            return
+# ------------------------------------------------
+#                     Input 
+# ------------------------------------------------ 
 
 branchNamesTrkAna_ = [
 
@@ -218,22 +400,22 @@ particleDict = {
 
 def GetLatexParticleName(particle):
 
-    if particle == "proton": return "$p$"
-    elif particle == "pi+-": return "$\pi^{\pm}$"
-    elif particle == "pi+": return "$\pi^{+}$"
-    elif particle == "pi-": return "$\pi^{-}$"
-    elif particle == "mu+-": return "$\mu^{\pm}$"
-    elif particle == "mu+": return "$\mu^{+}$"
-    elif particle == "mu-": return "$\mu^{-}$"
-    elif particle == "e+": return "$e^{+}$"
-    elif particle == "e-": return "$e^{-}$"
+    if particle == "proton": return r"$p$"
+    elif particle == "pi+-": return r"$\pi^{\pm}$"
+    elif particle == "pi+": return r"$\pi^{+}$"
+    elif particle == "pi-": return r"$\pi^{-}$"
+    elif particle == "mu+-": return r"$\mu^{\pm}$"
+    elif particle == "mu+": return r"$\mu^{+}$"
+    elif particle == "mu-": return r"$\mu^{-}$"
+    elif particle == "e+": return r"$e^{+}$"
+    elif particle == "e-": return r"$e^{-}$"
     # elif particle == "e+ >10 MeV": return "$e^{+} > 10$ MeV"
     # elif particle == "e- >10 MeV": return "$e^{-} > 10$ MeV"
-    elif particle == "kaon+": return "$K^{+}$"
-    elif particle == "kaon-": return "$K^{-}$"
-    elif particle == "kaon0": return "$K^{0}$"
-    elif particle == "kaon0L": return "$K^{0}_{L}$"
-    elif particle == "kaon0S": return "$K^{0}_{S}$"
+    elif particle == "kaon+": return r"$K^{+}$"
+    elif particle == "kaon-": return r"$K^{-}$"
+    elif particle == "kaon0": return r"$K^{0}$"
+    elif particle == "kaon0L": return r"$K^{0}_{L}$"
+    elif particle == "kaon0S": return r"$K^{0}_{S}$"
     # elif particle == "no_proton": return "No protons"
     # elif particle == "pi-_and_mu-": return "$\pi^{-}$ & $\mu^{-}$"
     # elif particle == "pi+_and_mu+": return "$\pi^{+}$ & $\mu^{+}$"
@@ -248,6 +430,20 @@ for key, value in  particleDict.items():
 # --------
 # Plotting
 # --------
+
+def ScientificNotation(ax):
+
+    # Scientific notation
+    if (ax.get_xlim()[1] > 9.999e3) or (ax.get_xlim()[1] < 9.999e-3):
+        ax.xaxis.set_major_formatter(ScalarFormatter(useMathText=True))
+        ax.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+        ax.xaxis.offsetText.set_fontsize(14)
+    if (ax.get_ylim()[1] > 9.999e3) or (ax.get_ylim()[1] < 9.999e-3):
+        ax.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
+        ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+        ax.yaxis.offsetText.set_fontsize(14)
+
+    return
 
 import matplotlib.pyplot as plt
 
@@ -311,15 +507,7 @@ def PlotGraphErrors(x, xerr, y, yerr, title=None, xlabel=None, ylabel=None, fout
     ax.tick_params(axis='x', labelsize=13)  # Set x-axis tick label font size
     ax.tick_params(axis='y', labelsize=13)  # Set y-axis tick label font size
 
-    if (ax.get_xlim()[1] > 9.999e3) or (ax.get_xlim()[1] < 9.999e-3) :
-        ax.xaxis.set_major_formatter(ScalarFormatter(useMathText=True))
-        ax.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
-        ax.xaxis.offsetText.set_fontsize(13)
-    if (ax.get_ylim()[1] > 9.999e3) or (ax.get_ylim()[1] < 9.999e-3) :
-        ax.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
-        ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
-        ax.yaxis.offsetText.set_fontsize(13)
-
+    ScientificNotation(ax)
 
     # Save the figure
     plt.savefig(fout, dpi=NDPI, bbox_inches="tight")
@@ -456,19 +644,17 @@ def Plot1D(data, nbins=100, xmin=-1.0, xmax=1.0, title=None, xlabel=None, ylabel
     # Set x-axis limits
     ax.set_xlim(xmin, xmax)
 
-    # # # Calculate statistics
+    # Calculate statistics
     N, mean, meanErr, stdDev, stdDevErr, underflows, overflows = GetBasicStats(data, xmin, xmax)
-    # # N, mean, meanErr, stdDev, stdDevErr = str(N), Round(mean, 3), Round(meanErr, 1), Round(stdDev, 3), Round(stdDevErr, 1) 
 
     # # Create legend text
-    legend_text = f"Entries: {N}\nMean: {Round(mean, 3)}\nStd Dev: {Round(stdDev, 3)}"
-    if errors: legend_text = f"Entries: {N}\nMean: {Round(mean, 3)}$\pm${Round(meanErr, 1)}\nStd Dev: {Round(stdDev, 3)}$\pm${Round(stdDevErr, 1)}"
-    if underOver: legend_text += f"\nUnderflows: {underflows}\nOverflows: {overflows}"
-
-    # # legend_text = f"Entries: {N}\nMean: {Round(mean, 3)}$\pm${Round(meanErr, 1)}\nStd Dev: {Round(stdDev, 3)}$\pm${Round(stdDev, 1)}"
+    legendText = f"Entries: {N}\nMean: {Round(mean, 3)}\nStd Dev: {Round(stdDev, 3)}"
+    # if errors: legendText = f"Entries: {N}\nMean: {Round(mean, 3)}$\pm${Round(meanErr, 1)}\nStd Dev: {Round(stdDev, 3)}$\pm${Round(stdDevErr, 1)}"
+    if errors: legendText = f"Entries: {N}\nMean: {Round(mean, 3)}" + rf"$\pm$" + f"{Round(meanErr, 1)}\nStd Dev: {Round(stdDev, 3)}" rf"$\pm$" + f"{Round(stdDevErr, 1)}"
+    if underOver: legendText += f"\nUnderflows: {underflows}\nOverflows: {overflows}"
 
     # Add legend to the plot
-    if stats: ax.legend([legend_text], loc=legPos, frameon=False, fontsize=13)
+    if stats: ax.legend([legendText], loc=legPos, frameon=False, fontsize=13)
 
     ax.set_title(title, fontsize=15, pad=10)
     ax.set_xlabel(xlabel, fontsize=13, labelpad=10) 
@@ -478,14 +664,7 @@ def Plot1D(data, nbins=100, xmin=-1.0, xmax=1.0, title=None, xlabel=None, ylabel
     ax.tick_params(axis='x', labelsize=13)  # Set x-axis tick label font size
     ax.tick_params(axis='y', labelsize=13)  # Set y-axis tick label font size
 
-    if (ax.get_xlim()[1] > 9.999e3) or (ax.get_xlim()[1] < 9.999e-3):
-        ax.xaxis.set_major_formatter(ScalarFormatter(useMathText=True))
-        ax.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
-        ax.xaxis.offsetText.set_fontsize(13)
-    if (ax.get_ylim()[1] > 9.999e3) or (ax.get_ylim()[1] < 9.999e-3):
-        ax.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
-        ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
-        ax.yaxis.offsetText.set_fontsize(13)
+    ScientificNotation(ax)
 
     # Save the figure
     plt.savefig(fout, dpi=NDPI, bbox_inches="tight")
@@ -501,10 +680,12 @@ from scipy.optimize import curve_fit
 # --------------------
 
 # The Gaussian function
-def gaussian(x, norm, mu, sigma):
+def GausFunc(x, norm, mu, sigma):
     return norm * np.exp(-((x - mu) / (2 * sigma)) ** 2)
 
 # Under development!
+# Does this work? 
+# I thought it 
 def Plot1DWithGaussFit(data, nbins=100, xmin=-1.0, xmax=1.0, norm=1.0, mu=0.0, sigma=1.0, fitMin=-1.0, fitMax=1.0, title=None, xlabel=None, ylabel=None, fout="hist.png", legPos="best", stats=True, peak=False, underOver=False, errors=False, NDPI=300):
     
     data = np.array(data)
@@ -513,7 +694,7 @@ def Plot1DWithGaussFit(data, nbins=100, xmin=-1.0, xmax=1.0, norm=1.0, mu=0.0, s
     fig, ax = plt.subplots()
 
     # Plot the histogram with outline
-    counts, bin_edges, _ = ax.hist(data, bins=nbins, range=(xmin, xmax), histtype='step', edgecolor='black', linewidth=1.0, fill=False, density=False)
+    counts, binEdges, _ = ax.hist(data, bins=nbins, range=(xmin, xmax), histtype='step', edgecolor='black', linewidth=1.0, fill=False, density=False)
 
     # Set x-axis limits
     ax.set_xlim(xmin, xmax)
@@ -521,28 +702,31 @@ def Plot1DWithGaussFit(data, nbins=100, xmin=-1.0, xmax=1.0, norm=1.0, mu=0.0, s
     # Fit gaussian
 
     # Calculate bin centers
-    bin_centres = (bin_edges[:-1] + bin_edges[1:]) / 2
+    binCentres = (binEdges[:-1] + binEdges[1:]) / 2
+
+    # Filter bin_centres and counts based on fitMin and fitMax
+    valid = (binCentres >= fitMin) & (binCentres <= fitMax)
+    binCentresFit = binCentres[valid]
+    countsFit = counts[valid]
+
     # Fit the Gaussian function to the histogram data
-    params, covariance = curve_fit(gaussian, bin_centres[(bin_centres >= fitMin) & (bin_centres <= fitMax)], counts, p0=[norm, mu, sigma])
+    params, covariance = curve_fit(GausFunc, binCentresFit, counts, p0=[norm, mu, sigma])
     # Extract parameters from the fitting
     norm, mu, sigma = params
     # Plot the Gaussian curve
-    ax.plot(bin_centres, gaussian(bin_centres, norm, mu, sigma), color="red", label=f"Norm: {norm}\n$\mu$: {mu}\n$sigma {sigma}")
+    ax.plot(binCentres, GausFunc(binCentresFit, norm, mu, sigma), color="red") 
 
     # Calculate statistics
     N, mean, meanErr, stdDev, stdDevErr, underflows, overflows = GetBasicStats(data, xmin, xmax)
 
     # Create legend text
-    legend_text = f"Entries: {N}\nMean: {Round(mean, 3)}\nStd Dev: {Round(stdDev, 3)}"
-    # if errors: legend_text = f"Entries: {N}\nMean: {Round(mean, 3)}$\pm${Round(meanErr, 1)}\nStd Dev: {Round(stdDev, 3)}$\pm${Round(stdDevErr, 1)}"
-    # if errors: legend_text = f"Entries: {N}\nMean: {Round(mean, 4)}$\pm${Round(meanErr, 1)}\nStd Dev: {Round(stdDev, 4)}$\pm${Round(stdDevErr, 1)}"
-    # # if peak: legend_text += f"\nPeak: {Round(peak, 4)}$\pm${Round(peakErr, 1)}"
-    # if underOver: legend_text += f"\nUnderflows: {underflows}\nOverflows: {overflows}"
-
-    # legend_text = f"Entries: {N}\nMean: {Round(mean, 3)}$\pm${Round(meanErr, 1)}\nStd Dev: {Round(stdDev, 3)}$\pm${Round(stdDev, 1)}"
+    legendText = [
+        f"Entries: {N}\nMean: {round(mean, 3)}\nStd Dev: {round(stdDev, 3)}",
+        f"Norm: {round(norm, 3)}" + "\n" + rf"$\mu$: {round(mu, 3)}" + "\n" + rf"$\sigma$: {round(sigma, 3)}"
+    ]
 
     # Add legend to the plot
-    if stats: ax.legend([legend_text], loc=legPos, frameon=False, fontsize=13)
+    if stats: ax.legend(legendText, loc=legPos, frameon=False, fontsize=13)
 
     ax.set_title(title, fontsize=15, pad=10)
     ax.set_xlabel(xlabel, fontsize=13, labelpad=10) 
@@ -552,14 +736,7 @@ def Plot1DWithGaussFit(data, nbins=100, xmin=-1.0, xmax=1.0, norm=1.0, mu=0.0, s
     ax.tick_params(axis='x', labelsize=13)  # Set x-axis tick label font size
     ax.tick_params(axis='y', labelsize=13)  # Set y-axis tick label font size
 
-    if (ax.get_xlim()[1] > 9.999e3) or (ax.get_xlim()[1] < 9.999e-3):
-        ax.xaxis.set_major_formatter(ScalarFormatter(useMathText=True))
-        ax.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
-        ax.xaxis.offsetText.set_fontsize(13)
-    if (ax.get_ylim()[1] > 9.999e3) or (ax.get_ylim()[1] < 9.999e-3):
-        ax.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
-        ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
-        ax.yaxis.offsetText.set_fontsize(13)
+    ScientificNotation(ax)
 
     # Save the figure
     plt.savefig(fout, dpi=NDPI, bbox_inches="tight")
@@ -608,15 +785,7 @@ def Plot2D(x, y, nbinsX=100, xmin=-1.0, xmax=1.0, nbinsY=100, ymin=-1.0, ymax=1.
     plt.xlabel(xlabel, fontsize=14, labelpad=10)
     plt.ylabel(ylabel, fontsize=14, labelpad=10)
 
-    # Scientific notation
-    if (ax.get_xlim()[1] > 9.999e3) or (ax.get_xlim()[1] < 9.999e-3):
-        ax.xaxis.set_major_formatter(ScalarFormatter(useMathText=True))
-        ax.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
-        ax.xaxis.offsetText.set_fontsize(14)
-    if (ax.get_ylim()[1] > 9.999e3) or (ax.get_ylim()[1] < 9.999e-3):
-        ax.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
-        ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
-        ax.yaxis.offsetText.set_fontsize(14)
+    ScientificNotation(ax)
 
     plt.savefig(fout, dpi=NDPI, bbox_inches="tight")
     print("\n---> Written:\n\t", fout)
@@ -624,6 +793,69 @@ def Plot2D(x, y, nbinsX=100, xmin=-1.0, xmax=1.0, nbinsY=100, ymin=-1.0, ymax=1.
     # Clear memory
     plt.close()
 
+# ax.plot([x_offset, x_offset], [ax.get_ylim()[0], ax.get_ylim()[1]], 'w--', linewidth=1) 
+# import matplotlib.patches as patches
+def Plot2DWithBox(x, y, nbinsX=100, xmin=-1.0, xmax=1.0, nbinsY=100, ymin=-1.0, ymax=1.0,  xbox_ = [-1, 1], ybox_=[-1,1], title=None, xlabel=None, ylabel=None, fout="hist.png", log=False, cb=True, NDPI=300):
+
+    # Filter out empty entries from x and y
+    valid_indices = [i for i in range(len(x)) if np.any(x[i]) and np.any(y[i])]
+
+    # Extract valid data points based on the indices
+    x = [x[i] for i in valid_indices]
+    y = [y[i] for i in valid_indices]
+
+    # Check if the input arrays are not empty and have the same length
+    if len(x) == 0 or len(y) == 0:
+        print("Input arrays are empty.")
+        return
+    if len(x) != len(y):
+        print("Input arrays x and y have different lengths.")
+        return
+
+    # Create 2D histogram
+    hist, x_edges, y_edges = np.histogram2d(x, y, bins=[nbinsX, nbinsY], range=[[xmin, xmax], [ymin, ymax]])
+
+    # Set up the plot
+    fig, ax = plt.subplots()
+
+    norm = colors.Normalize(vmin=0, vmax=np.max(hist))  
+    if log: norm = colors.LogNorm(vmin=1, vmax=np.max(hist)) 
+
+    # Plot the 2D histogram
+    im = ax.imshow(hist.T, cmap='inferno', extent=[xmin, xmax, ymin, ymax], aspect='auto', origin='lower', norm=norm)  # , vmax=np.max(hist), norm=colors.LogNorm())
+    # im = ax.imshow(hist.T, extent=[xmin, xmax, ymin, ymax], aspect='auto', origin='lower', vmax=np.max(hist))
+
+    # Box
+    # [x1, x2, x2, x1, x1], [y1, y1, y2, y2, y1]
+    # ax.plot([xbox_[0], xbox_[0], xbox_[1], xbox_[0], xbox_[0]], [ybox_[0], ybox_[0], ybox_[2], ybox_[1], ybox_[1]], 'w--', linewidth=1) 
+    # x, y = -crvDS_len/2, -crvDS_wid/2
+    # rect = patches.Rectangle((x, y), crvDS_len, crvDS_wid, linewidth=1, edgecolor='w', facecolor='none')
+    # ax.add_patch(rect)
+
+    # Extract corner coordinates
+    x1, x2 = xbox_
+    y1, y2 = ybox_
+    
+    # Plot the rectangle
+    plt.plot([x1, x2, x2, x1, x1], [y1, y1, y2, y2, y1], 'w--')  # Adjust color and line style as needed
+
+
+    # Add colourbar
+    if cb: plt.colorbar(im)
+
+
+    plt.title(title, fontsize=16, pad=10)
+    plt.xlabel(xlabel, fontsize=14, labelpad=10)
+    plt.ylabel(ylabel, fontsize=14, labelpad=10)
+
+    ScientificNotation(ax)
+
+    plt.savefig(fout, dpi=NDPI, bbox_inches="tight")
+    print("\n---> Written:\n\t", fout)
+
+    # Clear memory
+    plt.close()
+    
 def Plot1DOverlay(hists_, nbins=100, xmin=-1.0, xmax=1.0, title=None, xlabel=None, ylabel=None, fout="hist.png", label_=None, legPos="best", NDPI=300, includeBlack=False, logY=False, legFontSize=12):
 
     # Create figure and axes
@@ -646,15 +878,7 @@ def Plot1DOverlay(hists_, nbins=100, xmin=-1.0, xmax=1.0, title=None, xlabel=Non
     ax.tick_params(axis='x', labelsize=14)  # Set x-axis tick label font size
     ax.tick_params(axis='y', labelsize=14)  # Set y-axis tick label font size
     
-    # Scientific notation
-    if ax.get_xlim()[1] > 9999:
-        ax.xaxis.set_major_formatter(ScalarFormatter(useMathText=True))
-        ax.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
-        ax.xaxis.offsetText.set_fontsize(14)
-    if ax.get_ylim()[1] > 9999:
-        ax.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
-        ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
-        ax.yaxis.offsetText.set_fontsize(14)
+    ScientificNotation(ax)
 
     # Add legend to the plot
     ax.legend(loc=legPos, frameon=False, fontsize=legFontSize)
@@ -667,6 +891,58 @@ def Plot1DOverlay(hists_, nbins=100, xmin=-1.0, xmax=1.0, title=None, xlabel=Non
     plt.close()
 
 from matplotlib.ticker import ScalarFormatter
+
+def SimpleBarChart(data_, title=None, xlabel=None, ylabel=None, fout="simple_bar_chart.png",bar_alpha=1.0, bar_color='black', NDPI=300):
+
+    # data_ = { "label_1" : 123, "label_2" : 321 }
+    
+    # Extract labels and values from the data dictionary
+    labels_ = list(data_.keys())
+    label_counts = list(data_.values())
+    
+    # Create figure and axes
+    fig, ax = plt.subplots()
+
+    # Calculate the positions and width for each bar
+    indices = np.arange(len(labels_))
+    
+    # Determine the bar width based on the number of bars
+    n_bars = len(indices)
+    bar_width = 3.0 / n_bars
+    if n_bars == 3.0: 
+        bar_width = 2.0 / n_bars
+    elif n_bars == 2.0:
+        bar_width = 1.0 / n_bars
+
+    # Plot the bar chart
+    ax.bar(indices, label_counts, align='center', alpha=bar_alpha, color=bar_color, width=bar_width, fill=False, hatch='/', linewidth=1, edgecolor='black')
+
+    # Set x-axis labels
+    ax.set_xticks(indices)
+    ax.set_xticklabels(unique_labels, rotation=0) # 45)
+
+    # Set labels for the chart
+    ax.set_title(title, fontsize=16, pad=10)
+    ax.set_xlabel(xlabel, fontsize=14, labelpad=10) 
+    ax.set_ylabel(ylabel, fontsize=14, labelpad=10) 
+
+    # Set font size of tick labels on x and y axes
+    ax.tick_params(axis='x', labelsize=14)  # Set x-axis tick label font size
+    ax.tick_params(axis='y', labelsize=14)  # Set y-axis tick label font size
+
+ 
+    # Scientific notation
+    if ax.get_ylim()[1] > 999:
+        ax.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
+        ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+        ax.yaxis.offsetText.set_fontsize(14)
+
+    # Save the figure
+    plt.savefig(fout, dpi=NDPI, bbox_inches="tight")
+    print("---> Written", fout)
+
+    # Clear memory
+    plt.close()
 
 def BarChart(data_, label_dict, title=None, xlabel=None, ylabel=None, fout="bar_chart.png", percentage=False, bar_alpha=1.0, bar_color='black', NDPI=300):
     

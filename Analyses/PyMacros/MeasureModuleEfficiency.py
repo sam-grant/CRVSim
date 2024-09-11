@@ -554,11 +554,13 @@ def WriteResults(results_, recon, finTag, foutTag, quiet):
 
 
     return
+
+
 # ------------------------------------------------
-#                       Run
+#   Measure module eff with CRV and tracker
 # ------------------------------------------------
 
-def Run(file, recon, particle, PE, layer, finTag, quiet): 
+def Run(file, recon, particle, PE, layer, finTag, trkOnly, quiet): 
     
     # Output strings
     coincidenceConditions = f"{PE}PEs{layer}Layers"
@@ -573,8 +575,8 @@ def Run(file, recon, particle, PE, layer, finTag, quiet):
     # Filter particle species
     data_ = FilterParticles(data_, particle, quiet)
 
-    # Enforce basic trigger
-    data_ = Trigger(data_, fail=False, quiet=quiet)
+    # Enforce trigger
+    data_ = Trigger(data_, fail=False, trkOnly=trkOnly, quiet=quiet)
 
     # Singles cut
     data_ = FilterSingles(data_, fail=False, quiet=quiet)
@@ -600,7 +602,7 @@ def Run(file, recon, particle, PE, layer, finTag, quiet):
     WriteResults( {"no_track_cuts" : (successes_, failures_), "track_cuts" : (successes_track_cuts_, failures_track_cuts_)}, recon, finTag, foutTag, quiet) 
 
     return
-
+    
 # ------------------------------------------------
 #              Multithread 
 # ------------------------------------------------
@@ -632,6 +634,8 @@ def Multithread(processFunction, fileList_, max_workers=96): # One worker per fi
     print("\n---> Multithreading completed!")
     return
 
+# This eats memory like crazy and requires some restrcutring. 
+# This must be more efficient though, since we open the file and loop for ages. 
 def Multiprocess(processFunction, fileList_, max_workers=96): # One worker per file
     
     print("\n---> Starting multiprocessing...\n")
@@ -709,15 +713,15 @@ def TestMain():
     finTag = fileName.split('.')[-2] 
 
     with uproot.open(fileName) as file:
-        Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, quiet=False)
+        Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, trkOnly=True, quiet=False)
 
     return
 
 
 def main():
 
-    # TestMain()
-    # return
+    TestMain()
+    return
 
     #########################################################
 

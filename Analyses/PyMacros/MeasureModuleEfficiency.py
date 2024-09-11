@@ -118,7 +118,7 @@ def FilterParticles(data_, particle, quiet):
 
 #  Events with ONE coincidence in sectors 2 & 3 
 #  AND no more than one coincidence in sector 1 (with default coin conditions) 
-def FilterSingles(data_, fail, quiet):
+def FilterSingles(data_, fail, trkOnly, quiet):
     
     if not quiet: print(f"\n---> Filtering singles") 
 
@@ -126,14 +126,18 @@ def FilterSingles(data_, fail, quiet):
     sector2Condition = data_["crv"]["crvcoincs.sectorType"] == 2
     sector3Condition = data_["crv"]["crvcoincs.sectorType"] == 3
 
-    oneOrZeroCoincInMeasurementSector = ak.count(data_["crv"]["crvcoincs.sectorType"][sector1Condition], axis=1) < 2
+    oneOrZeroCoincInMeasurementSector = ak.count(data_["crv"]["crvcoincs.sectorType"][sector1Condition], axis=1) <= 1
     oneCoincInSector2Condition = ak.count(data_["crv"]["crvcoincs.sectorType"][sector2Condition], axis=1) == 1
     oneCoincInSector3Condition = ak.count(data_["crv"]["crvcoincs.sectorType"][sector3Condition], axis=1) == 1
     
     data_["oneOrZeroCoincInMeasurementSector"] = oneOrZeroCoincInMeasurementSector 
     data_["oneCoinInTriggerSectors"] = (oneCoincInSector2Condition & oneCoincInSector3Condition)
-    data_["pass_singles"] = (oneOrZeroCoincInMeasurementSector & oneCoincInSector2Condition & oneCoincInSector3Condition)
 
+    if not trkOnly:
+        data_["pass_singles"] = (oneOrZeroCoincInMeasurementSector & oneCoincInSector2Condition & oneCoincInSector3Condition)
+    else: 
+        data_["pass_singles"] = oneOrZeroCoincInMeasurementSector 
+        
     if not quiet: print("Done!")
     
     # Cut on event level
@@ -204,15 +208,19 @@ def MarkTrackerCuts(arrays_, crv1=False, quiet=False):
     # min_box_coords = (-(2570/2)-500, -(3388/2))
     # max_box_coords = (+(2570/2)-500, +(3388/2))
 
+    # Also subtract the layer offset on each side (see 1205.0.422424)
     # Measurement module
     arrays_["trkfit_CRV1Fiducial"] = ( 
         (abs(arrays_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fX"]) < 6100/2) 
-        & (abs(arrays_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fZ"] + 500) < 3423/2)) 
+        # & (abs(arrays_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fZ"] + 500) < 3423/2) )
+        & (abs(arrays_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fZ"] + 500) < (3423/2 - 127) )
+    )
 
     # Trigger modules
     arrays_["trkfit_CRV23Fiducial"] = ( 
         (abs(arrays_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fX"]) < 3388/2)
-        & (abs(arrays_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fZ"] + 500) < 2570/2) ) 
+        & (abs(arrays_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fZ"] + 500) < 2570/2) 
+    ) 
 
     # Track condition 
     trkCondition = arrays_["trk_bestFit"]
@@ -275,10 +283,8 @@ def Trigger(data_, fail=False, trkOnly=False, quiet=False):
     if trkOnly: 
         # Look for a good track which intersects the CRV-T 
         MarkTrackerCuts(data_, crv1=True, quiet=quiet)
-        # data_fail_ = ApplyTrackerCuts(data_copy_, fail=False, crv1=True, quiet=quiet)
         triggerCondition = data_["pass_track_cuts"] 
 
-    # this won't work because there are no false values... they've all been removed which changes the array length 
     data_["pass_trigger"] = triggerCondition
     
     if not quiet: print("Done!")
@@ -461,28 +467,35 @@ def Run(file, recon, particle, PE, layer, finTag, trkOnly, quiet):
     # Filter particle species
     data_ = FilterParticles(data_, particle, quiet)
 
+    # Singles cut
+    data_ = FilterSingles(data_, fail=False, trkOnly=trkOnly, quiet=quiet)
+
     # Enforce trigger
     data_ = Trigger(data_, fail=False, trkOnly=trkOnly, quiet=quiet)
 
     # Sanity check
-    if True:
+    if False:
         # pr.PrintNEvents(data_, 1, masks_ = ["pass_track_cuts", "trk_bestFit", "trkfit_bestFit", "trkfit_KLCRV1", "trkfit_CRV1Fiducial", "pass_trigger"] ) # "trkfit_CRV1Fiducial"])
         
-        min_box_coords = (-3423.0/2-500, -6100/2)
-        max_box_coords = (3423.0/2-500, 6100/2)
+        min_box_coords = (-(3423/2-127)-500, -6100/2)
+        max_box_coords = ((3423/2-127)-500, 6100/2)
         
         # Plot the track distribution in zx as a sanity check 
         ut.Plot2D(x=ak.flatten(data_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fZ"], axis=None)#[:1000]
                   , y=ak.flatten(data_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fX"], axis=None)#[:1000]
-                  , nbinsX=100, xmin=-8000, xmax=8000, nbinsY=100, ymin=-8000, ymax=8000
-                  # , min_box_coords=min_box_coords, max_box_coords=max_box_coords
+                  , nbinsX=200, xmin=-4000, xmax=4000, nbinsY=200, ymin=-4000, ymax=4000
+                  , min_box_coords=min_box_coords, max_box_coords=max_box_coords
                   , title="Track cuts", xlabel="KKInter Z [mm]", ylabel="KKInter X [mm]"
-                  , fout=f"../Images/{recon}/Sanity/h2_ZX_trkOnly.png")
+                  , fout=f"../Images/{recon}/Sanity/h2_trkZX_trkOnly.png")
 
-    # return 
+        ut.Plot2D(x=ak.flatten(data_["crv"]["crvcoincs.pos.fCoordinates.fZ"][data_["crv"]["crvcoincs.sectorType"] == 1], axis=None)#[:1000]
+                      , y=ak.flatten(data_["crv"]["crvcoincs.pos.fCoordinates.fX"][data_["crv"]["crvcoincs.sectorType"] == 1], axis=None)#[:1000]
+                      , nbinsX=200, xmin=-4000, xmax=4000, nbinsY=200, ymin=-4000, ymax=4000
+                      , min_box_coords=min_box_coords, max_box_coords=max_box_coords
+                      , title="Track cuts", xlabel="CRV Z [mm]", ylabel="CRV X [mm]"
+                      , fout=f"../Images/{recon}/Sanity/h2_crvZX_trkOnly.png")
 
-    # Singles cut
-    data_ = FilterSingles(data_, fail=False, quiet=quiet)
+    # return
 
     # Mark coincidences in the measurement sector for the remaining subset
     MarkCoincidences(data_, coincidenceConditions, quiet)
@@ -492,18 +505,27 @@ def Run(file, recon, particle, PE, layer, finTag, trkOnly, quiet):
     failures_ = SuccessfulTriggers(data_, success=False, quiet=quiet)
 
     # Apply track cuts
-    MarkTrackerCuts(data_, quiet=quiet)
-    data_ = ApplyTrackerCuts(data_, fail=False, quiet=quiet)
+    if not trkOnly:
 
-    # Successful and unsuccessful triggers with track cuts
-    successes_track_cuts_ = SuccessfulTriggers(data_, success=True, quiet=quiet)
-    failures_track_cuts_ = SuccessfulTriggers(data_, success=False, quiet=quiet)
+        # I don't think you need to do this if you're already using the track cuts to trigger events. 
+        MarkTrackerCuts(data_, quiet=quiet)
+        data_ = ApplyTrackerCuts(data_, fail=False, quiet=quiet)
 
-    # Write failures to file
-    WriteFailureInfo({"no_track_cuts" : failures_, "track_cuts" : failures_track_cuts_}, recon, finTag, foutTag, coincidenceConditions, quiet) 
+        # Successful and unsuccessful triggers with track cuts
+        successes_track_cuts_ = SuccessfulTriggers(data_, success=True, quiet=quiet)
+        failures_track_cuts_ = SuccessfulTriggers(data_, success=False, quiet=quiet)
     
-    # Write results to file
-    WriteResults( {"no_track_cuts" : (successes_, failures_), "track_cuts" : (successes_track_cuts_, failures_track_cuts_)}, recon, finTag, foutTag, quiet) 
+        # Write failures to file
+        WriteFailureInfo({"no_track_cuts" : failures_, "track_cuts" : failures_track_cuts_}, recon, finTag, foutTag, coincidenceConditions, quiet) 
+        
+        # Write results to file
+        WriteResults( {"no_track_cuts" : (successes_, failures_), "track_cuts" : (successes_track_cuts_, failures_track_cuts_)}, recon, finTag, foutTag, quiet) 
+
+    else:
+        
+        WriteFailureInfo({"track_crv1_only" : failures_}, recon, finTag, foutTag, coincidenceConditions, quiet) 
+
+        WriteResults( {"track_crv1_only" : (successes_, failures_)}, recon, finTag, foutTag, quiet) 
 
     return
     
@@ -613,18 +635,18 @@ def Multiprocess(processFunction, fileList_, max_workers=96): # One worker per f
 
 def TestMain():
     
-    fileName="/exp/mu2e/data/users/sgrant/CRVSim/CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.000/11946817/00/00085/nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000009.root" #"/exp/mu2e/data/users/sgrant/CRVSim/CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.000/11946817/00/00069/nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000020.root" #"/exp/mu2e/data/users/sgrant/CRVSim/CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.000/11946817/00/00069/nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000020.root"
+    fileName="/exp/mu2e/data/users/sgrant/CRVSim/CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.000/11946817/00/00023/nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000000.root" #"/exp/mu2e/data/users/sgrant/CRVSim/CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.000/11946817/00/00085/nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000009.root" #"/exp/mu2e/data/users/sgrant/CRVSim/CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.000/11946817/00/00069/nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000020.root" #"/exp/mu2e/data/users/sgrant/CRVSim/CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.000/11946817/00/00069/nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000020.root"
     finTag = fileName.split('.')[-2] 
 
     with uproot.open(fileName) as file:
-        Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, trkOnly=False, quiet=False)
+        Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, trkOnly=True, quiet=False)
 
     return
 
 def main():
 
-    # TestMain()
-    # return
+    TestMain()
+    return
 
     #########################################################
 
@@ -632,44 +654,45 @@ def main():
     recon = "MDC2020ae"
     particles_ = ["all"] #, "muons", "non_muons"]
     layers_ = [3] #, 2]
-    PEs_ = [10] #np.arange(10, 135, 5)
+    PEs_ = [10] # np.arange(15, 135, 5)
+    trkOnly = True
     quiet = True
     
     def processFunctionA(fileName):
-    # Always open the file in the processFunction 
-    file = rd.read_file(fileName, quiet)
-    # with uproot.open(fileName) as file:
-    finTag = fileName.split('.')[-2] 
-    # Scan PE thresholds
-    for PE in PEs_: 
-        # Scan particles
-        for particle in particles_: 
-            # Scan layers
-            for layer in layers_: 
-                outputStr = (
-                    "\n---> Running with:\n"
-                    f"fileName: {fileName}\n"
-                    f"recon: {recon}\n"
-                    f"particle: {particle}\n"
-                    f"PEs: {PE}\n"
-                    f"layers: {layer}/4\n"
-                    f"finTag: {finTag}\n"
-                    f"quiet: {quiet}\n"
-                )
-                if not quiet: print(outputStr) 
-                try:
-                    Run(file, recon, particle, PE, layer, finTag, quiet)
-                except Exception as exc:
-                    print(f'---> Exception!\n{row}\n{exc}')
-                    # Uncomment to test
-                    # return
-    return
+        # Always open the file in the processFunction 
+        file = rd.read_file(fileName, quiet)
+        # with uproot.open(fileName) as file:
+        finTag = fileName.split('.')[-2] 
+        # Scan PE thresholds
+        for PE in PEs_: 
+            # Scan particles
+            for particle in particles_: 
+                # Scan layers
+                for layer in layers_: 
+                    outputStr = (
+                        "\n---> Running with:\n"
+                        f"fileName: {fileName}\n"
+                        f"recon: {recon}\n"
+                        f"particle: {particle}\n"
+                        f"PEs: {PE}\n"
+                        f"layers: {layer}/4\n"
+                        f"finTag: {finTag}\n"
+                        f"quiet: {quiet}\n"
+                    )
+                    if not quiet: print(outputStr) 
+                    try:
+                        Run(file, recon, particle, PE, layer, finTag, trkOnly, quiet)
+                    except Exception as exc:
+                        print(f'---> Exception!\n{row}\n{exc}')
+                        # Uncomment to test
+                        # return
     
     fileList_ = rd.get_file_list(defname) #[:2]
     # fileList_ = ut.ReadFileList("../Txt/FileLists/MDC2020aeOnExpData.txt")
     
     print(f"---> Got {len(fileList_)} files.")
 
+    # Multithread(processFunctionA, [fileList_[0]])
     Multithread(processFunctionA, fileList_)
     # Multiprocess(processFunctionA, fileList_)
     

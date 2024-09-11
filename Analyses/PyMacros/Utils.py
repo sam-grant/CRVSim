@@ -748,7 +748,54 @@ def Plot1DWithGaussFit(data, nbins=100, xmin=-1.0, xmax=1.0, norm=1.0, mu=0.0, s
 
 import matplotlib.colors as colors
 
-def Plot2D(x, y, nbinsX=100, xmin=-1.0, xmax=1.0, nbinsY=100, ymin=-1.0, ymax=1.0, title=None, xlabel=None, ylabel=None, fout="hist.png", log=False, cb=True, NDPI=300):
+# def Plot2D(x, y, nbinsX=100, xmin=-1.0, xmax=1.0, nbinsY=100, ymin=-1.0, ymax=1.0, title=None, xlabel=None, ylabel=None, fout="hist.png", log=False, cb=True, NDPI=300):
+
+#     # Filter out empty entries from x and y
+#     valid_indices = [i for i in range(len(x)) if np.any(x[i]) and np.any(y[i])]
+
+#     # Extract valid data points based on the indices
+#     x = [x[i] for i in valid_indices]
+#     y = [y[i] for i in valid_indices]
+
+#     # Check if the input arrays are not empty and have the same length
+#     if len(x) == 0 or len(y) == 0:
+#         print("Input arrays are empty.")
+#         return
+#     if len(x) != len(y):
+#         print("Input arrays x and y have different lengths.")
+#         return
+
+#     # Create 2D histogram
+#     hist, x_edges, y_edges = np.histogram2d(x, y, bins=[nbinsX, nbinsY], range=[[xmin, xmax], [ymin, ymax]])
+
+#     # Set up the plot
+#     fig, ax = plt.subplots()
+
+#     norm = colors.Normalize(vmin=0, vmax=np.max(hist))  
+#     if log: norm = colors.LogNorm(vmin=1, vmax=np.max(hist)) 
+
+#     # Plot the 2D histogram
+#     im = ax.imshow(hist.T, cmap='inferno', extent=[xmin, xmax, ymin, ymax], aspect='auto', origin='lower', norm=norm)  # , vmax=np.max(hist), norm=colors.LogNorm())
+#     # im = ax.imshow(hist.T, extent=[xmin, xmax, ymin, ymax], aspect='auto', origin='lower', vmax=np.max(hist))
+
+#     # Add colourbar
+#     if cb: plt.colorbar(im)
+
+#     plt.title(title, fontsize=16, pad=10)
+#     plt.xlabel(xlabel, fontsize=14, labelpad=10)
+#     plt.ylabel(ylabel, fontsize=14, labelpad=10)
+
+#     ScientificNotation(ax)
+
+#     plt.savefig(fout, dpi=NDPI, bbox_inches="tight")
+#     print("\n---> Written:\n\t", fout)
+
+#     # Clear memory
+#     plt.close()
+
+# Plot2D 
+import matplotlib.patches as patches
+def Plot2D(x, y, nbinsX=100, xmin=-1.0, xmax=1.0, nbinsY=100, ymin=-1.0, ymax=1.0, min_box_coords=None, max_box_coords=None, box_colour="w", title=None, xlabel=None, ylabel=None, fout="hist.png", log=False, cb=True, NDPI=300):
 
     # Filter out empty entries from x and y
     valid_indices = [i for i in range(len(x)) if np.any(x[i]) and np.any(y[i])]
@@ -781,17 +828,28 @@ def Plot2D(x, y, nbinsX=100, xmin=-1.0, xmax=1.0, nbinsY=100, ymin=-1.0, ymax=1.
     # Add colourbar
     if cb: plt.colorbar(im)
 
+    # Draw a box if min_box_coords and max_box_coords are provided
+    if min_box_coords and max_box_coords:
+        x_min, y_min = min_box_coords
+        x_max, y_max = max_box_coords
+        rect = patches.Rectangle((x_min, y_min), x_max - x_min, y_max - y_min, linewidth=1, linestyle="--", edgecolor=box_colour, facecolor="none")
+        ax.add_patch(rect)
+
     plt.title(title, fontsize=16, pad=10)
     plt.xlabel(xlabel, fontsize=14, labelpad=10)
     plt.ylabel(ylabel, fontsize=14, labelpad=10)
 
     ScientificNotation(ax)
 
+    plt.tight_layout()
+
     plt.savefig(fout, dpi=NDPI, bbox_inches="tight")
+
+    plt.close()
+    
     print("\n---> Written:\n\t", fout)
 
-    # Clear memory
-    plt.close()
+    return
 
 # ax.plot([x_offset, x_offset], [ax.get_ylim()[0], ax.get_ylim()[1]], 'w--', linewidth=1) 
 # import matplotlib.patches as patches

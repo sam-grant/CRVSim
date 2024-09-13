@@ -39,6 +39,9 @@ import uproot
 import numpy as np
 import awkward as ak
 import pandas as pd
+from itertools import product
+import argparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Internal libraries
 import Utils as ut
@@ -221,7 +224,7 @@ def MarkTrackerCuts(arrays_, crv1=False, quiet=False):
         (abs(arrays_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fX"]) < 3388/2)
         & (abs(arrays_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fZ"] + 500) < 2570/2) 
     ) 
-
+    
     # Track condition 
     trkCondition = arrays_["trk_bestFit"]
 
@@ -269,6 +272,11 @@ def CutOnStartTime(data_, quiet):
 # ------------------------------------------------   
 
 # Trigger condition
+# TODO: restructure this. 
+# I think we want the tracker to be incorperated in the trigger. 
+# Then if it fails the track cuts we consider that to be a failure? No not neccesarrily 
+
+
 def Trigger(data_, fail=False, trkOnly=False, quiet=False): 
 
     if not quiet: print(f"\n---> Triggering")
@@ -283,7 +291,9 @@ def Trigger(data_, fail=False, trkOnly=False, quiet=False):
     if trkOnly: 
         # Look for a good track which intersects the CRV-T 
         MarkTrackerCuts(data_, crv1=True, quiet=quiet)
-        triggerCondition = data_["pass_track_cuts"] 
+        # Require a hit in the bottom module as per Yuri's request
+        triggerCondition = ( data_["pass_track_cuts"] & ak.any((data_["crv"]["crvcoincs.sectorType"] == 2), axis=1) )
+        # triggerCondition = data_["pass_track_cuts"] 
 
     data_["pass_trigger"] = triggerCondition
     
@@ -352,7 +362,7 @@ def WriteFailureInfo(failures_dict_, recon, finTag, foutTag, coincidenceConditio
         
         # Define the output file path
         foutNameConcise = f"../Txt/{recon}/failures_concise/{finTag}/failures_concise_{foutTag}_{trkTag}.csv" 
-        foutNameVerbose = f"../Txt/{recon}/failures_verbose/{finTag}/failures_verbose_{foutTag}_{trkTag}.csv" 
+        foutNameVerbose = f"../Txt/{recon}/failures_verbose/{finTag}/failures_verbose_{foutTag}_{trkTag}.txt" 
         
         if not quiet: print(f"\n---> Writing failure info to:\n{foutNameConcise}\n{foutNameVerbose}", flush=True) 
     
@@ -522,19 +532,16 @@ def Run(file, recon, particle, PE, layer, finTag, trkOnly, quiet):
         WriteResults( {"no_track_cuts" : (successes_, failures_), "track_cuts" : (successes_track_cuts_, failures_track_cuts_)}, recon, finTag, foutTag, quiet) 
 
     else:
-        
-        WriteFailureInfo({"track_crv1_only" : failures_}, recon, finTag, foutTag, coincidenceConditions, quiet) 
 
-        WriteResults( {"track_crv1_only" : (successes_, failures_)}, recon, finTag, foutTag, quiet) 
+        cut = "track_crv12" # "track_crv1_only" #  # "track_crv1_only" 
+        WriteFailureInfo({cut : failures_}, recon, finTag, foutTag, coincidenceConditions, quiet) 
+        WriteResults( {cut : (successes_, failures_)}, recon, finTag, foutTag, quiet) 
 
     return
     
 # ------------------------------------------------
 #              Multithread 
 # ------------------------------------------------
-            
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
-from itertools import product
 
 def Multithread(processFunction, fileList_, max_workers=96): # One worker per file
     
@@ -649,6 +656,66 @@ def main():
     # return
 
     #########################################################
+    # Try multiprocessing, called from an external script
+    
+    # Initialize the argument parser
+    parser = argparse.ArgumentParser(description="Measure Module Efficiency")
+
+    # Define positional or optional arguments
+    parser.add_argument('fileName', type=str, help="Dile name")
+    parser.add_argument('recon', type=str, help="Dataset tag (e.g. 'MDC2020ae')")
+    parser.add_argument('particles_', type=str, help="List of particles (e.g. ['all', 'muons', 'non_muons']")
+    parser.add_argument('PEs_', type=str, help="List of PE thresholds (e.g. [10, 15, ...]'")
+    parser.add_argument('layers_', type=str, help="List of layers (e.g. [2, 3])")
+    # parser.add_argument('finTag', type=str, help="File tag")
+    parser.add_argument('trkOnly', type=str, help="Track-only flag (no trigger modules)")
+    parser.add_argument('quiet', type=str, help="Quiet mode flag")
+
+    # Parse arguments
+    args = parser.parse_args()
+
+    # Convert string arguments back to lists and booleans
+    fileName = args.fileName
+    recon = args.recon
+    particles_ = args.particles_.split(',')
+    PEs_ = [int(pe) for pe in args.PEs_.split(',')]
+    layers_ = [int(layer) for layer in args.layers_.split(',')]
+    trkOnly = args.trkOnly.lower() == 'true'
+    quiet = args.quiet.lower() == 'true'
+
+    # Open the file
+    file = rd.read_file(fileName, quiet)
+    # with uproot.open(fileName) as file:
+    finTag = fileName.split('.')[-2] 
+
+    # all_combinations = list(product(particles_, PEs_, layers_))
+    
+    # Scan PE thresholds
+    for PE in PEs_: 
+        # Scan particles
+        for particle in particles_: 
+            # Scan layers
+            for layer in layers_: 
+                outputStr = (
+                    "\n---> Running with:\n"
+                    f"fileName: {fileName}\n"
+                    f"recon: {recon}\n"
+                    f"particle: {particle}\n"
+                    f"PEs: {PE}\n"
+                    f"layers: {layer}/4\n"
+                    f"finTag: {finTag}\n"
+                    f"trkOnly: {trkOnly}\n"
+                    f"quiet: {quiet}\n"
+                )
+                if not quiet: print(outputStr) 
+                try:
+                    Run(file, recon, particle, PE, layer, finTag, trkOnly, quiet)
+                except Exception as exc:
+                    print(f'---> Exception!\n{exc}')
+
+    return
+
+    #########################################################
 
     defname = "nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.root"
     recon = "MDC2020ae"
@@ -656,7 +723,7 @@ def main():
     layers_ = [3] #, 2]
     PEs_ = np.arange(15, 135, 5)
     trkOnly = True
-    quiet = Falses
+    quiet = False
     
     def processFunctionA(fileName):
         # Always open the file in the processFunction 
@@ -706,15 +773,16 @@ def main():
         df_failedJobs_ = pd.read_csv(failedJobsFile)
         
         # Always open the file in the processFunction 
+        # Aren't you wasting resources by opening the file first? 
         file = rd.read_file(fileName, quiet)
         finTag = fileName.split('.')[-2] 
     
         df_failedJobs_ = df_failedJobs_[df_failedJobs_["Tag"] == finTag]
     
         # helper to get filter level from dict
-        def get_key(d, val):
-          keys = [k for k, v in d.items() if v == val]
-          return keys[0] if keys else None
+        # def get_key(d, val):
+        #   keys = [k for k, v in d.items() if v == val]
+        #   return keys[0] if keys else None
             
         # Submit failed configs
         for index, row in df_failedJobs_.iterrows():

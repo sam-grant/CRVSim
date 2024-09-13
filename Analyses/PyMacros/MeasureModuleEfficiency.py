@@ -645,8 +645,8 @@ def TestMain():
 
 def main():
 
-    TestMain()
-    return
+    # TestMain()
+    # return
 
     #########################################################
 
@@ -654,9 +654,9 @@ def main():
     recon = "MDC2020ae"
     particles_ = ["all"] #, "muons", "non_muons"]
     layers_ = [3] #, 2]
-    PEs_ = [10] # np.arange(15, 135, 5)
+    PEs_ = np.arange(15, 135, 5)
     trkOnly = True
-    quiet = True
+    quiet = Falses
     
     def processFunctionA(fileName):
         # Always open the file in the processFunction 
@@ -683,7 +683,7 @@ def main():
                     try:
                         Run(file, recon, particle, PE, layer, finTag, trkOnly, quiet)
                     except Exception as exc:
-                        print(f'---> Exception!\n{row}\n{exc}')
+                        print(f'---> Exception!\n{exc}')
                         # Uncomment to test
                         # return
     

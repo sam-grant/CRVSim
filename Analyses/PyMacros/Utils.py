@@ -69,7 +69,8 @@ def GetBasicStats(data, xmin, xmax):
 
     return N, mean, meanErr, stdDev, stdDevErr, underflows, overflows
 
-# Mu2eEAF 
+def GetBinCentres(binEdges): 
+    return (binEdges[:-1] + binEdges[1:]) / 2 
 
 # Read a txt file contain a list of files
 def ReadFileList(fileListPath):
@@ -792,6 +793,35 @@ import matplotlib.colors as colors
 
 #     # Clear memory
 #     plt.close()
+
+def Hist1D(x, nbins=100, xmin=-1.0, xmax=1.0):
+
+    # Create 2D histogram
+    counts, x_edges = np.histogram(x, bins=nbins, range=[xmin, xmax])
+
+    return counts, x_edges
+    
+def Hist2D(x, y, nbinsX=100, xmin=-1.0, xmax=1.0, nbinsY=100, ymin=-1.0, ymax=1.0):
+
+    # Filter out empty entries from x and y
+    valid_indices = [i for i in range(len(x)) if np.any(x[i]) and np.any(y[i])]
+
+    # Extract valid data points based on the indices
+    x = [x[i] for i in valid_indices]
+    y = [y[i] for i in valid_indices]
+
+    # Check if the input arrays are not empty and have the same length
+    if len(x) == 0 or len(y) == 0:
+        print("Input arrays are empty.")
+        return
+    if len(x) != len(y):
+        print("Input arrays x and y have different lengths.")
+        return
+
+    # Create 2D histogram
+    hist, x_edges, y_edges = np.histogram2d(x, y, bins=[nbinsX, nbinsY], range=[[xmin, xmax], [ymin, ymax]])
+
+    return hist # , x_edges, y_edges
 
 # Plot2D 
 import matplotlib.patches as patches

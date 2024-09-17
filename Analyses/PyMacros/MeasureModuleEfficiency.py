@@ -97,7 +97,7 @@ def MarkCoincidences(data_, coincidenceConditions, quiet):
     data_["layer_condition"] = layerCondition 
     data_["angle_condition"] = angleCondition 
 
-    if not quiet: print("Done!")
+    # if not quiet: print("Done!")
 
     return 
 
@@ -141,7 +141,7 @@ def FilterParticles(data_, particle, quiet):
 #     else: 
 #         data_["pass_singles"] = oneOrZeroCoincInMeasurementSector 
         
-#     if not quiet: print("Done!")
+#     # if not quiet: print("Done!")
     
 #     # Cut on event level
 #     if not fail: 
@@ -184,119 +184,15 @@ def FilterSingles(data_, triggerMode, fail, quiet):
     else:
         raise ValueError(f"---> triggerMode '{triggerMode}' not valid...")
             
-    if not quiet: print("Done!")
+    # if not quiet: print("Done!")
     
     # Cut on event level
     if not fail: 
         return data_[data_["pass_singles"]]
     else: 
         return data_[~data_["pass_singles"]]
-
-# # Tracker cuts
-# def MarkTrackerCuts(arrays_, crv1=False, quiet=False):
     
-#     if not quiet: print(f"\n---> Marking tracker cuts.") 
-
-#     # Mark cuts on the track and track fit level
-#     arrays_["trkfit_KLCRV1"] = ( 
-#         (arrays_["trkfit"]["klfit"]["sid"] == 200) 
-#         & (arrays_["trkfit"]["klfit"]["sindex"] == 1) )
-
-#     arrays_["trk_bestFit"] = ( 
-#         (arrays_["trk"]["kl.ndof"] >= 10)
-#         & (arrays_["trk"]["kl.fitcon"] > 0.1)
-#         & ((arrays_["trk"]["kl.nactive"]/arrays_["trk"]["kl.nhits"]) > 0.99)
-#         & (arrays_["trk"]["kl.nplanes"] >= 4)
-#         & ((arrays_["trk"]["kl.nnullambig"]/arrays_["trk"]["kl.nhits"]) < 0.2) )
-    
-#     arrays_["trkfit_bestFit"] = ( 
-#         (arrays_["trkfit"]["klkl"]["z0err"] < 1) 
-#         & (arrays_["trkfit"]["klkl"]["d0err"] < 1) 
-#         & (arrays_["trkfit"]["klkl"]["thetaerr"] < 0.004)
-#         & (arrays_["trkfit"]["klkl"]["phi0err"] < 0.001) )
-
-#     # CRV-T module overall length 6100 mm
-#     # CRV-T module overall width 951.0 mm 
-#     # Total layer offset 42.00*(4-1) = 127 mm
-#     # Four modules side-by-side w_tot = w + (N_mod-1)*(w_mod-off) 
-#     # ---> 951 + (4-1)*(951-127) = 3423
-#     # Then we have a -500 mm offset in z
-    
-#     # min_box_coords = (-1775.0-500, -6100/2)
-#     # max_box_coords = (1775.0-500, 6100/2)
-
-#     # CRV-L-end length = 3388 mm
-#     # CRV-L-end width = 951 mm 
-#     # CRV-DS length = 2570 mm
-#     # CRV-DS width = 826 mm 
-    
-#     # CRV-DS is rotated. length -> width. 
-#     # z: width for CRV-L
-#     # z: length for CRV-DS
-#     # x: width for CRV-DS
-#     # x: length for CRV-L
-    
-#     # Total layer offset, off = 42.00*(4-1) = 127 mm
-#     # 2 modules w_tot = w_mod + (N_mod-1)*(w_mod-off) 
-#     # -500 offset in z
-    
-#     # In x:
-#     # CRV-L-end width < CRV-DS length
-    
-#     # In z:
-#     # CRV-L-end length > CRV-DS width
-    
-#     # So the box is defined by:
-#     # x: CRV-DS length
-#     # z: CRV-L-end length
-    
-#     # (z, x)
-#     # min_box_coords = (-(2570/2)-500, -(3388/2))
-#     # max_box_coords = (+(2570/2)-500, +(3388/2))
-
-#     # Also subtract the layer offset on each side (see 1205.0.422424)
-#     # Measurement module
-#     arrays_["trkfit_CRV1Fiducial"] = ( 
-#         (abs(arrays_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fX"]) < 6100/2) 
-#         # & (abs(arrays_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fZ"] + 500) < 3423/2) )
-#         & (abs(arrays_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fZ"] + 500) < (3423/2 - 127) )
-#     )
-
-#     # Trigger modules
-#     arrays_["trkfit_CRV23Fiducial"] = ( 
-#         (abs(arrays_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fX"]) < 3388/2)
-#         & (abs(arrays_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fZ"] + 500) < 2570/2) 
-#     ) 
-    
-#     # Track condition 
-#     trkCondition = arrays_["trk_bestFit"]
-
-#     # Track fit (segments) condition 
-#     trkFitCondition = (arrays_["trkfit_bestFit"] & arrays_["trkfit_KLCRV1"] & arrays_["trkfit_CRV23Fiducial"])
-#     if crv1:
-#         trkFitCondition = (arrays_["trkfit_bestFit"] & arrays_["trkfit_KLCRV1"] & arrays_["trkfit_CRV1Fiducial"])
-        
-#     # Create masks
-#     arrays_["trkfit"] = arrays_["trkfit"][trkFitCondition] 
-#     arrays_["trk"] = arrays_["trk"][trkCondition]
-
-#     # Check for a track in the event after cuts.
-#     trkCut = ak.any(arrays_["trk"]["kl.status"], axis=1, keepdims=False) > 0 
-#     # Check for a track fit in the event after cuts
-#     trkFitCut = (
-#         (ak.count(arrays_["trkfit"]["klfit"]["sid"], axis=-1, keepdims=False) > 0) 
-#         & (ak.count(arrays_["trkfit"]["klkl"]["z0err"], axis=-1, keepdims=False) > 0) )
-    
-#     # Reset to event level
-#     trkFitCut = ak.any(trkFitCut, axis=-1, keepdims=False) == True 
-
-#     # Mark events which pass
-#     arrays_["pass_track_cuts"] = (trkCut & trkFitCut)
-
-#     # Marking method is more flexible than applying the cuts immediately. 
-#     return 
-
-def MarkTrackerCuts(arrays_, triggerMode, fail, quiet):
+def ApplyTrackerCuts(data_, triggerMode="default", fail=False, quiet=False): 
 
     if triggerMode in ["crv_trigger", "crv2_trigger", "crv3_trigger"]:
         return 
@@ -304,22 +200,22 @@ def MarkTrackerCuts(arrays_, triggerMode, fail, quiet):
     if not quiet: print(f"\n---> Marking tracker cuts") 
 
     # Mark cuts on the track and track fit level
-    arrays_["trkfit_KLCRV1"] = ( 
-        (arrays_["trkfit"]["klfit"]["sid"] == 200) 
-        & (arrays_["trkfit"]["klfit"]["sindex"] == 1) )
+    data_["trkfit_KLCRV1"] = ( 
+        (data_["trkfit"]["klfit"]["sid"] == 200) 
+        & (data_["trkfit"]["klfit"]["sindex"] == 1) )
 
-    arrays_["trk_bestFit"] = ( 
-        (arrays_["trk"]["kl.ndof"] >= 10)
-        & (arrays_["trk"]["kl.fitcon"] > 0.1)
-        & ((arrays_["trk"]["kl.nactive"]/arrays_["trk"]["kl.nhits"]) > 0.99)
-        & (arrays_["trk"]["kl.nplanes"] >= 4)
-        & ((arrays_["trk"]["kl.nnullambig"]/arrays_["trk"]["kl.nhits"]) < 0.2) )
+    data_["trk_bestFit"] = ( 
+        (data_["trk"]["kl.ndof"] >= 10)
+        & (data_["trk"]["kl.fitcon"] > 0.1)
+        & ((data_["trk"]["kl.nactive"]/data_["trk"]["kl.nhits"]) > 0.99)
+        & (data_["trk"]["kl.nplanes"] >= 4)
+        & ((data_["trk"]["kl.nnullambig"]/data_["trk"]["kl.nhits"]) < 0.2) )
     
-    arrays_["trkfit_bestFit"] = ( 
-        (arrays_["trkfit"]["klkl"]["z0err"] < 1) 
-        & (arrays_["trkfit"]["klkl"]["d0err"] < 1) 
-        & (arrays_["trkfit"]["klkl"]["thetaerr"] < 0.004)
-        & (arrays_["trkfit"]["klkl"]["phi0err"] < 0.001) )
+    data_["trkfit_bestFit"] = ( 
+        (data_["trkfit"]["klkl"]["z0err"] < 1) 
+        & (data_["trkfit"]["klkl"]["d0err"] < 1) 
+        & (data_["trkfit"]["klkl"]["thetaerr"] < 0.004)
+        & (data_["trkfit"]["klkl"]["phi0err"] < 0.001) )
 
     ###### Fiducial area ######
 
@@ -375,95 +271,83 @@ def MarkTrackerCuts(arrays_, triggerMode, fail, quiet):
     # min_box_coords = (-(2570/2)-500, -(3388/2))
     # max_box_coords = (+(2570/2)-500, +(3388/2))
 
-    # Tested in TrackCuts.ipynb
+    # Tested in TrackCuts.ipynb and CompCRV.ipynb
     
     # Measurement module
-    arrays_["trkfit_CRV1Fiducial"] = ( 
-        (abs(arrays_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fX"]) < 6100/2) 
-        & (abs(arrays_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fZ"] + 500) < 3423/2))
+    data_["trkfit_CRV1Fiducial"] = ( 
+        (abs(data_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fX"]) < 6100/2) 
+        & (abs(data_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fZ"] + 500) < 3423/2))
 
     # Trigger modules
-    arrays_["trkfit_CRV23Fiducial"] = ( 
-        (abs(arrays_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fX"]) < 3388/2)
-        & (abs(arrays_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fZ"] + 500) < 2570/2) ) 
+    data_["trkfit_CRV23Fiducial"] = ( 
+        (abs(data_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fX"]) < 3388/2)
+        & (abs(data_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fZ"] + 500) < 2570/2) ) 
 
     # CRV-DS 
-    arrays_["trkfit_CRV2Fiducial"] = ( 
-        (abs(arrays_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fX"]) < 1525/2)
-        & (abs(arrays_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fZ"] + 500) < 2570/2) ) 
+    data_["trkfit_CRV2Fiducial"] = ( 
+        (abs(data_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fX"]) < 1525/2)
+        & (abs(data_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fZ"] + 500) < 2570/2) ) 
 
     # CRV-L-end
-    arrays_["trkfit_CRV3Fiducial"] = ( 
-        (abs(arrays_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fX"]) < 3388/2)
-        & (abs(arrays_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fZ"] + 500) < 1775/2) ) 
+    data_["trkfit_CRV3Fiducial"] = ( 
+        (abs(data_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fX"]) < 3388/2)
+        & (abs(data_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fZ"] + 500) < 1775/2) ) 
 
     ################################################
     
     # Track condition 
-    trkCondition = arrays_["trk_bestFit"]
-
+    data_["pass_trk"] = data_["trk_bestFit"]
+    
     # Track fit (segments) condition (default has no area cut)
-    trkFitCondition = False # (arrays_["trkfit_bestFit"] & arrays_["trkfit_KLCRV1"]) 
-
-    # Modes: 
-    # 1. CRV-DS and CRV-L trigger, crv_trigger 
-    # 2. CRV-DS trigger, crv2_trigger 
-    # 3. CRV-L-end trigger, crv3_trigger 
-    # 4. Tracker trigger, trk_trigger
-    # 5. CRV and tracker trigger, trk_crv_trigger
-    # 6. CRV-DS and tracker trigger, trk_crv2_trigger
-    # 7. CRV-L-end and tracker trigger, trk_crv3_trigger
-
-    # Should never calling track cuts for crv_trigger, crv2_trigger or crv3_trigger 
-    
-    # if triggerMode == "default": 
-    #     trkFitCondition = (arrays_["trkfit_bestFit"] & arrays_["trkfit_KLCRV1"]) 
-    
-    if triggerMode == "trk_crv_trigger":
-        trkFitCondition = (arrays_["trkfit_bestFit"] & arrays_["trkfit_KLCRV1"] & arrays_["trkfit_CRV23Fiducial"])
+    if triggerMode == "default":
+        data_["pass_trkfit"] = (data_["trkfit_bestFit"] & data_["trkfit_KLCRV1"])
+    elif triggerMode == "trk_crv_trigger":
+        data_["pass_trkfit"] = (data_["trkfit_bestFit"] & data_["trkfit_KLCRV1"] & data_["trkfit_CRV23Fiducial"])
     elif triggerMode == "trk_crv2_trigger":
-        trkFitCondition = (arrays_["trkfit_bestFit"] & arrays_["trkfit_KLCRV1"] & arrays_["trkfit_CRV2Fiducial"])
+        data_["pass_trkfit"] = (data_["trkfit_bestFit"] & data_["trkfit_KLCRV1"] & data_["trkfit_CRV2Fiducial"])
     elif triggerMode == "trk_crv3_trigger":
-        trkFitCondition = (arrays_["trkfit_bestFit"] & arrays_["trkfit_KLCRV1"] & arrays_["trkfit_CRV3Fiducial"]) 
+        data_["pass_trkfit"] = (data_["trkfit_bestFit"] & data_["trkfit_KLCRV1"] & data_["trkfit_CRV3Fiducial"]) 
     elif triggerMode == "trk_trigger":
-        trkFitCondition = (arrays_["trkfit_bestFit"] & arrays_["trkfit_KLCRV1"] & arrays_["trkfit_CRV1Fiducial"]) 
+        data_["pass_trkfit"] = (data_["trkfit_bestFit"] & data_["trkfit_KLCRV1"] & data_["trkfit_CRV1Fiducial"]) 
     else:
         raise ValueError(f"---> triggerMode '{triggerMode}' not valid...")
     
+    if not quiet: 
+        # print("Done!") 
+        print(f"\n---> Applying tracker cuts") 
+
+    # Mask the data on trk/trkfit level
     if not fail: 
-        # Create masks
-        arrays_["trkfit"] = arrays_["trkfit"][trkFitCondition] 
-        arrays_["trk"] = arrays_["trk"][trkCondition] 
+        data_["trk"] = data_["trk"][data_["pass_trk"]] 
+        data_["trkfit"] = data_["trkfit"][data_["pass_trkfit"]]
     else: 
-        # Create masks
-        arrays_["trkfit"] = arrays_["trkfit"][~trkFitCondition] 
-        arrays_["trk"] = arrays_["trk"][~trkCondition] 
+        data_["trk"] = data_["trk"][~data_["pass_trk"]] 
+        data_["trkfit"] = data_["trkfit"][~data_["pass_trkfit"]]
 
-    # Check for a track in the event after cuts.
-    trkCut = ak.any(arrays_["trk"]["kl.status"], axis=1, keepdims=False) == True
-    
-    # Check for a track fit in the event after cuts
-    # Could do the same thing with ak.any ... 
-    
-    trkFitCut = (
-        (ak.count(arrays_["trkfit"]["klfit"]["sid"], axis=-1, keepdims=False) > 0) 
-        & (ak.count(arrays_["trkfit"]["klkl"]["z0err"], axis=-1, keepdims=False) > 0) )
-    
+    # Now clean up empty events after cuts
+    goodTrk = ak.any(data_["trk"]["kl.status"], axis=1, keepdims=False) == True
+    goodTrkFit = (
+        (ak.any(data_["trkfit"]["klfit"]["sid"], axis=-1, keepdims=False) == True) 
+        & (ak.any(data_["trkfit"]["klkl"]["z0err"], axis=-1, keepdims=False) == True) 
+    )
     # Reset to event level
-    trkFitCut = ak.any(trkFitCut, axis=-1, keepdims=False) == True 
+    goodTrkFit = ak.any(goodTrkFit, axis=-1, keepdims=False) == True 
 
-    # Mark the cut
-    arrays_["pass_track_cuts"] = (trkCut & trkFitCut)
-    
-    return
+    # Mark passing events
+    # We need to include this flag in the trigger condition 
+    data_["pass_track_cuts"] = (goodTrk & goodTrkFit)
 
-# def ApplyTrackerCuts(arrays_, fail=False, quiet=False):
-#     if not quiet: 
-#         print(f"\n---> Applying track cuts with fail = {fail}.")
-#     if not fail:
-#         return arrays_[arrays_["pass_track_cuts"]]
-#     else: 
-#         return arrays_[~arrays_["pass_track_cuts"]]
+    # Apply the event level cut
+    data_ = data_[ data_["pass_track_cuts"] ] 
+
+    # Sanity check: this flag should always be True
+    if ak.any(data_["pass_track_cuts"] == False, axis=0) == True:
+        raise ValueError("pass_track_cuts is False!") 
+
+    # if not quiet: print("Done!") 
+        
+    return data_ 
+
 
 # Events at the end of the digitisation window get messed up
 def CutOnStartTime(data_, quiet): 
@@ -476,11 +360,6 @@ def CutOnStartTime(data_, quiet):
 # ------------------------------------------------   
 
 # Trigger condition
-# TODO: restructure this. 
-# I think we want the tracker to be incorperated in the trigger. 
-# Then if it fails the track cuts we consider that to be a failure? No not neccesarrily 
-
-
 def Trigger(data_, triggerMode, fail, quiet): 
 
     if not quiet: print(f"\n---> Triggering")
@@ -497,7 +376,6 @@ def Trigger(data_, triggerMode, fail, quiet):
     # 6. CRV-DS and tracker trigger, trk_crv2_trigger
     # 7. CRV-L-end and tracker trigger, trk_crv3_trigger
     
-
     if triggerMode == "crv_trigger": 
         triggerCondition = (
             ak.any((data_["crv"]["crvcoincs.sectorType"] == 2), axis=1) &
@@ -512,39 +390,39 @@ def Trigger(data_, triggerMode, fail, quiet):
             ak.any((data_["crv"]["crvcoincs.sectorType"] == 3), axis=1) 
         )
     elif triggerMode == "trk_trigger": 
+        ApplyTrackerCuts(data_, triggerMode=triggerMode, fail=fail, quiet=quiet)             
         triggerCondition = ( 
             data_["pass_track_cuts"]
+            # This is always True after we apply the track cuts. 
+            # Somehow it's nice to include it in the trigger condition anyway, for readability. 
+            # We need to apply fit-level masks to the data in order to get the event level flag, so it's bit odd. 
+            # Track cuts are tricky. 
         )
     elif triggerMode == "trk_crv_trigger":
+        ApplyTrackerCuts(data_, triggerMode=triggerMode, fail=fail, quiet=quiet) 
         triggerCondition = (
             ak.any((data_["crv"]["crvcoincs.sectorType"] == 2), axis=1) &
             ak.any((data_["crv"]["crvcoincs.sectorType"] == 3), axis=1) &
             data_["pass_track_cuts"]
         )
     elif triggerMode == "trk_crv2_trigger":
+        ApplyTrackerCuts(data_, triggerMode=triggerMode, fail=fail, quiet=quiet) 
         triggerCondition = (
             ak.any((data_["crv"]["crvcoincs.sectorType"] == 2), axis=1) &
             data_["pass_track_cuts"]
         )
     elif triggerMode == "trk_crv3_trigger":
+        ApplyTrackerCuts(data_, triggerMode=triggerMode, fail=fail, quiet=quiet) 
         triggerCondition = (
             ak.any((data_["crv"]["crvcoincs.sectorType"] == 3), axis=1) &
             data_["pass_track_cuts"]
         )
     else:
         raise ValueError(f"---> triggerMode '{triggerMode}' not valid...")
-    
-    # # Trigger condition with tracker
-    # if trkOnly: 
-    #     # Look for a good track which intersects the CRV-T 
-    #     MarkTrackerCuts(data_, crv1=True, quiet=quiet)
-    #     # Require a hit in the bottom module as per Yuri's request
-    #     triggerCondition = ( data_["pass_track_cuts"] & ak.any((data_["crv"]["crvcoincs.sectorType"] == 2), axis=1) )
-    #     # triggerCondition = data_["pass_track_cuts"] 
 
     data_["pass_trigger"] = triggerCondition
     
-    if not quiet: print("Done!")
+    # if not quiet: print("Done!")
 
     if not fail: 
         return data_[data_["pass_trigger"]]
@@ -564,7 +442,7 @@ def SuccessfulTriggers(data_, success, quiet):
     # Coincidence conditions are set in FindCoincidences()
     successCondition = ak.any(data_["CRVT_coincidence"], axis=1) 
     
-    if not quiet: print("Done!")
+    # if not quiet: print("Done!")
 
     if success: return data_[successCondition] # successful triggers
     else: return data_[~successCondition] # unsuccessful triggers
@@ -572,36 +450,6 @@ def SuccessfulTriggers(data_, success, quiet):
 # ------------------------------------------------
 #                     Output 
 # ------------------------------------------------ 
-
-# For debugging single files only!
-# def WriteSuccessInfo(successes_, recon, finTag, foutTag, coincidenceConditions, quiet):
-
-#     # Define the output file path
-#     foutNameConcise = f"../Txt/{recon}/successes_concise/{finTag}/successes_concise_{foutTag}.csv" 
-#     foutNameVerbose = f"../Txt/{recon}/successes_verbose/{finTag}/successes_verbose_{foutTag}.csv" 
-    
-#     if not quiet: print(f"\n---> Writing failure info to:\n{foutNameConcise}\n{foutNameVerbose}", flush=True) 
-        
-#    # Concise form
-#     with open(foutNameConcise, "w") as fout:
-#         # Write the header
-#         fout.write("evtinfo.run,evtinfo.subrun,evtinfo.event\n")
-#         # Write the events
-#         for event in successes_:
-#             fout.write(
-#                 f"{event['evt']['evtinfo.run']}, {event['evt']['evtinfo.subrun']}, {event['evt']['evtinfo.event']}\n"
-#             )
-            
-#     # Verbose form
-#     if True: 
-#         with open(foutNameVerbose, "w") as fout:
-#             # Write the events
-#             for event in successes_:
-#                 fout.write(
-#                     PrintEvent(event)+"\n" 
-#                 )
-
-#     return
 
 def WriteFailureInfo(failures_dict_, recon, finTag, foutTag, coincidenceConditions, quiet):
 
@@ -728,7 +576,8 @@ def Run(file, recon, particle, PE, layer, finTag, triggerMode, quiet):
     data_ = FilterSingles(data_, triggerMode=triggerMode, fail=False, quiet=quiet)
 
     # Mark tracker cuts
-    MarkTrackerCuts(data_, triggerMode=triggerMode, fail=False, quiet=quiet) 
+    # The problem with this is that you do apply a cut in this function... 
+    # MarkTrackerCuts(data_, triggerMode=triggerMode, fail=False, quiet=quiet) 
 
     # Enforce trigger
     # Modes: 
@@ -743,7 +592,7 @@ def Run(file, recon, particle, PE, layer, finTag, triggerMode, quiet):
     data_ = Trigger(data_, triggerMode=triggerMode, fail=False, quiet=quiet)
 
     # Sanity check
-    if False:
+    if True:
 
         # trk_crv_trigger
         # min_box_coords = (-(2570/2)-500, -(3388/2))
@@ -761,8 +610,6 @@ def Run(file, recon, particle, PE, layer, finTag, triggerMode, quiet):
         min_box_coords = (-3388/2-500, -6100/2)
         max_box_coords = (3388/2-500, 6100/2)
 
-
-                
         # Plot the track distribution in zx as a sanity check 
         ut.Plot2D(x=ak.flatten(data_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fZ"], axis=None)#[:1000]
                   , y=ak.flatten(data_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fX"], axis=None)#[:1000]
@@ -792,33 +639,7 @@ def Run(file, recon, particle, PE, layer, finTag, triggerMode, quiet):
     WriteResults({triggerMode : (successes_, failures_)}, recon, finTag, foutTag, quiet) 
 
     return
-
-    # # Apply track cuts
-    # if not trkOnly:
-
-    #     # I don't think you need to do this if you're already using the track cuts to trigger events. 
-    #     MarkTrackerCuts(data_, quiet=quiet)
-    #     data_ = ApplyTrackerCuts(data_, fail=False, quiet=quiet)
-
-    #     # Successful and unsuccessful triggers with track cuts
-    #     # Effectively include track cuts in the trigger 
-    #     successes_track_cuts_ = SuccessfulTriggers(data_, success=True, quiet=quiet)
-    #     failures_track_cuts_ = SuccessfulTriggers(data_, success=False, quiet=quiet)
     
-    #     # Write failures to file
-    #     WriteFailureInfo({"no_track_cuts" : failures_, "track_cuts" : failures_track_cuts_}, recon, finTag, foutTag, coincidenceConditions, quiet) 
-        
-    #     # Write results to file
-    #     WriteResults( {"no_track_cuts" : (successes_, failures_), "track_cuts" : (successes_track_cuts_, failures_track_cuts_)}, recon, finTag, foutTag, quiet) 
-
-    # else:
-
-    #     cut = "track_crv12" # "track_crv1_only" #  # "track_crv1_only" 
-    #     WriteFailureInfo({cut : failures_}, recon, finTag, foutTag, coincidenceConditions, quiet) 
-    #     WriteResults( {cut : (successes_, failures_)}, recon, finTag, foutTag, quiet) 
-
-    # return
-
 # ------------------------------------------------
 #                      Main
 # ------------------------------------------------
@@ -827,14 +648,13 @@ def TestMain():
     
     fileName="/exp/mu2e/data/users/sgrant/CRVSim/CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.000/11946817/00/00023/nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000000.root" 
     
-    #"/exp/mu2e/data/users/sgrant/CRVSim/CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.000/11946817/00/00085/nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000009.root" #"/exp/mu2e/data/users/sgrant/CRVSim/CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.000/11946817/00/00069/nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000020.root" #"/exp/mu2e/data/users/sgrant/CRVSim/CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.000/11946817/00/00069/nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.001205_00000020.root"
     finTag = fileName.split('.')[-2] 
 
     with uproot.open(fileName) as file:
-        Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="trk_crv_trigger", quiet=False) # tested
+        # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="trk_crv_trigger", quiet=False) # tested
         # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="trk_crv2_trigger", quiet=False) # tested
         # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="trk_crv3_trigger", quiet=False) # tested
-        # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="trk_trigger", quiet=False) # tested
+        Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="trk_trigger", quiet=False) # tested
         # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="crv_trigger", quiet=False) # tested
         # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="crv2_trigger", quiet=False) # tested
         # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="crv3_trigger", quiet=False)
@@ -843,8 +663,8 @@ def TestMain():
 
 def main():
 
-    # TestMain()
-    # return
+    TestMain()
+    return
 
     #########################################################
     # Try multiprocessing, called from an external script
@@ -1178,6 +998,6 @@ if __name__ == "__main__":
 #                   , title=title, xlabel="KKInter X [mm]", ylabel="CRV X [mm]"
 #                   , fout=f"../Images/{recon}/Sanity/{filters_[filterLevel]}/h2_XX_singles_track_cuts.png")
         
-#     if not quiet: print("Done!")
+#     # if not quiet: print("Done!")
 
 #     return

@@ -518,11 +518,16 @@ def WriteResults(results_, recon, finTag, foutTag, quiet):
         nsuccesses = len(successes_)
         ntotal = nfailures + nsuccesses
         
-        inefficiency = (nfailures / ntotal) * 100 if ntotal else np.nan
+        inefficiency = (nfailures / ntotal) * 100 if ntotal > 0 else np.nan
 
-        lower, upper = proportion_confint(nfailures, ntotal, method="wilson")
-        point = nfailures/ntotal
-        ineffErr = abs((upper - point) / 2) * 100
+        # # Error from Wilson interval
+        # ineffErr = -1 # np.nan
+        # if ntotal > 0:
+        #     lower, upper = proportion_confint(nfailures, ntotal, method="wilson")
+        #     point = nfailures/ntotal
+        #     ineffErr = abs((upper - point) / 2) * 100
+        # else:
+        #     ineffErr = np.nan 
             
         # Append output string 
         resultStr += f"""\n
@@ -530,13 +535,14 @@ def WriteResults(results_, recon, finTag, foutTag, quiet):
         Successes: {nsuccesses}
         Failures: {nfailures}
         Total: {ntotal}
-        Inefficiency: {nfailures}/{ntotal} = {inefficiency:.3f}+/-{ineffErr:.3f}%
+        Inefficiency: {nfailures}/{ntotal} = {inefficiency:.3f}% 
         """
-
+        #+/-{ineffErr:.3f}%
+        
         # Write to file
         with open(foutName, "w") as fout:
-            fout.write("Total,Successes,Failures,Inefficiency [%],Inefficiency Error [%]\n") # no spaces!
-            fout.write(f"{ntotal},{nsuccesses},{nfailures},{inefficiency},{ineffErr}\n")
+            fout.write("Total,Successes,Failures,Inefficiency [%]") # no spaces!
+            fout.write(f"{ntotal},{nsuccesses},{nfailures},{inefficiency}")
 
     # Finish output string 
     resultStr += f"""
@@ -665,6 +671,7 @@ def main():
     parser.add_argument('layers_', type=str, help="List of layers (e.g. [2, 3])")
     parser.add_argument('triggerModes_', type=str, help="Trigger mode, e.g. ['crv_trigger', 'crv_trk_trigger']")
     parser.add_argument('quiet', type=str, help="Quiet mode flag")
+    parser.add_argument('resub', type=str, help="Resubmission mode flag")
 
     # Parse arguments
     args = parser.parse_args()
@@ -677,40 +684,59 @@ def main():
     layers_ = [int(layer) for layer in args.layers_.split(',')]
     triggerModes_ = [str(triggerMode) for triggerMode in args.triggerModes_.split(',')]
     quiet = args.quiet.lower() == 'true'
+    resub = args.resub.lower() == 'true'
     
     # Open the file
-    file = rd.read_file(fileName, quiet)
-    # with uproot.open(fileName) as file:
-    finTag = fileName.split('.')[-2] 
+    # vomsCert not working
+    # file = rd.read_file(fileName, quiet)
 
-    # all_combinations = list(product(particles_, PEs_, layers_))
-    
-    # Scan PE thresholds
-    for PE in PEs_: 
-        # Scan particles
-        for particle in particles_: 
-            # Scan layers
-            for layer in layers_: 
-                # Scan trigger modes
-                for triggerMode in triggerModes_:
-                    outputStr = (
-                        "\n---> Running with:\n"
-                        f"fileName: {fileName}\n"
-                        f"recon: {recon}\n"
-                        f"particle: {particle}\n"
-                        f"PEs: {PE}\n"
-                        f"layers: {layer}/4\n"
-                        f"finTag: {finTag}\n"
-                        f"triggerMode: {triggerMode}\n"
-                        f"quiet: {quiet}\n"
-                    )
-                    if not quiet: print(outputStr) 
-                    try:
-                        Run(file, recon, particle, PE, layer, finTag, triggerMode, quiet)
-                    except Exception as exc:
-                        print(f'---> Exception!\n{exc}')
-
-    return
+    with uproot.open(fileName) as file:
+        # with uproot.open(fileName) as file:
+        finTag = fileName.split('.')[-2]
+        if not resub:
+            # Scan PE thresholds
+            for PE in PEs_: 
+                # Scan particles
+                for particle in particles_: 
+                    # Scan layers
+                    for layer in layers_: 
+                        # Scan trigger modes
+                        for triggerMode in triggerModes_:
+                            outputStr = (
+                                "\n---> Running with:\n"
+                                f"fileName: {fileName}\n"
+                                f"recon: {recon}\n"
+                                f"particle: {particle}\n"
+                                f"PEs: {PE}\n"
+                                f"layers: {layer}/4\n"
+                                f"finTag: {finTag}\n"
+                                f"triggerMode: {triggerMode}\n"
+                                f"quiet: {quiet}\n"
+                            )
+                            if not quiet: print(outputStr) 
+                            try:
+                                Run(file, recon, particle, PE, layer, finTag, triggerMode, quiet)
+                            except Exception as exc:
+                                print(f'---> Exception!\n{exc}')
+        else: # resubmit jobs
+            for PE, particle, layer, triggerMode in zip(PEs_, particles_, layers_, triggerModes_):
+                outputStr = (
+                    "\n---> Running with:\n"
+                    f"fileName: {fileName}\n"
+                    f"recon: {recon}\n"
+                    f"particle: {particle}\n"
+                    f"PEs: {PE}\n"
+                    f"layers: {layer}/4\n"
+                    f"finTag: {finTag}\n"
+                    f"triggerMode: {triggerMode}\n"
+                    f"quiet: {quiet}\n"
+                )
+                if not quiet: print(outputStr) 
+                try:
+                    Run(file, recon, particle, PE, layer, finTag, triggerMode, quiet)
+                except Exception as exc:
+                    print(f'---> Exception!\n{exc}')
+        return
 
    #  #########################################################
 

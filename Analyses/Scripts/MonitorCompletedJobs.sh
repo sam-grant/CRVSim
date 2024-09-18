@@ -4,18 +4,21 @@ recon="MDC2020ae"
 particle_=("all" "muons" "non_muons")
 layers_=(2 3)
 PEs_=($(seq 10 5 130))
-
+triggerModes_=("crv_trigger" "trk_trigger" "trk_crv_trigger" "trk_crv2_trigger" "trk_crv3_trigger" "trk_crv2_2layers_trigger" "trk_crv2_2layers_trigger")
 len_particle=${#particle_[@]}
 len_layers=${#layers_[@]}
 len_PEs=${#PEs_[@]}
+len_triggers=${#triggerModes_[@]}
 
 baseDir="../Txt/${recon}/results"
 numFiles=$(ls $baseDir | wc -l)
 
-totalTasks=$((numFiles * len_particle * len_layers * len_PEs))
+totalTasks=$((numFiles * len_particle * len_layers * len_PEs * len_triggers))
 
 #logFile="../Txt/Monitoring/completion_log_" + (date +%s) +".csv"
 logFile="../Txt/Monitoring/completion_log_$(date +%s).csv"
+# logFile="../Txt/Monitoring/completion_log_1726625479.csv"
+echo $logFile
 
 echo "time,completed_tasks" > $logFile
 
@@ -29,11 +32,13 @@ while [ $completedTasks -lt $totalTasks ]; do
 		for PE in ${PEs_[@]}; do
 			for particle in ${particle_[@]}; do
 				for layer in ${layers_[@]}; do
-					file="results_${particle}_${PE}PEs${layer}Layers_track_cuts.csv"
-					filePath="${baseDir}/${dir}/${file}"
-					if [ -f $filePath ]; then
-					((completedTasks++))
-					fi
+					for trigger in ${triggerModes_[@]}; do
+						file="results_${particle}_${PE}PEs${layer}Layers_${trigger}.csv"
+						filePath="${baseDir}/${dir}/${file}"
+						if [ -f $filePath ]; then
+							((completedTasks++))
+						fi
+					done
 				done
 			done
 		done
@@ -45,10 +50,10 @@ while [ $completedTasks -lt $totalTasks ]; do
 	previousCompleted=$completedTasks
     fi
 
-    #echo "${completedTasks}/${totalTasks} tasks completed."
+    echo "${completedTasks}/${totalTasks} tasks completed."
 
     # Sleep for a specified duration before the next check
-    sleep 300 # Check every 5 minutes; adjust this as needed
+    sleep 60 # Check every minute; adjust this as needed
 done
 
 echo "---> All tasks completed."

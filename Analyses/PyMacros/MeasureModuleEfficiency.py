@@ -42,6 +42,7 @@ import pandas as pd
 from itertools import product
 import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from statsmodels.stats.proportion import proportion_confint
 
 # Internal libraries
 import Utils as ut
@@ -119,36 +120,6 @@ def FilterParticles(data_, particle, quiet):
     else:
         raise ValueError(f"Particle string {particle} not valid!")
 
-#  Events with ONE coincidence in sectors 2 & 3 
-#  AND no more than one coincidence in sector 1 (with default coin conditions) 
-# def FilterSingles(data_, fail, trkOnly, quiet):
-    
-#     if not quiet: print(f"\n---> Filtering singles") 
-
-#     sector1Condition = data_["crv"]["crvcoincs.sectorType"] == 1
-#     sector2Condition = data_["crv"]["crvcoincs.sectorType"] == 2
-#     sector3Condition = data_["crv"]["crvcoincs.sectorType"] == 3
-
-#     oneOrZeroCoincInMeasurementSector = ak.count(data_["crv"]["crvcoincs.sectorType"][sector1Condition], axis=1) <= 1
-#     oneCoincInSector2Condition = ak.count(data_["crv"]["crvcoincs.sectorType"][sector2Condition], axis=1) == 1
-#     oneCoincInSector3Condition = ak.count(data_["crv"]["crvcoincs.sectorType"][sector3Condition], axis=1) == 1
-    
-#     data_["oneOrZeroCoincInMeasurementSector"] = oneOrZeroCoincInMeasurementSector 
-#     data_["oneCoinInTriggerSectors"] = (oneCoincInSector2Condition & oneCoincInSector3Condition)
-
-#     if not trkOnly:
-#         data_["pass_singles"] = (oneOrZeroCoincInMeasurementSector & oneCoincInSector2Condition & oneCoincInSector3Condition)
-#     else: 
-#         data_["pass_singles"] = oneOrZeroCoincInMeasurementSector 
-        
-#     # if not quiet: print("Done!")
-    
-#     # Cut on event level
-#     if not fail: 
-#         return data_[data_["pass_singles"]]
-#     else: 
-#         return data_[~data_["pass_singles"]]
-
 def FilterSingles(data_, triggerMode, fail, quiet):
     
     if not quiet: print(f"\n---> Filtering singles") 
@@ -175,7 +146,7 @@ def FilterSingles(data_, triggerMode, fail, quiet):
 
     if triggerMode in ["crv_trigger", "trk_crv_trigger"]:
         data_["pass_singles"] = (oneOrZeroCoincInMeasurementSector & oneCoincInSector2Condition & oneCoincInSector3Condition)
-    elif triggerMode in ["crv2_trigger", "trk_crv2_trigger"]:
+    elif triggerMode in ["crv2_trigger", "trk_crv2_trigger", "trk_crv2_2layers_trigger", "trk_crv2_3layers_trigger"]:
         data_["pass_singles"] = (oneOrZeroCoincInMeasurementSector & oneCoincInSector2Condition)
     elif triggerMode in ["crv3_trigger", "trk_crv3_trigger"]:
         data_["pass_singles"] = (oneOrZeroCoincInMeasurementSector & oneCoincInSector3Condition)        
@@ -303,7 +274,7 @@ def ApplyTrackerCuts(data_, triggerMode="default", fail=False, quiet=False):
         data_["pass_trkfit"] = (data_["trkfit_bestFit"] & data_["trkfit_KLCRV1"])
     elif triggerMode == "trk_crv_trigger":
         data_["pass_trkfit"] = (data_["trkfit_bestFit"] & data_["trkfit_KLCRV1"] & data_["trkfit_CRV23Fiducial"])
-    elif triggerMode == "trk_crv2_trigger":
+    elif triggerMode in ["trk_crv2_trigger", "trk_crv2_2layers_trigger", "trk_crv2_3layers_trigger"]:
         data_["pass_trkfit"] = (data_["trkfit_bestFit"] & data_["trkfit_KLCRV1"] & data_["trkfit_CRV2Fiducial"])
     elif triggerMode == "trk_crv3_trigger":
         data_["pass_trkfit"] = (data_["trkfit_bestFit"] & data_["trkfit_KLCRV1"] & data_["trkfit_CRV3Fiducial"]) 
@@ -374,7 +345,9 @@ def Trigger(data_, triggerMode, fail, quiet):
     # 4. Tracker trigger, trk_trigger
     # 5. CRV and tracker trigger, trk_crv_trigger
     # 6. CRV-DS and tracker trigger, trk_crv2_trigger
-    # 7. CRV-L-end and tracker trigger, trk_crv3_trigger
+    # 7. CRV-L-end and tracker trigger, trk_crv3_trigger 
+    # 8. CRV-DS (3 layers active) and tracker trigger, trk_crv2_3layers_trigger
+    # 9. CRV-DS (2 layers active) and tracker trigger, trk_crv2_trigger, trk_crv2_2layers_trigger
     
     if triggerMode == "crv_trigger": 
         triggerCondition = (
@@ -415,6 +388,24 @@ def Trigger(data_, triggerMode, fail, quiet):
         ApplyTrackerCuts(data_, triggerMode=triggerMode, fail=fail, quiet=quiet) 
         triggerCondition = (
             ak.any((data_["crv"]["crvcoincs.sectorType"] == 3), axis=1) &
+            data_["pass_track_cuts"]
+        )
+    elif triggerMode == "trk_crv2_2layers_trigger":
+        ApplyTrackerCuts(data_, triggerMode=triggerMode, fail=fail, quiet=quiet) 
+        # Look for PEsPerLayer >= 10 in the top two layers (indices 2 and 3) 
+        layerCondition = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 2][:, :, 2:4] >= 10
+        layerCondition = ak.flatten((ak.all(layerCondition, axis=-1, keepdims=False)==True), axis=None)
+        triggerCondition = (
+            layerCondition &
+            data_["pass_track_cuts"]
+        )
+    elif triggerMode == "trk_crv2_3layers_trigger":
+        ApplyTrackerCuts(data_, triggerMode=triggerMode, fail=fail, quiet=quiet) 
+        # Look for PEsPerLayer >= 10 in the top two layers (indices 2 and 3) 
+        layerCondition = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 2][:, :, 1:4] >= 10
+        layerCondition = ak.flatten((ak.all(layerCondition, axis=-1, keepdims=False)==True), axis=None)
+        triggerCondition = (
+            layerCondition &
             data_["pass_track_cuts"]
         )
     else:
@@ -529,19 +520,23 @@ def WriteResults(results_, recon, finTag, foutTag, quiet):
         
         inefficiency = (nfailures / ntotal) * 100 if ntotal else np.nan
 
+        lower, upper = proportion_confint(nfailures, ntotal, method="wilson")
+        point = nfailures/ntotal
+        ineffErr = abs((upper - point) / 2) * 100
+            
         # Append output string 
         resultStr += f"""\n
         Cut: {cut}
         Successes: {nsuccesses}
         Failures: {nfailures}
         Total: {ntotal}
-        Inefficiency: {nfailures}/{ntotal} = {inefficiency:.2f}%
+        Inefficiency: {nfailures}/{ntotal} = {inefficiency:.3f}+/-{ineffErr:.3f}%
         """
 
         # Write to file
         with open(foutName, "w") as fout:
-            fout.write("Total,Successes,Failures,Inefficiency [%]\n") # no spaces!
-            fout.write(f"{ntotal},{nsuccesses},{nfailures},{inefficiency}\n")
+            fout.write("Total,Successes,Failures,Inefficiency [%],Inefficiency Error [%]\n") # no spaces!
+            fout.write(f"{ntotal},{nsuccesses},{nfailures},{inefficiency},{ineffErr}\n")
 
     # Finish output string 
     resultStr += f"""
@@ -575,40 +570,27 @@ def Run(file, recon, particle, PE, layer, finTag, triggerMode, quiet):
     # Singles cut
     data_ = FilterSingles(data_, triggerMode=triggerMode, fail=False, quiet=quiet)
 
-    # Mark tracker cuts
-    # The problem with this is that you do apply a cut in this function... 
-    # MarkTrackerCuts(data_, triggerMode=triggerMode, fail=False, quiet=quiet) 
-
     # Enforce trigger
-    # Modes: 
-    # 1. CRV-DS and CRV-L trigger, crv_trigger 
-    # 2. CRV-DS trigger, crv2_trigger 
-    # 3. CRV-L-end trigger, crv3_trigger 
-    # 4. Tracker trigger, trk_trigger
-    # 5. CRV and tracker trigger, trk_crv_trigger
-    # 6. CRV-DS and tracker trigger, trk_crv2_trigger
-    # 7. CRV-L-end and tracker trigger, trk_crv3_trigger 
-    
     data_ = Trigger(data_, triggerMode=triggerMode, fail=False, quiet=quiet)
 
     # Sanity check
-    if True:
+    if False:
 
         # trk_crv_trigger
         # min_box_coords = (-(2570/2)-500, -(3388/2))
         # max_box_coords = (+(2570/2)-500, +(3388/2))
 
         # trk_crv2_trigger
-        # min_box_coords = (-2570/2-500, -1525/2)
-        # max_box_coords = (2570/2-500, +1525/2)
+        min_box_coords = (-2570/2-500, -1525/2)
+        max_box_coords = (2570/2-500, +1525/2)
 
         # # # trk_crv3_trigger
         # min_box_coords = (-(1775/2)-500, -(3388/2))
         # max_box_coords = (+(1775/2)-500, +(3388/2))
 
         # # trk_trigger
-        min_box_coords = (-3388/2-500, -6100/2)
-        max_box_coords = (3388/2-500, 6100/2)
+        # min_box_coords = (-3388/2-500, -6100/2)
+        # max_box_coords = (3388/2-500, 6100/2)
 
         # Plot the track distribution in zx as a sanity check 
         ut.Plot2D(x=ak.flatten(data_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fZ"], axis=None)#[:1000]
@@ -654,17 +636,20 @@ def TestMain():
         # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="trk_crv_trigger", quiet=False) # tested
         # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="trk_crv2_trigger", quiet=False) # tested
         # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="trk_crv3_trigger", quiet=False) # tested
-        Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="trk_trigger", quiet=False) # tested
+        # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="trk_trigger", quiet=False) # tested
         # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="crv_trigger", quiet=False) # tested
         # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="crv2_trigger", quiet=False) # tested
-        # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="crv3_trigger", quiet=False)
+        # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="crv3_trigger", quiet=False)vtrk_crv2_2layers_trigger
+        Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="trk_crv2_trigger", quiet=False)
+        # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="trk_crv2_2layers_trigger", quiet=False)
+        # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="trk_crv2_3layers_trigger", quiet=False)
 
     return
 
 def main():
 
-    TestMain()
-    return
+    # TestMain()
+    # return
 
     #########################################################
     # Try multiprocessing, called from an external script

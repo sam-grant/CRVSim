@@ -124,15 +124,6 @@ def FilterSingles(data_, triggerMode, fail, quiet):
     
     if not quiet: print(f"\n---> Filtering singles") 
 
-    # Modes: 
-    # 1. CRV-DS and CRV-L trigger, crv_trigger 
-    # 2. CRV-DS trigger, crv2_trigger 
-    # 3. CRV-L-end trigger, crv3_trigger 
-    # 4. Tracker trigger, trk_trigger
-    # 5. CRV and tracker trigger, trk_crv_trigger
-    # 6. CRV-DS and tracker trigger, trk_crv2_trigger
-    # 7. CRV-L-end and tracker trigger, trk_crv3_trigger
-
     sector1Condition = data_["crv"]["crvcoincs.sectorType"] == 1
     sector2Condition = data_["crv"]["crvcoincs.sectorType"] == 2
     sector3Condition = data_["crv"]["crvcoincs.sectorType"] == 3
@@ -144,7 +135,7 @@ def FilterSingles(data_, triggerMode, fail, quiet):
     # data_["oneOrZeroCoincInMeasurementSector"] = oneOrZeroCoincInMeasurementSector 
     # data_["oneCoinInTriggerSectors"] = (oneCoincInSector2Condition & oneCoincInSector3Condition)
 
-    if triggerMode in ["crv_trigger", "trk_crv_trigger"]:
+    if triggerMode in ["crv_trigger", "trk_crv_trigger", "crv_2layers_trigger", "crv_3layers_trigger", "trk_crv_2layers_trigger", "trk_crv_3layers_trigger"]:
         data_["pass_singles"] = (oneOrZeroCoincInMeasurementSector & oneCoincInSector2Condition & oneCoincInSector3Condition)
     elif triggerMode in ["crv2_trigger", "trk_crv2_trigger", "trk_crv2_2layers_trigger", "trk_crv2_3layers_trigger"]:
         data_["pass_singles"] = (oneOrZeroCoincInMeasurementSector & oneCoincInSector2Condition)
@@ -165,8 +156,8 @@ def FilterSingles(data_, triggerMode, fail, quiet):
     
 def ApplyTrackerCuts(data_, triggerMode="default", fail=False, quiet=False): 
 
-    if triggerMode in ["crv_trigger", "crv2_trigger", "crv3_trigger"]:
-        return 
+    if triggerMode in ["crv_trigger", "crv2_trigger", "crv3_trigger", "crv_2layers_trigger", "crv_3layers_trigger"]:
+        raise ValueError(f"Improper trigger mode {triggerMode} called in ApplyTrackerCuts()...")
     
     if not quiet: print(f"\n---> Marking tracker cuts") 
 
@@ -272,7 +263,7 @@ def ApplyTrackerCuts(data_, triggerMode="default", fail=False, quiet=False):
     # Track fit (segments) condition (default has no area cut)
     if triggerMode == "default":
         data_["pass_trkfit"] = (data_["trkfit_bestFit"] & data_["trkfit_KLCRV1"])
-    elif triggerMode == "trk_crv_trigger":
+    elif triggerMode in ["trk_crv_trigger", "trk_crv_2layers_trigger", "trk_crv_3layers_trigger"]:
         data_["pass_trkfit"] = (data_["trkfit_bestFit"] & data_["trkfit_KLCRV1"] & data_["trkfit_CRV23Fiducial"])
     elif triggerMode in ["trk_crv2_trigger", "trk_crv2_2layers_trigger", "trk_crv2_3layers_trigger"]:
         data_["pass_trkfit"] = (data_["trkfit_bestFit"] & data_["trkfit_KLCRV1"] & data_["trkfit_CRV2Fiducial"])
@@ -348,6 +339,10 @@ def Trigger(data_, triggerMode, fail, quiet):
     # 7. CRV-L-end and tracker trigger, trk_crv3_trigger 
     # 8. CRV-DS (3 layers active) and tracker trigger, trk_crv2_3layers_trigger
     # 9. CRV-DS (2 layers active) and tracker trigger, trk_crv2_trigger, trk_crv2_2layers_trigger
+    # 10. CRV-DS and CRV-L trigger (2 layers active), crv_2layers_trigger
+    # 11. CRV-DS and CRV-L trigger (3 layers active), crv_3layers_trigger 
+    # 12. CRV and tracker trigger (2 layers active), trk_crv_2layers_trigger
+    # 13. CRV and tracker trigger (3 layers active), trk_crv_3layers_trigger 
     
     if triggerMode == "crv_trigger": 
         triggerCondition = (
@@ -393,7 +388,7 @@ def Trigger(data_, triggerMode, fail, quiet):
     elif triggerMode == "trk_crv2_2layers_trigger":
         ApplyTrackerCuts(data_, triggerMode=triggerMode, fail=fail, quiet=quiet) 
         # Look for PEsPerLayer >= 10 in the top two layers (indices 2 and 3) 
-        layerCondition = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 2][:, :, 2:4] >= 10
+        layerCondition = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 2][:, :, -2:] >= 10
         layerCondition = ak.flatten((ak.all(layerCondition, axis=-1, keepdims=False)==True), axis=None)
         triggerCondition = (
             layerCondition &
@@ -402,8 +397,52 @@ def Trigger(data_, triggerMode, fail, quiet):
     elif triggerMode == "trk_crv2_3layers_trigger":
         ApplyTrackerCuts(data_, triggerMode=triggerMode, fail=fail, quiet=quiet) 
         # Look for PEsPerLayer >= 10 in the top two layers (indices 2 and 3) 
-        layerCondition = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 2][:, :, 1:4] >= 10
+        layerCondition = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 2][:, :, -3:] >= 10
         layerCondition = ak.flatten((ak.all(layerCondition, axis=-1, keepdims=False)==True), axis=None)
+        triggerCondition = (
+            layerCondition &
+            data_["pass_track_cuts"]
+        )
+    elif triggerMode == "crv_2layers_trigger": 
+        # Look for PEsPerLayer >= 10 in the top two layers (indices 2 and 3) 
+        layerConditionUpper = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 2][:, :, -2:] >= 10 # top two layers
+        layerConditionLower = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 3][:, :, :2] >= 10 # bottom two layers
+        layerConditionUpper = ak.flatten((ak.all(layerConditionUpper, axis=-1, keepdims=False)==True), axis=None)
+        layerConditionLower = ak.flatten((ak.all(layerConditionLower, axis=-1, keepdims=False)==True), axis=None)
+        layerCondition = layerConditionUpper & layerConditionLower
+        triggerCondition = (
+            layerCondition 
+        )
+    elif triggerMode == "crv_3layers_trigger":
+        # Look for PEsPerLayer >= 10 in the top two layers (indices 2 and 3) 
+        layerConditionUpper = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 2][:, :, -3:] >= 10 # top three layers
+        layerConditionLower = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 3][:, :, :3] >= 10 # bottom three layers
+        layerConditionUpper = ak.flatten((ak.all(layerConditionUpper, axis=-1, keepdims=False)==True), axis=None)
+        layerConditionLower = ak.flatten((ak.all(layerConditionLower, axis=-1, keepdims=False)==True), axis=None)
+        layerCondition = layerConditionUpper & layerConditionLower
+        triggerCondition = (
+            layerCondition 
+        )
+    elif triggerMode == "trk_crv_2layers_trigger":
+        ApplyTrackerCuts(data_, triggerMode=triggerMode, fail=fail, quiet=quiet) 
+        # Look for PEsPerLayer >= 10 in the top two layers (indices 2 and 3) 
+        layerConditionUpper = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 2][:, :, -2:] >= 10 # top two layers
+        layerConditionLower = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 3][:, :, :2] >= 10 # bottom two layers
+        layerConditionUpper = ak.flatten((ak.all(layerConditionUpper, axis=-1, keepdims=False)==True), axis=None)
+        layerConditionLower = ak.flatten((ak.all(layerConditionLower, axis=-1, keepdims=False)==True), axis=None)
+        layerCondition = layerConditionUpper & layerConditionLower
+        triggerCondition = (
+            layerCondition &
+            data_["pass_track_cuts"]
+        )
+    elif triggerMode == "trk_crv_3layers_trigger":
+        ApplyTrackerCuts(data_, triggerMode=triggerMode, fail=fail, quiet=quiet) 
+        # Look for PEsPerLayer >= 10 in the top two layers (indices 2 and 3) 
+        layerConditionUpper = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 2][:, :, -3:] >= 10 # top three layers
+        layerConditionLower = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 3][:, :, :3] >= 10 # bottom three layers
+        layerConditionUpper = ak.flatten((ak.all(layerConditionUpper, axis=-1, keepdims=False)==True), axis=None)
+        layerConditionLower = ak.flatten((ak.all(layerConditionLower, axis=-1, keepdims=False)==True), axis=None)
+        layerCondition = layerConditionUpper & layerConditionLower
         triggerCondition = (
             layerCondition &
             data_["pass_track_cuts"]
@@ -646,9 +685,14 @@ def TestMain():
         # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="crv_trigger", quiet=False) # tested
         # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="crv2_trigger", quiet=False) # tested
         # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="crv3_trigger", quiet=False)vtrk_crv2_2layers_trigger
-        Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="trk_crv2_trigger", quiet=False)
+        # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="trk_crv2_trigger", quiet=False)
         # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="trk_crv2_2layers_trigger", quiet=False)
         # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="trk_crv2_3layers_trigger", quiet=False)
+        # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="crv_2layers_trigger", quiet=False)
+        # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="crv_3layers_trigger", quiet=False)
+        # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="trk_crv_2layers_trigger", quiet=False)
+        Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="trk_crv_3layers_trigger", quiet=False)
+        
 
     return
 

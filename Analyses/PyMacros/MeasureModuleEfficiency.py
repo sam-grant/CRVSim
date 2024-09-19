@@ -332,14 +332,14 @@ def Trigger(data_, triggerMode, fail, quiet):
 
     # Modes: 
     # 1. CRV-DS and CRV-L trigger, crv_trigger 
-    # 2. CRV-DS trigger, crv2_trigger 
-    # 3. CRV-L-end trigger, crv3_trigger 
+    # X 2. CRV-DS trigger, crv2_trigger 
+    # X 3. CRV-L-end trigger, crv3_trigger 
     # 4. Tracker trigger, trk_trigger
     # 5. CRV and tracker trigger, trk_crv_trigger
     # 6. CRV-DS and tracker trigger, trk_crv2_trigger
     # 7. CRV-L-end and tracker trigger, trk_crv3_trigger 
     # 8. CRV-DS (3 layers active) and tracker trigger, trk_crv2_3layers_trigger
-    # 9. CRV-DS (2 layers active) and tracker trigger, trk_crv2_trigger, trk_crv2_2layers_trigger
+    # 9. CRV-DS (2 layers active) and tracker trigger, trk_crv2_2layers_trigger
     # 10. CRV-DS and CRV-L trigger (2 layers active), crv_2layers_trigger
     # 11. CRV-DS and CRV-L trigger (3 layers active), crv_3layers_trigger 
     # 12. CRV and tracker trigger (2 layers active), trk_crv_2layers_trigger
@@ -539,7 +539,7 @@ def WriteResults(results_, recon, finTag, foutTag, quiet):
 
         foutStr += f"\n{foutName}"
 
-        if not quiet: print(f"\n---> Writing results to:\n{foutName}")
+        # if not quiet: print(f"\n---> Writing results to:\n{foutName}")
 
         # Calculate efficiency 
         successes_ = result[0]
@@ -580,8 +580,8 @@ def WriteResults(results_, recon, finTag, foutTag, quiet):
         
         # Write to file
         with open(foutName, "w") as fout:
-            fout.write("Total,Successes,Failures,Inefficiency [%]") # no spaces!
-            fout.write(f"{ntotal},{nsuccesses},{nfailures},{inefficiency}")
+            fout.write("Total,Successes,Failures\n") # no spaces!
+            fout.write(f"{ntotal},{nsuccesses},{nfailures}\n")
 
     # Finish output string 
     resultStr += f"""
@@ -681,7 +681,7 @@ def TestMain():
         # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="trk_crv_trigger", quiet=False) # tested
         # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="trk_crv2_trigger", quiet=False) # tested
         # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="trk_crv3_trigger", quiet=False) # tested
-        # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="trk_trigger", quiet=False) # tested
+        Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="trk_trigger", quiet=False) # tested
         # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="crv_trigger", quiet=False) # tested
         # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="crv2_trigger", quiet=False) # tested
         # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="crv3_trigger", quiet=False)vtrk_crv2_2layers_trigger
@@ -691,15 +691,15 @@ def TestMain():
         # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="crv_2layers_trigger", quiet=False)
         # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="crv_3layers_trigger", quiet=False)
         # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="trk_crv_2layers_trigger", quiet=False)
-        Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="trk_crv_3layers_trigger", quiet=False)
+        # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="crv_2layers_trigger", quiet=False)
         
 
     return
 
 def main():
 
-    TestMain()
-    return
+    # TestMain()
+    # return
 
     #########################################################
     # Try multiprocessing, called from an external script

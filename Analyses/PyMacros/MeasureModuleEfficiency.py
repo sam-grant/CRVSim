@@ -57,6 +57,7 @@ from mu2etools import parallelise as pa
 # ------------------------------------------------
 
 # Impose stricter conditions than the default, if desired
+# This works but needs a be a refactor, it's a bit awkard.
 def MarkCoincidences(data_, coincidenceConditions, quiet): 
     
     # print("\n---> Marking coincidences")
@@ -396,15 +397,14 @@ def Trigger(data_, triggerMode, fail, quiet):
         )
     elif triggerMode == "trk_crv2_3layers_trigger":
         ApplyTrackerCuts(data_, triggerMode=triggerMode, fail=fail, quiet=quiet) 
-        # Look for PEsPerLayer >= 10 in the top two layers (indices 2 and 3) 
-        layerCondition = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 2][:, :, -3:] >= 10
-        layerCondition = ak.flatten((ak.all(layerCondition, axis=-1, keepdims=False)==True), axis=None)
+        # Look for PEsPerLayer >= 10 in 2/3 of the top three layers 
+        layerCondition = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 2][:, :, -3:] >= 10  
+        layerCondition = ak.flatten(ak.sum(layerCondition == True, axis=-1, keepdims=False), axis=None) >= 2 
         triggerCondition = (
             layerCondition &
             data_["pass_track_cuts"]
         )
-    elif triggerMode == "crv_2layers_trigger": 
-        # Look for PEsPerLayer >= 10 in the top two layers (indices 2 and 3) 
+    elif triggerMode == "crv_2layers_trigger":  
         layerConditionUpper = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 2][:, :, -2:] >= 10 # top two layers
         layerConditionLower = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 3][:, :, :2] >= 10 # bottom two layers
         layerConditionUpper = ak.flatten((ak.all(layerConditionUpper, axis=-1, keepdims=False)==True), axis=None)
@@ -414,11 +414,11 @@ def Trigger(data_, triggerMode, fail, quiet):
             layerCondition 
         )
     elif triggerMode == "crv_3layers_trigger":
-        # Look for PEsPerLayer >= 10 in the top two layers (indices 2 and 3) 
+        # Look for PEsPerLayer >= 10 in the 2/3 of layers of the top and bottom modules 
         layerConditionUpper = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 2][:, :, -3:] >= 10 # top three layers
-        layerConditionLower = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 3][:, :, :3] >= 10 # bottom three layers
-        layerConditionUpper = ak.flatten((ak.all(layerConditionUpper, axis=-1, keepdims=False)==True), axis=None)
-        layerConditionLower = ak.flatten((ak.all(layerConditionLower, axis=-1, keepdims=False)==True), axis=None)
+        layerConditionLower = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 3][:, :, :3] >= 10 # bottom three layers        
+        layerConditionUpper = ak.flatten(ak.sum(layerConditionUpper == True, axis=-1, keepdims=False), axis=None) >= 2 
+        layerConditionLower = ak.flatten(ak.sum(layerConditionLower == True, axis=-1, keepdims=False), axis=None) >= 2 
         layerCondition = layerConditionUpper & layerConditionLower
         triggerCondition = (
             layerCondition 
@@ -437,11 +437,11 @@ def Trigger(data_, triggerMode, fail, quiet):
         )
     elif triggerMode == "trk_crv_3layers_trigger":
         ApplyTrackerCuts(data_, triggerMode=triggerMode, fail=fail, quiet=quiet) 
-        # Look for PEsPerLayer >= 10 in the top two layers (indices 2 and 3) 
+        # Look for PEsPerLayer >= 10 in the 2/3 of layers of the top and bottom modules
         layerConditionUpper = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 2][:, :, -3:] >= 10 # top three layers
         layerConditionLower = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 3][:, :, :3] >= 10 # bottom three layers
-        layerConditionUpper = ak.flatten((ak.all(layerConditionUpper, axis=-1, keepdims=False)==True), axis=None)
-        layerConditionLower = ak.flatten((ak.all(layerConditionLower, axis=-1, keepdims=False)==True), axis=None)
+        layerConditionUpper = ak.flatten(ak.sum(layerConditionUpper == True, axis=-1, keepdims=False), axis=None) >= 2 
+        layerConditionLower = ak.flatten(ak.sum(layerConditionLower == True, axis=-1, keepdims=False), axis=None) >= 2 
         layerCondition = layerConditionUpper & layerConditionLower
         triggerCondition = (
             layerCondition &
@@ -698,8 +698,8 @@ def TestMain():
 
 def main():
 
-    # TestMain()
-    # return
+    TestMain()
+    return
 
     #########################################################
     # Try multiprocessing, called from an external script
@@ -782,6 +782,9 @@ def main():
                     print(f'---> Exception!\n{exc}')
         return
 
+if __name__ == "__main__":
+    main()
+    
    #  #########################################################
 
    #  defname = "nts.sgrant.CosmicCRYExtractedCatTriggered.MDC2020ae_best_v1_3.root"
@@ -894,8 +897,7 @@ def main():
     
 
 
-if __name__ == "__main__":
-    main()
+
 
 # Multithread on one file with many configs
 # def Multithread2(processFunction2, fileName, particles_, layers_, PEs_):

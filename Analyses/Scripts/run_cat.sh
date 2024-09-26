@@ -1,6 +1,8 @@
+#!/bin/bash
+
 # Run concatenation job
 DATASET=$1
-FILTER=$2
+TRIGGER=$2
 PARTICLE=$3
 LAYER=$4
 PE=$5
@@ -10,7 +12,7 @@ PE=$5
             
 coincidenceConditions="${PE}PEs${LAYER}Layers"
 
-config="${PARTICLE}_${coincidenceConditions}_${FILTER}"
+config="${PARTICLE}_${coincidenceConditions}_${TRIGGER}"
 
 # Set up directory
 
@@ -46,7 +48,7 @@ echo "Tag,${header}" >> $fout
 for fin in $(ls ../Txt/${DATASET}/${i}/0*/${i}_${config}.csv | sort -V); do
     id=$(echo "$fin" | awk -F'/' '{print $(NF-1)}')
     results=$(awk 'NR==2' "$fin")
-    echo "${id}, ${results}" >> $fout
+    echo "${id},${results}" >> $fout
 done
 
 echo "---> Written ${fout}"

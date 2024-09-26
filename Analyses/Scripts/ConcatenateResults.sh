@@ -4,8 +4,8 @@
 recon="MDC2020ae" # "original"
 particle_=("all" "muons" "non_muons")
 coincidenceFilter="one_coincidence_per_trigger_sector"
-filter_=("singles" "singles_track_cuts")
-PEs_=($(seq 10.0 5.0 60.0))
+filter_=("no_track_cuts" "track_cuts")
+PEs_=($(seq 10.0 5.0 130.0))
 
 for particle in "all" "muons" "non_muons"; do
     for layer in 2 3; do

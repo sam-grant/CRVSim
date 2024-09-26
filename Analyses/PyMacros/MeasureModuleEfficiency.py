@@ -195,7 +195,7 @@ def ApplyTrackerCuts(data_, triggerMode="default", fail=False, quiet=False):
         
     # CRV-T
     # width ---> 951 + (4-1)*(951-127) = 3388
-    # z: 3388/2 (offset by -500 mm) 
+    # z: 3388/2 (offset by -500 mm). Need to subtract the layer offset as well. 3388/2 - 127. 
     # x: 6100/2 
     # (z, x)
     # min_box_coords = (-3388/2-500, -6100/2)
@@ -231,7 +231,7 @@ def ApplyTrackerCuts(data_, triggerMode="default", fail=False, quiet=False):
     # z: CRV-DS length (2570/2) 
     # x: CRV-L-end length (3388/2) 
     # (z, x)
-    # min_box_coords = (-(2570/2)-500, -(3388/2))
+    # min_box_coords = (-(2570/2)-500, -(3388/2))s
     # max_box_coords = (+(2570/2)-500, +(3388/2))
 
     # Tested in TrackCuts.ipynb and CompCRV.ipynb
@@ -239,7 +239,7 @@ def ApplyTrackerCuts(data_, triggerMode="default", fail=False, quiet=False):
     # Measurement module
     data_["trkfit_CRV1Fiducial"] = ( 
         (abs(data_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fX"]) < 6100/2) 
-        & (abs(data_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fZ"] + 500) < 3423/2))
+        & (abs(data_["trkfit"]["klfit"]["pos"]["fCoordinates"]["fZ"] + 500) < (3388/2 - 127*2)) ) # Make it 2*layer offset to be  sure. 
 
     # Trigger modules
     data_["trkfit_CRV23Fiducial"] = ( 
@@ -388,8 +388,9 @@ def Trigger(data_, triggerMode, fail, quiet):
         )
     elif triggerMode == "trk_crv2_2layers_trigger":
         ApplyTrackerCuts(data_, triggerMode=triggerMode, fail=fail, quiet=quiet) 
-        # Look for PEsPerLayer >= 10 in the top two layers (indices 2 and 3) 
-        layerCondition = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 2][:, :, -2:] >= 10
+        # Look for PEsPerLayer >= 10 in the BOTTOM two layers (indices 2 and 3) 
+        # layerCondition = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 2][:, :, -2:] >= 10
+        layerCondition = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 2][:, :, :2] >= 10 # bottom two layers
         layerCondition = ak.flatten((ak.all(layerCondition, axis=-1, keepdims=False)==True), axis=None)
         triggerCondition = (
             layerCondition &
@@ -405,8 +406,10 @@ def Trigger(data_, triggerMode, fail, quiet):
             data_["pass_track_cuts"]
         )
     elif triggerMode == "crv_2layers_trigger":  
-        layerConditionUpper = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 2][:, :, -2:] >= 10 # top two layers
-        layerConditionLower = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 3][:, :, :2] >= 10 # bottom two layers
+        # layerConditionUpper = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 2][:, :, -2:] >= 10 # top two layers
+        # layerConditionLower = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 3][:, :, :2] >= 10 # bottom two layers
+        layerConditionUpper = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 2][:, :, :2] >= 10 # bottom two layers
+        layerConditionLower = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 3][:, :, -2:] >= 10 # top two layers
         layerConditionUpper = ak.flatten((ak.all(layerConditionUpper, axis=-1, keepdims=False)==True), axis=None)
         layerConditionLower = ak.flatten((ak.all(layerConditionLower, axis=-1, keepdims=False)==True), axis=None)
         layerCondition = layerConditionUpper & layerConditionLower
@@ -415,7 +418,7 @@ def Trigger(data_, triggerMode, fail, quiet):
         )
     elif triggerMode == "crv_3layers_trigger":
         # Look for PEsPerLayer >= 10 in the 2/3 of layers of the top and bottom modules 
-        layerConditionUpper = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 2][:, :, -3:] >= 10 # top three layers
+        layerConditionUpper = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 2][:, :, -3:] >= 10 #  three layers
         layerConditionLower = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 3][:, :, :3] >= 10 # bottom three layers        
         layerConditionUpper = ak.flatten(ak.sum(layerConditionUpper == True, axis=-1, keepdims=False), axis=None) >= 2 
         layerConditionLower = ak.flatten(ak.sum(layerConditionLower == True, axis=-1, keepdims=False), axis=None) >= 2 
@@ -426,8 +429,10 @@ def Trigger(data_, triggerMode, fail, quiet):
     elif triggerMode == "trk_crv_2layers_trigger":
         ApplyTrackerCuts(data_, triggerMode=triggerMode, fail=fail, quiet=quiet) 
         # Look for PEsPerLayer >= 10 in the top two layers (indices 2 and 3) 
-        layerConditionUpper = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 2][:, :, -2:] >= 10 # top two layers
-        layerConditionLower = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 3][:, :, :2] >= 10 # bottom two layers
+        # layerConditionUpper = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 2][:, :, -2:] >= 10 # top two layers
+        # layerConditionLower = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 3][:, :, :2] >= 10 # bottom two layers
+        layerConditionUpper = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 2][:, :, :2] >= 10 # bottom two layers
+        layerConditionLower = data_["crv"]["crvcoincs.PEsPerLayer[4]"][data_["crv"]["crvcoincs.sectorType"] == 3][:, :, -2:] >= 10 # top two layers
         layerConditionUpper = ak.flatten((ak.all(layerConditionUpper, axis=-1, keepdims=False)==True), axis=None)
         layerConditionLower = ak.flatten((ak.all(layerConditionLower, axis=-1, keepdims=False)==True), axis=None)
         layerCondition = layerConditionUpper & layerConditionLower
@@ -681,7 +686,7 @@ def TestMain():
         # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="trk_crv_trigger", quiet=False) # tested
         # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="trk_crv2_trigger", quiet=False) # tested
         # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="trk_crv3_trigger", quiet=False) # tested
-        Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="trk_trigger", quiet=False) # tested
+        # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="trk_trigger", quiet=False) # tested
         # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="crv_trigger", quiet=False) # tested
         # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="crv2_trigger", quiet=False) # tested
         # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="crv3_trigger", quiet=False)vtrk_crv2_2layers_trigger
@@ -690,8 +695,19 @@ def TestMain():
         # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="trk_crv2_3layers_trigger", quiet=False)
         # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="crv_2layers_trigger", quiet=False)
         # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="crv_3layers_trigger", quiet=False)
-        # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="trk_crv_2layers_trigger", quiet=False)
+
+        Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="trk_trigger", quiet=False)
+        
+        # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="crv_trigger", quiet=False)
         # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="crv_2layers_trigger", quiet=False)
+
+        # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="trk_crv_trigger", quiet=False)
+        # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="trk_crv_2layers_trigger", quiet=False)
+
+        # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="trk_crv2_trigger", quiet=False)
+        # Run(file, recon="MDC2020ae", particle="all", PE="10", layer="3", finTag=finTag, triggerMode="trk_crv2_2layers_trigger", quiet=False)
+
+
         
 
     return
